@@ -156,14 +156,22 @@ if "InitN1mmCWShiftOption();" not in s:
     write_source(p, bom, nl, s)
 
 
-# 3. Remove only the Stage-1 empty branding constant and its dead conditional.
+# 3. Keep the neutral build-name compatibility symbol idempotently.
+# Other upstream files reference TitleBar.BUILD_NAME, so the symbol must remain.
 p, bom, nl, s = read_source("Project Files/Source/Console/titlebar.cs")
-s = "\n".join(
-    line
-    for line in s.split("\n")
-    if 'public const string BUILD_NAME = "";' not in line
-    and 'if (BUILD_NAME != "")' not in line
-)
+s = s.replace('        public const string BUILD_NAME = "";\n', '        public static readonly string BUILD_NAME = "";\n')
+if 'public static readonly string BUILD_NAME = "";' not in s:
+    anchor = "    class TitleBar\n    {\n"
+    if anchor not in s:
+        raise RuntimeError("TitleBar class anchor not found")
+    s = s.replace(anchor, anchor + '        public static readonly string BUILD_NAME = "";\n\n', 1)
+
+conditional = '            if (BUILD_NAME != "") s += " " + BUILD_NAME;\n'
+if conditional not in s:
+    anchor = '            s += " (" + VersionInfo.BuildDate + ")<FW>";  //[2.10.2.2]MW0LGE use the auto generated class from pre build event for the BuildDate\n'
+    if anchor not in s:
+        raise RuntimeError("TitleBar BuildDate anchor not found")
+    s = s.replace(anchor, anchor + "\n" + conditional, 1)
 write_source(p, bom, nl, s)
 
 
