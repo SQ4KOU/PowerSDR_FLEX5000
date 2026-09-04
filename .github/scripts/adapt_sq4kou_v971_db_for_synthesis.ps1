@@ -67,7 +67,9 @@ $newForceInfo = '            string force_info = force_upgrade ? "Force database
 $text = Replace-ScriptExactOnce $text $oldForceInfo $newForceInfo 'DB P0-P2 schema mismatch reason propagation'
 
 $oldReplaceMethod = '    $dbm = Replace-Method $dbm "        private static void checkVersion(bool made_new, bool force_upgrade = false, bool force_upgrade_via_file = false)" $newCheckVersion'
-$newReplaceMethod = '    $dbm = Replace-Method $dbm "        private static bool checkVersion(bool made_new, bool force_upgrade = false, bool force_upgrade_via_file = false, bool schema_mismatch = false, string schema_mismatch_reason = "")" $newCheckVersion'
+$newReplaceMethod = @'
+    $dbm = Replace-Method $dbm '        private static bool checkVersion(bool made_new, bool force_upgrade = false, bool force_upgrade_via_file = false, bool schema_mismatch = false, string schema_mismatch_reason = "")' $newCheckVersion
+'@.TrimEnd()
 $text = Replace-ScriptExactOnce $text $oldReplaceMethod $newReplaceMethod 'DB P0-P2 EU2AV checkVersion method anchor'
 
 $oldPostcheck = '        @{ Name="checkVersion propagated"; Ok=$dbm.Contains("if(ok) ok = checkVersion") },'
