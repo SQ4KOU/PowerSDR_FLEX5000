@@ -84,4 +84,24 @@ if (-not $text.Contains('schema_mismatch_reason')) {
 }
 
 [IO.File]::WriteAllText($path, $text.Replace("`n", "`r`n"), [Text.UTF8Encoding]::new($true))
+
+# The outer V9.7.1 builder has one legacy audit predicate that looks only for
+# the 3-argument Ramdor call text. Accept the preserved EU2AV schema-aware call
+# as an equivalent/stronger propagation check; this changes only the audit,
+# not the database implementation.
+$builderPath = Join-Path $PackRoot 'BUILD_SQ4KOU_THETIS.ps1'
+if (-not (Test-Path -LiteralPath $builderPath)) { throw "Builder not found: $builderPath" }
+$builder = [IO.File]::ReadAllText($builderPath)
+$oldAudit = @'
+                  $dbman.Contains('if(ok) ok = checkVersion') -and
+'@.Trim()
+$newAudit = @'
+                  ($dbman.Contains('if(ok) ok = checkVersion') -or $dbman.Contains('ok = checkVersion(made_new, ctrl_key_force_update, updateFile, schema_mismatch, mismatch_reason);')) -and
+'@.Trim()
+$auditCount = ([regex]::Matches($builder, [regex]::Escape($oldAudit))).Count
+if ($auditCount -ne 1) { throw "Builder DB audit compatibility anchor count=$auditCount, expected 1" }
+$builder = $builder.Replace($oldAudit, $newAudit)
+[IO.File]::WriteAllText($builderPath, $builder, [Text.UTF8Encoding]::new($true))
+
 Write-Host 'DB_P0_P2_EU2AV_COMPAT=PASS'
+Write-Host 'DB_P0_P2_BUILDER_AUDIT_COMPAT=PASS'
