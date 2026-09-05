@@ -31,6 +31,12 @@ $t = Inject-After-Once $t '^[ \t]*private const int OpSetPaFilter = 1260;[ \t]*\
         private const int OpReadPtt = 1266;
 "@ 'Flex5000 PTT opcode'
 
+$t = Inject-After-Once $t '^[ \t]*private static uint _serial;[ \t]*\r?$' 'FLEX5000_NATIVE_PTT_DIAGNOSTICS' @"
+
+        // FLEX5000_NATIVE_PTT_DIAGNOSTICS: log only state edges, never every poll.
+        private static int _lastPttBits = -1;
+"@ 'Flex5000 PTT diagnostic state'
+
 $t = Inject-After-Once $t '^[ \t]*internal static uint Serial \{ get \{ return _serial; \} \}[ \t]*\r?$' 'FLEX5000_NATIVE_PTT_BRIDGE' @"
 
         // FLEX5000_NATIVE_PTT_BRIDGE: translate PAL/FWC PTT/key bits to Thetis native bit layout.
@@ -49,6 +55,12 @@ $t = Inject-After-Once $t '^[ \t]*internal static uint Serial \{ get \{ return _
                     if ((raw & 0x0C) != 0) bits |= 0x01; // RCA PTT or MIC PTT -> Thetis PTT
                     if ((raw & 0x02) != 0) bits |= 0x02; // dash
                     if ((raw & 0x01) != 0) bits |= 0x04; // dot
+
+                    if (bits != _lastPttBits)
+                    {
+                        _lastPttBits = bits;
+                        Log("PTT_STATE|RAW=0x" + raw.ToString("X2") + "|THETIS=0x" + bits.ToString("X2"));
+                    }
                     return bits;
                 }
                 catch
@@ -74,8 +86,10 @@ Write-Utf8 $consolePath $t
 $transport = Read-Utf8 $transportPath
 $console = Read-Utf8 $consolePath
 if (!$transport.Contains('FLEX5000_NATIVE_PTT_OPCODE')) { throw 'PTT opcode gate failed' }
+if (!$transport.Contains('FLEX5000_NATIVE_PTT_DIAGNOSTICS')) { throw 'PTT diagnostics gate failed' }
 if (!$transport.Contains('FLEX5000_NATIVE_PTT_BRIDGE')) { throw 'PTT bridge gate failed' }
+if (!$transport.Contains('PTT_STATE|RAW=0x')) { throw 'PTT state log gate failed' }
 if (!$console.Contains('Flex5000Transport.ReadDotDashPtt()')) { throw 'Console PTT poll gate failed' }
 if ($console.Contains('physical FLEX PTT deferred')) { throw 'Deferred physical PTT path still present' }
 
-Write-Host "FLEX5000 physical PTT bridge applied successfully (poll sites=$count)."
+Write-Host "FLEX5000 physical PTT bridge applied successfully (poll sites=$count, edge logging enabled)."
