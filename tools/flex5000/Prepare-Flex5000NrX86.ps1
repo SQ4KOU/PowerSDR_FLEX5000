@@ -60,7 +60,7 @@ $vecPath = Join-Path $rnSrc 'src\vec.h'
 Need $vecPath
 $vec = [IO.File]::ReadAllText($vecPath)
 $x86Inc = '(?m)^\s*#include\s+"x86/x86_arch_macros\.h"\s*\r?\n'
-$simd = '(?m)^[ \t]*#if[ \t]+defined\(__AVX__\)[ \t]*\|\|[ \t]*defined\(__SSE2__\)[ \t]*$'
+$simd = '(?m)^[ \t]*#if[ \t]+defined\(__AVX__\)[ \t]*\|\|[ \t]*defined\(__SSE2__\)[ \t]*\r?$'
 if ([regex]::Matches($vec,$x86Inc).Count -eq 1) { $vec = [regex]::Replace($vec,$x86Inc,'') }
 elseif ($vec -match 'x86/x86_arch_macros\.h') { throw 'RNNoise x86 include layout changed' }
 if ([regex]::Matches($vec,$simd).Count -eq 1) {
@@ -87,13 +87,13 @@ $sbCmakeText = $sbCmakeText -replace 'fftw_x64','fftw_x86'
 $spectral = Join-Path $sbSrc 'src\shared\utils\spectral_utils.c'
 Need $spectral
 $st = [IO.File]::ReadAllText($spectral)
-$vla = '(?m)^([ \t]*)([A-Za-z_][A-Za-z0-9_ \t\*]*?)\s+tmp_buffer\s*\[\s*([^\]\r\n]+?)\s*\]\s*;[ \t]*$'
+$vla = '(?m)^([ \t]*)([A-Za-z_][A-Za-z0-9_ \t\*]*?)\s+tmp_buffer\s*\[\s*([^\]\r\n]+?)\s*\]\s*;[ \t]*\r?$'
 $matches = [regex]::Matches($st,$vla)
 if ($matches.Count -eq 1) {
     $m=$matches[0]; $indent=$m.Groups[1].Value; $ctype=$m.Groups[2].Value.Trim(); $count=$m.Groups[3].Value.Trim()
     $replacement=$indent+$ctype+' *tmp_buffer = ('+$ctype+' *)_alloca(sizeof('+$ctype+') * ('+$count+'));'
     $st=$st.Substring(0,$m.Index)+$replacement+$st.Substring($m.Index+$m.Length)
-    if ($st -notmatch '(?m)^\s*#\s*include\s*<malloc\.h>\s*$') {
+    if ($st -notmatch '(?m)^\s*#\s*include\s*<malloc\.h>\s*\r?$') {
         $first=[regex]::Match($st,'(?m)^\s*#\s*include[^\r\n]*(?:\r?\n)')
         if (!$first.Success) { throw 'SpecBleach include anchor missing' }
         $eol=if($first.Value.EndsWith("`r`n")){"`r`n"}else{"`n"}
