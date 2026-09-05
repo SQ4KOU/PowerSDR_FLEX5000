@@ -17,8 +17,10 @@ $logDir = Join-Path $artifactDir 'logs'
 New-Item -ItemType Directory -Force -Path $artifactDir,$logDir | Out-Null
 Get-ChildItem -LiteralPath $artifactDir -File -ErrorAction SilentlyContinue | Remove-Item -Force
 
+# This is a PowerShell script, not a native process. Any overlay error throws and
+# terminates here because ErrorActionPreference=Stop; LASTEXITCODE is intentionally
+# not inspected after this call.
 & (Join-Path $PSScriptRoot 'Apply-Flex5000Overlay.ps1')
-if ($LASTEXITCODE -ne 0) { throw "FLEX5000 overlay failed rc=$LASTEXITCODE" }
 
 $vswhere = Join-Path ${env:ProgramFiles(x86)} 'Microsoft Visual Studio\Installer\vswhere.exe'
 if (!(Test-Path -LiteralPath $vswhere)) { throw 'vswhere.exe not found' }
@@ -27,7 +29,8 @@ if (!$msbuild -or !(Test-Path -LiteralPath $msbuild)) { throw 'MSBuild not found
 Write-Host "MSBUILD=$msbuild"
 
 if (!$SkipRestore) {
-    $nuget = (Get-Command nuget.exe -ErrorAction SilentlyContinue | Select-Object -First 1).Source
+    $nugetCmd = Get-Command nuget.exe -ErrorAction SilentlyContinue | Select-Object -First 1
+    $nuget = if ($null -ne $nugetCmd) { $nugetCmd.Source } else { $null }
     if (!$nuget) {
         $nuget = Join-Path $env:TEMP 'nuget-flex5000.exe'
         Invoke-WebRequest -UseBasicParsing -Uri 'https://dist.nuget.org/win-x86-commandline/latest/nuget.exe' -OutFile $nuget
@@ -77,10 +80,12 @@ Copy-Item -LiteralPath $msi.FullName -Destination $finalMsi -Force
 $sha = (Get-FileHash -Algorithm SHA256 -LiteralPath $finalMsi).Hash.ToLowerInvariant()
 "$sha  $finalName" | Set-Content -LiteralPath (Join-Path $artifactDir ($finalName + '.sha256')) -Encoding ASCII
 
+$branch = if (Test-Path Env:GITHUB_REF_NAME) { $env:GITHUB_REF_NAME } else { 'local' }
+$sourceSha = if (Test-Path Env:GITHUB_SHA) { $env:GITHUB_SHA } else { 'local' }
 $manifest = @(
     'BUILD=FLEX5000_P0_SQ4KOU',
-    "SOURCE_BRANCH=$env:GITHUB_REF_NAME",
-    "SOURCE_SHA=$env:GITHUB_SHA",
+    "SOURCE_BRANCH=$branch",
+    "SOURCE_SHA=$sourceSha",
     "THETIS_EXE=$thetisExe",
     "THETIS_FILE_VERSION=$fv",
     "CMASIO=$cmAsio",
