@@ -28,8 +28,27 @@ function Run([string]$Name, [string]$Exe, [string[]]$Args, [string]$Log) {
 }
 
 foreach ($p in @($rnSrc,$sbSrc,(Join-Path $nr64 'rnnoise.h'),(Join-Path $nr64 'specbleach_adenoiser.h'),(Join-Path $fftw 'fftw3.h'),$wdspProj)) { Need $p }
+
+# The current SQ4KOU tree ships libfftw3f-3.dll + .def but not its x86 import .lib.
+# Generate that missing import library from the vendor .def with the installed MSVC toolchain.
 $fftwLib = Get-ChildItem -LiteralPath $fftw -File -Filter '*fftw3f*.lib' | Select-Object -First 1
-if (!$fftwLib) { throw "No single-precision FFTW x86 import library in $fftw" }
+if (!$fftwLib) {
+    $fftwDef = Get-ChildItem -LiteralPath $fftw -File -Filter '*fftw3f*.def' | Select-Object -First 1
+    if (!$fftwDef) { throw "No single-precision FFTW x86 .lib or .def in $fftw" }
+    $vswhere = Join-Path ${env:ProgramFiles(x86)} 'Microsoft Visual Studio\Installer\vswhere.exe'
+    Need $vswhere
+    $vsRoot = & $vswhere -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
+    if (!$vsRoot) { throw 'Visual C++ tools installation not found' }
+    $libExe = Get-ChildItem -LiteralPath (Join-Path $vsRoot 'VC\Tools\MSVC') -Recurse -File -Filter 'lib.exe' |
+        Where-Object { $_.FullName -match '\\bin\\Hostx64\\x86\\lib\.exe$' } |
+        Sort-Object FullName -Descending | Select-Object -First 1
+    if (!$libExe) { throw 'MSVC x86 lib.exe not found' }
+    $generated = Join-Path $fftw 'libfftw3f-3.lib'
+    Run 'Generate FFTW3f x86 import library' $libExe.FullName @('/nologo','/MACHINE:X86',('/DEF:'+$fftwDef.FullName),('/OUT:'+$generated)) (Join-Path $LogDir 'FFTW3F_IMPORTLIB_X86.log')
+    Need $generated
+    $fftwLib = Get-Item -LiteralPath $generated
+}
+Write-Host "FFTW3F_X86_LIB=$($fftwLib.FullName)"
 $cmake = (Get-Command cmake.exe -ErrorAction Stop).Source
 
 # RNNoise: exact compatibility change already proven by the earlier FLEX5000 V1.12 build.
@@ -83,7 +102,6 @@ elseif ($st -notmatch '_alloca\s*\(') { throw "SpecBleach tmp_buffer VLA layout 
 
 $sbBuild = Join-Path $env:RUNNER_TEMP 'sq4kou-specbleach-x86'
 if (Test-Path $sbBuild) { Remove-Item $sbBuild -Recurse -Force }
-$fftwHeader = Join-Path $fftw 'fftw3.h'
 $sbArgs=@('-S',$sbSrc,'-B',$sbBuild,'-A','Win32',
     "-DFFTW3f_INCLUDE_DIR=$fftw", "-DFFTW3F_INCLUDE_DIR=$fftw",
     "-DFFTW3f_LIBRARY=$($fftwLib.FullName)", "-DFFTW3F_LIBRARY=$($fftwLib.FullName)",
