@@ -259,7 +259,7 @@ extern "C" __declspec(dllexport) int prepareFlexASIO(int samplerate, const char*
     }
 
     setError(0);
-    return (int)g.blockSize;
+    return 0;
 }
 
 extern "C" __declspec(dllexport) long flexAsioStart()
