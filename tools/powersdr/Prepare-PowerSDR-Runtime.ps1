@@ -19,7 +19,7 @@ function Assert-Hash([string]$Path,[string]$Expected,[string]$Label) {
 
 function Copy-AppTree([string]$Root,[string]$Label) {
     $candidates = Get-ChildItem -LiteralPath $Root -Recurse -File -Filter PowerSDR.exe -ErrorAction SilentlyContinue
-    if(!$candidates){throw "$Label: no PowerSDR.exe found"}
+    if(!$candidates){throw "${Label}: no PowerSDR.exe found"}
     $ranked = foreach($exe in $candidates){
         $dir=$exe.Directory.FullName
         $dllCount=(Get-ChildItem -LiteralPath $dir -File -Filter '*.dll' -ErrorAction SilentlyContinue).Count
@@ -32,21 +32,21 @@ function Copy-AppTree([string]$Root,[string]$Label) {
 
 New-Item -ItemType Directory -Force -Path $OutDir,$LogRoot | Out-Null
 
-# Full official installer supplies the complete legacy PowerSDR runtime that the
-# KE9NS source tree intentionally does not carry. Extract only; do not execute it.
 $fullExe=Join-Path $WorkRoot '_ke9ns_full.exe'
 $fullRoot=Join-Path $WorkRoot '_ke9ns_full'
 Invoke-WebRequest -UseBasicParsing -Uri $FullUrl -OutFile $fullExe
 Assert-Hash $fullExe $FullSha 'KE9NS full installer'
 New-Item -ItemType Directory -Force -Path $fullRoot | Out-Null
 $seven='C:\Program Files\7-Zip\7z.exe'
-if(!(Test-Path -LiteralPath $seven)){$seven=(Get-Command 7z.exe -ErrorAction SilentlyContinue).Source}
+if(!(Test-Path -LiteralPath $seven)){
+    $sevenCmd=Get-Command 7z.exe -ErrorAction SilentlyContinue
+    if($sevenCmd){$seven=$sevenCmd.Source}
+}
 if(!$seven -or !(Test-Path -LiteralPath $seven)){throw '7-Zip not found on runner'}
 & $seven x '-y' "-o$fullRoot" $fullExe | Tee-Object -FilePath (Join-Path $LogRoot 'KE9NS_FULL_7ZIP.log')
 if($LASTEXITCODE -ne 0){throw "7-Zip full installer extraction failed rc=$LASTEXITCODE"}
 Copy-AppTree $fullRoot 'KE9NS_FULL'
 
-# Incremental official MSI then overlays the current KE9NS v2.8.0.329 files.
 $incMsi=Join-Path $WorkRoot '_ke9ns_incremental.msi'
 $incRoot=Join-Path $WorkRoot '_ke9ns_incremental'
 Invoke-WebRequest -UseBasicParsing -Uri $IncUrl -OutFile $incMsi
@@ -56,10 +56,6 @@ $msiLog=Join-Path $LogRoot 'KE9NS_INCREMENTAL_EXTRACT.log'
 $msiArgs=@('/a',"`"$incMsi`"",'/qn',"TARGETDIR=`"$incRoot`"",'/L*v',"`"$msiLog`"")
 $p=Start-Process msiexec.exe -ArgumentList $msiArgs -Wait -PassThru
 if($p.ExitCode -ne 0){throw "KE9NS incremental extraction failed rc=$($p.ExitCode)"}
-
-# The administrative image can be flattened by MSI authoring. Overlay every
-# file found beside the best PowerSDR.exe candidate, and then resolve any
-# required DLL still absent by exact-name recursive search in the image.
 Copy-AppTree $incRoot 'KE9NS_INCREMENTAL'
 
 $required=@(
