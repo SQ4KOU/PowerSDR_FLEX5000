@@ -17,10 +17,13 @@ $logDir = Join-Path $artifactDir 'logs'
 New-Item -ItemType Directory -Force -Path $artifactDir,$logDir | Out-Null
 Get-ChildItem -LiteralPath $artifactDir -File -ErrorAction SilentlyContinue | Remove-Item -Force
 
-# This is a PowerShell script, not a native process. Any overlay error throws and
-# terminates here because ErrorActionPreference=Stop; LASTEXITCODE is intentionally
-# not inspected after this call.
+# Checkout-only source integration. Errors throw and stop the build.
 & (Join-Path $PSScriptRoot 'Apply-Flex5000Overlay.ps1')
+
+# SQ4KOU x86 currently has no prebuilt NR_Algorithms_x86. Build the exact pinned
+# RNNoise/SpecBleach sources as Win32 before WDSP, then patch only the disposable
+# Release|Win32 WDSP link configuration.
+& (Join-Path $PSScriptRoot 'Prepare-Flex5000NrX86.ps1') -LogDir $logDir
 
 $vswhere = Join-Path ${env:ProgramFiles(x86)} 'Microsoft Visual Studio\Installer\vswhere.exe'
 if (!(Test-Path -LiteralPath $vswhere)) { throw 'vswhere.exe not found' }
@@ -60,8 +63,10 @@ $thetisExe = Join-Path $repo "Project Files\bin\$Platform\$Configuration\Thetis.
 if (!(Test-Path -LiteralPath $thetisExe)) { throw "Thetis.exe missing: $thetisExe" }
 $cmAsio = Join-Path $repo "Project Files\bin\$Platform\$Configuration\cmASIO.dll"
 if (!(Test-Path -LiteralPath $cmAsio)) { throw "cmASIO.dll missing: $cmAsio" }
+$wdspDll = Join-Path $repo "Project Files\bin\$Platform\$Configuration\wdsp.dll"
+if (!(Test-Path -LiteralPath $wdspDll)) { throw "wdsp.dll missing: $wdspDll" }
 
-# Build installer explicitly as a final gate even when it was part of the solution build.
+# Build installer explicitly as final gate.
 $wixLog = Join-Path $logDir 'MSBUILD_FLEX5000_WIX.log'
 & $msbuild $wix '/m' '/t:Build' "/p:Configuration=$Configuration" "/p:Platform=$Platform" '/v:minimal' "/flp:logfile=$wixLog;verbosity=normal"
 if ($LASTEXITCODE -ne 0) { throw "WiX MSI build failed rc=$LASTEXITCODE" }
@@ -89,12 +94,14 @@ $manifest = @(
     "THETIS_EXE=$thetisExe",
     "THETIS_FILE_VERSION=$fv",
     "CMASIO=$cmAsio",
+    "WDSP=$wdspDll",
     "MSI=$finalName",
     "MSI_SHA256=$sha",
     'ARCH=x86',
     'TRANSPORT=PAL_FWC_ASIO_FLEXRADIO_8X8_192K',
     'DSP=CHANNELMASTER_WDSP',
-    'HPSDR_RNET=DISABLED'
+    'HPSDR_RNET=DISABLED',
+    'NR_X86=RNNOISE_GENERIC_PLUS_SPECBLEACH'
 )
 $manifest | Set-Content -LiteralPath (Join-Path $artifactDir 'FLEX5000_BUILD_MANIFEST.txt') -Encoding UTF8
 
