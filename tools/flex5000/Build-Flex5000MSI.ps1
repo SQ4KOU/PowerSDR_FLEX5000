@@ -20,6 +20,7 @@ Get-ChildItem -LiteralPath $artifactDir -File -ErrorAction SilentlyContinue | Re
 # Checkout-only source integration. Errors throw and stop the build.
 & (Join-Path $PSScriptRoot 'Apply-Flex5000Overlay.ps1')
 & (Join-Path $PSScriptRoot 'Apply-Flex5000Ptt.ps1')
+& (Join-Path $PSScriptRoot 'Apply-Flex5000Cleanup.ps1')
 
 # SQ4KOU x86 currently has no prebuilt NR_Algorithms_x86. Build the exact pinned
 # RNNoise/SpecBleach sources as Win32 before WDSP, then patch only the disposable
@@ -102,7 +103,8 @@ $manifest = @(
     'TRANSPORT=PAL_FWC_ASIO_FLEXRADIO_8X8_192K',
     'DSP=CHANNELMASTER_WDSP',
     'HPSDR_RNET=DISABLED',
-    'PHYSICAL_PTT=PAL_FWC_READ_PTT',
+    'PHYSICAL_PTT=PAL_FWC_READ_PTT_EDGE_LOGGED',
+    'TX_INPUT=ASIO_CH6_CH7_NATIVE_192K',
     'NR_X86=RNNOISE_GENERIC_PLUS_SPECBLEACH'
 )
 $manifest | Set-Content -LiteralPath (Join-Path $artifactDir 'FLEX5000_BUILD_MANIFEST.txt') -Encoding UTF8
