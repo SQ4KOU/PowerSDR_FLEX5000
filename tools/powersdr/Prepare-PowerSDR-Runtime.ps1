@@ -18,35 +18,36 @@ function Assert-Hash([string]$Path,[string]$Expected,[string]$Label) {
 }
 
 function Copy-AppTree([string]$Root,[string]$Label) {
-    $candidates = Get-ChildItem -LiteralPath $Root -Recurse -File -Filter PowerSDR.exe -ErrorAction SilentlyContinue
+    $candidates=Get-ChildItem -LiteralPath $Root -Recurse -File -Filter PowerSDR.exe -ErrorAction SilentlyContinue
     if(!$candidates){throw "${Label}: no PowerSDR.exe found"}
-    $ranked = foreach($exe in $candidates){
+    $ranked=foreach($exe in $candidates){
         $dir=$exe.Directory.FullName
         $dllCount=(Get-ChildItem -LiteralPath $dir -File -Filter '*.dll' -ErrorAction SilentlyContinue).Count
         [pscustomobject]@{Exe=$exe;Dir=$dir;Dlls=$dllCount}
     }
-    $best=$ranked | Sort-Object Dlls -Descending | Select-Object -First 1
+    $best=$ranked|Sort-Object Dlls -Descending|Select-Object -First 1
     Write-Host "$Label APPDIR=$($best.Dir) DLLS=$($best.Dlls)"
     Copy-Item -LiteralPath (Join-Path $best.Dir '*') -Destination $OutDir -Recurse -Force
 }
 
 New-Item -ItemType Directory -Force -Path $OutDir,$LogRoot | Out-Null
 
+# KE9NS documents that the full installer is Inno Setup. Extract it without
+# executing any installer/driver actions on the CI host.
 $fullExe=Join-Path $WorkRoot '_ke9ns_full.exe'
 $fullRoot=Join-Path $WorkRoot '_ke9ns_full'
 Invoke-WebRequest -UseBasicParsing -Uri $FullUrl -OutFile $fullExe
 Assert-Hash $fullExe $FullSha 'KE9NS full installer'
 New-Item -ItemType Directory -Force -Path $fullRoot | Out-Null
-$seven='C:\Program Files\7-Zip\7z.exe'
-if(!(Test-Path -LiteralPath $seven)){
-    $sevenCmd=Get-Command 7z.exe -ErrorAction SilentlyContinue
-    if($sevenCmd){$seven=$sevenCmd.Source}
-}
-if(!$seven -or !(Test-Path -LiteralPath $seven)){throw '7-Zip not found on runner'}
-& $seven x '-y' "-o$fullRoot" $fullExe | Tee-Object -FilePath (Join-Path $LogRoot 'KE9NS_FULL_7ZIP.log')
-if($LASTEXITCODE -ne 0){throw "7-Zip full installer extraction failed rc=$LASTEXITCODE"}
+$inno=Get-Command innoextract.exe -ErrorAction SilentlyContinue
+if(!$inno){$inno=Get-Command innoextract -ErrorAction SilentlyContinue}
+if(!$inno){throw 'innoextract not found on runner'}
+& $inno.Source '--extract' '--output-dir' $fullRoot '--progress=0' $fullExe |
+    Tee-Object -FilePath (Join-Path $LogRoot 'KE9NS_FULL_INNOEXTRACT.log')
+if($LASTEXITCODE -ne 0){throw "innoextract failed rc=$LASTEXITCODE"}
 Copy-AppTree $fullRoot 'KE9NS_FULL'
 
+# Overlay the current official KE9NS incremental MSI.
 $incMsi=Join-Path $WorkRoot '_ke9ns_incremental.msi'
 $incRoot=Join-Path $WorkRoot '_ke9ns_incremental'
 Invoke-WebRequest -UseBasicParsing -Uri $IncUrl -OutFile $incMsi
@@ -66,7 +67,7 @@ $required=@(
 foreach($name in $required){
     $dest=Join-Path $OutDir $name
     if(!(Test-Path -LiteralPath $dest)){
-        $hit=Get-ChildItem -LiteralPath $fullRoot,$incRoot -Recurse -File -Filter $name -ErrorAction SilentlyContinue | Select-Object -First 1
+        $hit=Get-ChildItem -LiteralPath $fullRoot,$incRoot -Recurse -File -Filter $name -ErrorAction SilentlyContinue|Select-Object -First 1
         if($hit){Copy-Item -LiteralPath $hit.FullName -Destination $dest -Force}
     }
     if(!(Test-Path -LiteralPath $dest)){throw "Required official PowerSDR runtime missing: $name"}
