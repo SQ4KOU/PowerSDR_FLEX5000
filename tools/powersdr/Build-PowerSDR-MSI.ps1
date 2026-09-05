@@ -16,34 +16,30 @@ if (Test-Path $WorkRoot) { Remove-Item $WorkRoot -Recurse -Force }
 if (Test-Path $ArtifactRoot) { Remove-Item $ArtifactRoot -Recurse -Force }
 New-Item -ItemType Directory -Force -Path $WorkRoot,$ArtifactRoot,$LogRoot | Out-Null
 
-function Run([string]$Exe,[string[]]$Args,[string]$Name) {
-    & $Exe @Args
-    if ($LASTEXITCODE -ne 0) { throw "$Name failed rc=$LASTEXITCODE" }
-}
-
 Write-Host "POWERSDR_SOURCE=$SourceRepo@$SourceSha"
-Run 'git' @('clone','--no-tags',$SourceRepo,$WorkRoot) 'clone'
+& git clone --no-tags $SourceRepo $WorkRoot
+if ($LASTEXITCODE -ne 0) { throw "PowerSDR clone failed rc=$LASTEXITCODE" }
 Push-Location $WorkRoot
 try {
-    Run 'git' @('checkout','--detach',$SourceSha) 'checkout'
+    & git checkout --detach $SourceSha
+    if ($LASTEXITCODE -ne 0) { throw "PowerSDR checkout failed rc=$LASTEXITCODE" }
     if ((git rev-parse HEAD).Trim() -ne $SourceSha) { throw 'Pinned source SHA mismatch' }
 
     $outDir = Join-Path $WorkRoot 'bin\Release'
     New-Item -ItemType Directory -Force -Path $outDir | Out-Null
 
     # KE9NS explicitly documents that his installed PowerSDR DLL set is required
-    # to compile the GitHub source.  Extract the official signed release MSI and
-    # seed the output directory with that complete runtime.  This preserves the
-    # original FLEX-5000 PAL/FWC/FireWire/ASIO/DttSP runtime instead of replacing
-    # it with Thetis or reimplementing it.
+    # to compile the GitHub source.  Extract the official release MSI and seed
+    # bin\Release with that complete runtime.  This keeps native FLEX-5000,
+    # PAL/FWC, FireWire/ASIO and DttSP exactly on the PowerSDR side.
     $depsMsi = Join-Path $WorkRoot '_ke9ns_runtime.msi'
     $depsRoot = Join-Path $WorkRoot '_ke9ns_runtime'
     Invoke-WebRequest -UseBasicParsing -Uri $DepsMsiUrl -OutFile $depsMsi
     $h = (Get-FileHash -Algorithm SHA256 $depsMsi).Hash.ToLowerInvariant()
     if ($h -ne $DepsMsiSha256) { throw "KE9NS MSI SHA256 mismatch: $h" }
     New-Item -ItemType Directory -Force -Path $depsRoot | Out-Null
-    $args = @('/a',"`"$depsMsi`"",'/qn',"TARGETDIR=`"$depsRoot`"",'/L*v',"`"$(Join-Path $LogRoot 'KE9NS_RUNTIME_EXTRACT.log')`"")
-    $p = Start-Process msiexec.exe -ArgumentList $args -Wait -PassThru
+    $msiArgs = @('/a',"`"$depsMsi`"",'/qn',"TARGETDIR=`"$depsRoot`"",'/L*v',"`"$(Join-Path $LogRoot 'KE9NS_RUNTIME_EXTRACT.log')`"")
+    $p = Start-Process msiexec.exe -ArgumentList $msiArgs -Wait -PassThru
     if ($p.ExitCode -ne 0) { throw "KE9NS MSI administrative extraction failed rc=$($p.ExitCode)" }
 
     $installedExe = Get-ChildItem $depsRoot -Recurse -File -Filter PowerSDR.exe | Select-Object -First 1
@@ -58,7 +54,7 @@ try {
         'Sanford.Multimedia.Timers.dll','Sanford.Threading.dll','TNF.dll'
     )
     foreach ($f in $mustRuntime) {
-        if (!(Test-Path (Join-Path $outDir $f))) { throw "Required native/upstream runtime missing: $f" }
+        if (!(Test-Path (Join-Path $outDir $f))) { throw "Required upstream runtime missing: $f" }
     }
 
     nuget restore (Join-Path $WorkRoot 'PowerSDR.sln') -NonInteractive |
@@ -69,10 +65,9 @@ try {
     $msbuild = & $vswhere -latest -products * -requires Microsoft.Component.MSBuild -find 'MSBuild\**\Bin\MSBuild.exe' | Select-Object -First 1
     if (!$msbuild) { throw 'MSBuild not found' }
 
-    # PowerMate is a C++/CLI compile-time reference.  Prefer the official runtime
-    # copy; if the release does not contain it, build that unchanged upstream
-    # project and copy its output.  DttSP is deliberately NOT rebuilt: the
-    # official KE9NS DttSP.dll above remains the DSP engine.
+    # PowerMate is a compile-time C++/CLI reference. Prefer the official copy;
+    # otherwise build the unchanged upstream project. DttSP is deliberately not
+    # rebuilt: the official PowerSDR DttSP.dll remains the DSP engine.
     $powerMateDll = Join-Path $outDir 'PowerMate.dll'
     if (!(Test-Path $powerMateDll)) {
         $pmLog = Join-Path $LogRoot 'MSBUILD_POWERMATE.log'
@@ -83,8 +78,8 @@ try {
         Copy-Item $builtPM $powerMateDll -Force
     }
 
-    # The solution does not select PowerMate for Release|Win32 on a clean CI
-    # runner.  Point the C# project at the already available x86 assembly only.
+    # Fix only clean-CI project wiring: point the C# project at the existing x86
+    # PowerMate assembly. No radio/backend source is modified here.
     $csproj = Join-Path $WorkRoot 'Console\PowerSDR.csproj'
     $cs = [IO.File]::ReadAllText($csproj)
     $prx = [regex]::new('(?ms)\s*<ProjectReference Include="\.\.\\PowerMate\\PowerMate\.vcxproj">.*?</ProjectReference>')
@@ -93,8 +88,8 @@ try {
     $cs = $prx.Replace($cs,$pmRef,1)
     [IO.File]::WriteAllText($csproj,$cs,(New-Object Text.UTF8Encoding($false)))
 
-    # UI-only port.  This script is not allowed to change FWC, audio, DttSP,
-    # ATU, Mixer, PAL, FireWire/ASIO, hardware transport or their source files.
+    # UI-only port. This script may not modify FWC, audio, DttSP, ATU, Mixer,
+    # PAL, FireWire/ASIO, hardware transport or their source files.
     $ui = Join-Path $HarnessRoot 'tools\powersdr\Apply-PowerSDR-ThetisUI.ps1'
     if (Test-Path $ui) { & $ui -SourceRoot $WorkRoot }
 
@@ -107,7 +102,6 @@ try {
     if (!(Test-Path $exe)) { throw 'PowerSDR.exe missing after build' }
     if (Test-Path (Join-Path $outDir 'Thetis.exe')) { throw 'Thetis.exe leaked into PowerSDR output' }
 
-    # Non-negotiable native PowerSDR functionality gates.
     foreach ($rel in @('Console\FWC\fwc.cs','Console\FWC\fwcatuform.cs','Console\console.Designer.cs')) {
         if (!(Test-Path (Join-Path $WorkRoot $rel))) { throw "PowerSDR native source missing: $rel" }
     }
