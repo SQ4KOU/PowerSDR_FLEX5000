@@ -21,9 +21,9 @@ if (!$LogDir) { $LogDir = Join-Path $repo 'artifacts\flex5000\logs' }
 New-Item -ItemType Directory -Force -Path $LogDir,$nr86 | Out-Null
 
 function Need([string]$p) { if (!(Test-Path -LiteralPath $p)) { throw "Required path missing: $p" } }
-function Run([string]$Name, [string]$Exe, [string[]]$Args, [string]$Log) {
+function Run([string]$Name, [string]$Exe, [string[]]$Arguments, [string]$Log) {
     Write-Host "NR_X86|$Name"
-    & $Exe @Args 2>&1 | Tee-Object -FilePath $Log
+    & $Exe @Arguments 2>&1 | Tee-Object -FilePath $Log
     if ($LASTEXITCODE -ne 0) { throw "$Name failed rc=$LASTEXITCODE; see $Log" }
 }
 
