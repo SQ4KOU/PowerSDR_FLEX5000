@@ -29,8 +29,8 @@ function Run([string]$Name, [string]$Exe, [string[]]$Args, [string]$Log) {
 
 foreach ($p in @($rnSrc,$sbSrc,(Join-Path $nr64 'rnnoise.h'),(Join-Path $nr64 'specbleach_adenoiser.h'),(Join-Path $fftw 'fftw3.h'),$wdspProj)) { Need $p }
 
-# The current SQ4KOU tree ships libfftw3f-3.dll + .def but not its x86 import .lib.
-# Generate that missing import library from the vendor .def with the installed MSVC toolchain.
+# Current SQ4KOU ships libfftw3f-3.dll + .def but no x86 import .lib.
+# Run LIB from inside fftw_x86 so /DEF and /OUT never contain a path with spaces.
 $fftwLib = Get-ChildItem -LiteralPath $fftw -File -Filter '*fftw3f*.lib' | Select-Object -First 1
 if (!$fftwLib) {
     $fftwDef = Get-ChildItem -LiteralPath $fftw -File -Filter '*fftw3f*.def' | Select-Object -First 1
@@ -44,7 +44,11 @@ if (!$fftwLib) {
         Sort-Object FullName -Descending | Select-Object -First 1
     if (!$libExe) { throw 'MSVC x86 lib.exe not found' }
     $generated = Join-Path $fftw 'libfftw3f-3.lib'
-    Run 'Generate FFTW3f x86 import library' $libExe.FullName @('/nologo','/MACHINE:X86',('/DEF:'+$fftwDef.FullName),('/OUT:'+$generated)) (Join-Path $LogDir 'FFTW3F_IMPORTLIB_X86.log')
+    Push-Location $fftw
+    try {
+        Run 'Generate FFTW3f x86 import library' $libExe.FullName @('/nologo','/MACHINE:X86',('/DEF:'+$fftwDef.Name),'/OUT:libfftw3f-3.lib') (Join-Path $LogDir 'FFTW3F_IMPORTLIB_X86.log')
+    }
+    finally { Pop-Location }
     Need $generated
     $fftwLib = Get-Item -LiteralPath $generated
 }
