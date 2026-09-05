@@ -1,126 +1,102 @@
 param([Parameter(Mandatory=$true)][string]$WixBin)
 
-$ErrorActionPreference = 'Stop'
+$ErrorActionPreference='Stop'
 Set-StrictMode -Version Latest
 
-$HarnessRoot = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
-$WorkRoot = Join-Path $HarnessRoot '.work\powersdr-ke9ns'
-$ArtifactRoot = Join-Path $HarnessRoot 'artifacts\powersdr'
-$LogRoot = Join-Path $ArtifactRoot 'logs'
-$SourceRepo = 'https://github.com/ke9ns/PowerSDR-KE9NS-v2.8.0.git'
-$SourceSha = 'fb05ec170fd09f32039afc4cdee7c119e08a2c29'
-$DepsMsiUrl = 'https://github.com/ke9ns/PowerSDR-KE9NS-v2.8.0/releases/download/v2.8.0.329/PowerSDR_KE9NS_V2.8.0.329_Incremental_Installer.msi'
-$DepsMsiSha256 = '6cb0f4aa820e4d7366e962e4c6f06eaf50326d886e87038d465e8a1f86e4e41c'
+$HarnessRoot=(Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
+$WorkRoot=Join-Path $HarnessRoot '.work\powersdr-ke9ns'
+$ArtifactRoot=Join-Path $HarnessRoot 'artifacts\powersdr'
+$LogRoot=Join-Path $ArtifactRoot 'logs'
+$SourceRepo='https://github.com/ke9ns/PowerSDR-KE9NS-v2.8.0.git'
+$SourceSha='fb05ec170fd09f32039afc4cdee7c119e08a2c29'
+$FullInstallerSha='ee31af4f244b4a0939bf6bed9987d0afc23d09cc64632c4772d6bb283ea767cd'
+$IncInstallerSha='6cb0f4aa820e4d7366e962e4c6f06eaf50326d886e87038d465e8a1f86e4e41c'
 
-if (Test-Path $WorkRoot) { Remove-Item $WorkRoot -Recurse -Force }
-if (Test-Path $ArtifactRoot) { Remove-Item $ArtifactRoot -Recurse -Force }
+if(Test-Path $WorkRoot){Remove-Item $WorkRoot -Recurse -Force}
+if(Test-Path $ArtifactRoot){Remove-Item $ArtifactRoot -Recurse -Force}
 New-Item -ItemType Directory -Force -Path $WorkRoot,$ArtifactRoot,$LogRoot | Out-Null
 
 Write-Host "POWERSDR_SOURCE=$SourceRepo@$SourceSha"
 & git clone --no-tags $SourceRepo $WorkRoot
-if ($LASTEXITCODE -ne 0) { throw "PowerSDR clone failed rc=$LASTEXITCODE" }
+if($LASTEXITCODE -ne 0){throw "PowerSDR clone failed rc=$LASTEXITCODE"}
 Push-Location $WorkRoot
-try {
+try{
     & git checkout --detach $SourceSha
-    if ($LASTEXITCODE -ne 0) { throw "PowerSDR checkout failed rc=$LASTEXITCODE" }
-    if ((git rev-parse HEAD).Trim() -ne $SourceSha) { throw 'Pinned source SHA mismatch' }
+    if($LASTEXITCODE -ne 0){throw "PowerSDR checkout failed rc=$LASTEXITCODE"}
+    if((git rev-parse HEAD).Trim() -ne $SourceSha){throw 'Pinned PowerSDR source SHA mismatch'}
 
-    $outDir = Join-Path $WorkRoot 'bin\Release'
+    $outDir=Join-Path $WorkRoot 'bin\Release'
     New-Item -ItemType Directory -Force -Path $outDir | Out-Null
 
-    # KE9NS explicitly documents that his installed PowerSDR DLL set is required
-    # to compile the GitHub source.  Extract the official release MSI and seed
-    # bin\Release with that complete runtime.  This keeps native FLEX-5000,
-    # PAL/FWC, FireWire/ASIO and DttSP exactly on the PowerSDR side.
-    $depsMsi = Join-Path $WorkRoot '_ke9ns_runtime.msi'
-    $depsRoot = Join-Path $WorkRoot '_ke9ns_runtime'
-    Invoke-WebRequest -UseBasicParsing -Uri $DepsMsiUrl -OutFile $depsMsi
-    $h = (Get-FileHash -Algorithm SHA256 $depsMsi).Hash.ToLowerInvariant()
-    if ($h -ne $DepsMsiSha256) { throw "KE9NS MSI SHA256 mismatch: $h" }
-    New-Item -ItemType Directory -Force -Path $depsRoot | Out-Null
-    $msiArgs = @('/a',"`"$depsMsi`"",'/qn',"TARGETDIR=`"$depsRoot`"",'/L*v',"`"$(Join-Path $LogRoot 'KE9NS_RUNTIME_EXTRACT.log')`"")
-    $p = Start-Process msiexec.exe -ArgumentList $msiArgs -Wait -PassThru
-    if ($p.ExitCode -ne 0) { throw "KE9NS MSI administrative extraction failed rc=$($p.ExitCode)" }
-
-    $installedExe = Get-ChildItem $depsRoot -Recurse -File -Filter PowerSDR.exe | Select-Object -First 1
-    if (!$installedExe) { throw 'PowerSDR.exe not found in official KE9NS MSI' }
-    $installedDir = $installedExe.Directory.FullName
-    Copy-Item (Join-Path $installedDir '*') $outDir -Recurse -Force
-    Write-Host "KE9NS_RUNTIME=$installedDir"
-
-    $mustRuntime = @(
-        'DttSP.dll','Interop.TDxInput.dll','Sanford.Collections.dll',
-        'Sanford.Multimedia.dll','Sanford.Multimedia.Midi.dll',
-        'Sanford.Multimedia.Timers.dll','Sanford.Threading.dll','TNF.dll'
-    )
-    foreach ($f in $mustRuntime) {
-        if (!(Test-Path (Join-Path $outDir $f))) { throw "Required upstream runtime missing: $f" }
-    }
+    # Build prerequisite exactly follows KE9NS model: his source requires DLLs
+    # from an installed PowerSDR. We reconstruct that official runtime from the
+    # KE9NS release assets, without changing FLEX/PAL/FWC/FireWire/ASIO/DttSP.
+    & (Join-Path $PSScriptRoot 'Prepare-PowerSDR-Runtime.ps1') -WorkRoot $WorkRoot -OutDir $outDir -LogRoot $LogRoot
 
     nuget restore (Join-Path $WorkRoot 'PowerSDR.sln') -NonInteractive |
         Tee-Object -FilePath (Join-Path $LogRoot 'NUGET_RESTORE.log')
-    if ($LASTEXITCODE -ne 0) { throw "NuGet restore failed rc=$LASTEXITCODE" }
+    if($LASTEXITCODE -ne 0){throw "NuGet restore failed rc=$LASTEXITCODE"}
 
-    $vswhere = Join-Path ${env:ProgramFiles(x86)} 'Microsoft Visual Studio\Installer\vswhere.exe'
-    $msbuild = & $vswhere -latest -products * -requires Microsoft.Component.MSBuild -find 'MSBuild\**\Bin\MSBuild.exe' | Select-Object -First 1
-    if (!$msbuild) { throw 'MSBuild not found' }
+    $vswhere=Join-Path ${env:ProgramFiles(x86)} 'Microsoft Visual Studio\Installer\vswhere.exe'
+    $msbuild=& $vswhere -latest -products * -requires Microsoft.Component.MSBuild -find 'MSBuild\**\Bin\MSBuild.exe' | Select-Object -First 1
+    if(!$msbuild){throw 'MSBuild not found'}
+    Write-Host "MSBUILD=$msbuild"
 
-    # PowerMate is a compile-time C++/CLI reference. Prefer the official copy;
-    # otherwise build the unchanged upstream project. DttSP is deliberately not
-    # rebuilt: the official PowerSDR DttSP.dll remains the DSP engine.
-    $powerMateDll = Join-Path $outDir 'PowerMate.dll'
-    if (!(Test-Path $powerMateDll)) {
-        $pmLog = Join-Path $LogRoot 'MSBUILD_POWERMATE.log'
+    # PowerMate is only a compile-time C++/CLI reference. Prefer the official
+    # runtime copy; otherwise build the unchanged upstream project. DttSP is not
+    # rebuilt and remains the official native PowerSDR DttSP.dll.
+    $powerMateDll=Join-Path $outDir 'PowerMate.dll'
+    if(!(Test-Path $powerMateDll)){
+        $pmLog=Join-Path $LogRoot 'MSBUILD_POWERMATE.log'
         & $msbuild (Join-Path $WorkRoot 'PowerMate\PowerMate.vcxproj') '/m' '/t:Rebuild' '/p:Configuration=Release' '/p:Platform=Win32' '/v:minimal' "/flp:logfile=$pmLog;verbosity=normal"
-        if ($LASTEXITCODE -ne 0) { throw "PowerMate build failed rc=$LASTEXITCODE" }
-        $builtPM = Join-Path $WorkRoot 'PowerMate\bin\Release\PowerMate.dll'
-        if (!(Test-Path $builtPM)) { throw "PowerMate output missing: $builtPM" }
+        if($LASTEXITCODE -ne 0){throw "PowerMate build failed rc=$LASTEXITCODE"}
+        $builtPM=Join-Path $WorkRoot 'PowerMate\bin\Release\PowerMate.dll'
+        if(!(Test-Path $builtPM)){throw "PowerMate.dll missing: $builtPM"}
         Copy-Item $builtPM $powerMateDll -Force
     }
 
-    # Fix only clean-CI project wiring: point the C# project at the existing x86
-    # PowerMate assembly. No radio/backend source is modified here.
-    $csproj = Join-Path $WorkRoot 'Console\PowerSDR.csproj'
-    $cs = [IO.File]::ReadAllText($csproj)
-    $prx = [regex]::new('(?ms)\s*<ProjectReference Include="\.\.\\PowerMate\\PowerMate\.vcxproj">.*?</ProjectReference>')
-    if ($prx.Matches($cs).Count -ne 1) { throw 'Unexpected PowerMate ProjectReference layout' }
-    $pmRef = "`r`n    <Reference Include=`"PowerMate`">`r`n      <HintPath>..\bin\Release\PowerMate.dll</HintPath>`r`n      <Private>True</Private>`r`n    </Reference>"
-    $cs = $prx.Replace($cs,$pmRef,1)
+    # Clean-CI wiring only; no application/backend code is altered.
+    $csproj=Join-Path $WorkRoot 'Console\PowerSDR.csproj'
+    $cs=[IO.File]::ReadAllText($csproj)
+    $rx=[regex]::new('(?ms)\s*<ProjectReference Include="\.\.\\PowerMate\\PowerMate\.vcxproj">.*?</ProjectReference>')
+    if($rx.Matches($cs).Count -ne 1){throw 'Unexpected PowerMate ProjectReference layout'}
+    $pmRef="`r`n    <Reference Include=`"PowerMate`">`r`n      <HintPath>..\bin\Release\PowerMate.dll</HintPath>`r`n      <Private>True</Private>`r`n    </Reference>"
+    $cs=$rx.Replace($cs,$pmRef,1)
     [IO.File]::WriteAllText($csproj,$cs,(New-Object Text.UTF8Encoding($false)))
 
-    # UI-only port. This script may not modify FWC, audio, DttSP, ATU, Mixer,
-    # PAL, FireWire/ASIO, hardware transport or their source files.
-    $ui = Join-Path $HarnessRoot 'tools\powersdr\Apply-PowerSDR-ThetisUI.ps1'
-    if (Test-Path $ui) { & $ui -SourceRoot $WorkRoot }
+    # UI port only. This overlay is forbidden from touching native hardware/DSP.
+    $ui=Join-Path $PSScriptRoot 'Apply-PowerSDR-ThetisUI.ps1'
+    if(Test-Path $ui){& $ui -SourceRoot $WorkRoot}
 
-    $buildLog = Join-Path $LogRoot 'MSBUILD_POWERSDR.log'
-    $binlog = Join-Path $LogRoot 'MSBUILD_POWERSDR.binlog'
+    $buildLog=Join-Path $LogRoot 'MSBUILD_POWERSDR.log'
+    $binlog=Join-Path $LogRoot 'MSBUILD_POWERSDR.binlog'
     & $msbuild $csproj '/m' '/t:Rebuild' '/p:Configuration=Release' '/p:Platform=x86' '/p:BuildProjectReferences=false' '/v:minimal' "/flp:logfile=$buildLog;verbosity=normal" "/bl:$binlog"
-    if ($LASTEXITCODE -ne 0) { throw "PowerSDR x86 build failed rc=$LASTEXITCODE" }
+    if($LASTEXITCODE -ne 0){throw "PowerSDR x86 build failed rc=$LASTEXITCODE"}
 
-    $exe = Join-Path $outDir 'PowerSDR.exe'
-    if (!(Test-Path $exe)) { throw 'PowerSDR.exe missing after build' }
-    if (Test-Path (Join-Path $outDir 'Thetis.exe')) { throw 'Thetis.exe leaked into PowerSDR output' }
+    $exe=Join-Path $outDir 'PowerSDR.exe'
+    if(!(Test-Path $exe)){throw 'PowerSDR.exe missing after build'}
+    if(Test-Path (Join-Path $outDir 'Thetis.exe')){throw 'Thetis.exe leaked into PowerSDR output'}
 
-    foreach ($rel in @('Console\FWC\fwc.cs','Console\FWC\fwcatuform.cs','Console\console.Designer.cs')) {
-        if (!(Test-Path (Join-Path $WorkRoot $rel))) { throw "PowerSDR native source missing: $rel" }
+    # Hard gates for functions that must remain PowerSDR-native.
+    foreach($rel in @('Console\FWC\fwc.cs','Console\FWC\fwcatuform.cs','Console\console.Designer.cs')){
+        if(!(Test-Path (Join-Path $WorkRoot $rel))){throw "Native PowerSDR source missing: $rel"}
     }
-    $designer = [IO.File]::ReadAllText((Join-Path $WorkRoot 'Console\console.Designer.cs'))
-    foreach ($token in @('mixerToolStripMenuItem','aTUToolStripMenuItem','antennaToolStripMenuItem','chkFWCATU')) {
-        if (!$designer.Contains($token)) { throw "PowerSDR native function gate failed: $token" }
+    $designer=[IO.File]::ReadAllText((Join-Path $WorkRoot 'Console\console.Designer.cs'))
+    foreach($token in @('mixerToolStripMenuItem','aTUToolStripMenuItem','antennaToolStripMenuItem','chkFWCATU')){
+        if(!$designer.Contains($token)){throw "Native PowerSDR function gate failed: $token"}
     }
 
-    $fv = [Diagnostics.FileVersionInfo]::GetVersionInfo($exe).FileVersion
-    if (!$fv) { $fv='2.8.0.0' }
-    $vm = [regex]::Match($fv,'(\d+)\.(\d+)\.(\d+)')
-    if (!$vm.Success) { throw "Bad PowerSDR file version: $fv" }
-    $msiVersion = "$($vm.Groups[1].Value).$($vm.Groups[2].Value).$($vm.Groups[3].Value)"
+    $fv=[Diagnostics.FileVersionInfo]::GetVersionInfo($exe).FileVersion
+    if(!$fv){$fv='2.8.0.0'}
+    $vm=[regex]::Match($fv,'(\d+)\.(\d+)\.(\d+)')
+    if(!$vm.Success){throw "Invalid PowerSDR version: $fv"}
+    $msiVersion="$($vm.Groups[1].Value).$($vm.Groups[2].Value).$($vm.Groups[3].Value)"
 
-    $wixWork = Join-Path $WorkRoot '_sq4kou_msi'
-    New-Item -ItemType Directory -Force $wixWork | Out-Null
-    $harvest = Join-Path $wixWork 'Harvest.wxs'
-    $product = Join-Path $wixWork 'Product.wxs'
-    $heat=Join-Path $WixBin 'heat.exe'; $candle=Join-Path $WixBin 'candle.exe'; $light=Join-Path $WixBin 'light.exe'
+    $wixWork=Join-Path $WorkRoot '_sq4kou_msi'
+    New-Item -ItemType Directory -Force -Path $wixWork | Out-Null
+    $harvest=Join-Path $wixWork 'Harvest.wxs'
+    $product=Join-Path $wixWork 'Product.wxs'
+    $heat=Join-Path $WixBin 'heat.exe';$candle=Join-Path $WixBin 'candle.exe';$light=Join-Path $WixBin 'light.exe'
     foreach($x in @($heat,$candle,$light)){if(!(Test-Path $x)){throw "WiX tool missing: $x"}}
     & $heat dir $outDir '-cg' 'AppFiles' '-dr' 'INSTALLFOLDER' '-gg' '-scom' '-sreg' '-sfrag' '-srd' '-var' 'var.SourceDir' '-out' $harvest
     if($LASTEXITCODE -ne 0){throw "WiX heat failed rc=$LASTEXITCODE"}
@@ -145,7 +121,7 @@ try {
     [IO.File]::WriteAllText($product,$xml,(New-Object Text.UTF8Encoding($false)))
 
     Push-Location $wixWork
-    try {
+    try{
         & $candle '-arch' 'x86' "-dSourceDir=$outDir" '-ext' 'WixUIExtension' 'Product.wxs' 'Harvest.wxs'
         if($LASTEXITCODE -ne 0){throw "WiX candle failed rc=$LASTEXITCODE"}
         $safe=$fv -replace '[^0-9A-Za-z._-]','_'
@@ -153,19 +129,19 @@ try {
         $final=Join-Path $ArtifactRoot $name
         & $light '-ext' 'WixUIExtension' '-sice:ICE61' '-out' $final 'Product.wixobj' 'Harvest.wixobj'
         if($LASTEXITCODE -ne 0){throw "WiX light failed rc=$LASTEXITCODE"}
-    } finally { Pop-Location }
+    }finally{Pop-Location}
 
     $sha=(Get-FileHash -Algorithm SHA256 $final).Hash.ToLowerInvariant()
-    "$sha  $name" | Set-Content (Join-Path $ArtifactRoot ($name+'.sha256')) -Encoding ASCII
+    "$sha  $name"|Set-Content (Join-Path $ArtifactRoot ($name+'.sha256')) -Encoding ASCII
     @(
       'PRODUCT=PowerSDR','EXE=PowerSDR.exe',"POWERSDR_FILE_VERSION=$fv",
       "POWERSDR_SOURCE_REPO=$SourceRepo","POWERSDR_SOURCE_SHA=$SourceSha",
-      "KE9NS_RUNTIME_SOURCE_SHA256=$DepsMsiSha256",'ARCH=x86','BASE=KE9NS_POWERSDR',
-      'FLEX5000_BACKEND=POWERSDR_NATIVE_PAL_FWC_FIREWIRE_ASIO','ATU=POWERSDR_NATIVE',
-      'MIXER=POWERSDR_NATIVE','DSP=POWERSDR_NATIVE_DTTSP','THETIS_BACKEND=ABSENT',
-      'THETIS_NETWORKIO=ABSENT','THETIS_CHANNELMASTER=ABSENT','THETIS_WDSP=ABSENT',
+      "KE9NS_FULL_INSTALLER_SHA256=$FullInstallerSha","KE9NS_INCREMENTAL_SHA256=$IncInstallerSha",
+      'ARCH=x86','BASE=KE9NS_POWERSDR','FLEX5000_BACKEND=POWERSDR_NATIVE_PAL_FWC_FIREWIRE_ASIO',
+      'ATU=POWERSDR_NATIVE','MIXER=POWERSDR_NATIVE','DSP=POWERSDR_NATIVE_DTTSP',
+      'THETIS_BACKEND=ABSENT','THETIS_NETWORKIO=ABSENT','THETIS_CHANNELMASTER=ABSENT','THETIS_WDSP=ABSENT',
       'UI_DIRECTION=THETIS_LAYOUT_ON_POWERSDR',"MSI=$name","MSI_SHA256=$sha"
-    ) | Set-Content (Join-Path $ArtifactRoot 'POWERSDR_BUILD_MANIFEST.txt') -Encoding UTF8
+    )|Set-Content (Join-Path $ArtifactRoot 'POWERSDR_BUILD_MANIFEST.txt') -Encoding UTF8
     Write-Host "POWERSDR_MSI_READY=$final"
     Write-Host "POWERSDR_MSI_SHA256=$sha"
-} finally { Pop-Location }
+}finally{Pop-Location}
