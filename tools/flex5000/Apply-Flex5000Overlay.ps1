@@ -94,7 +94,7 @@ Write-Utf8 $networkPath $t
 $audioPath = Join-Path $consoleDir 'audio.cs'
 $t = Read-Utf8 $audioPath
 if (!$t.Contains('FLEX5000_NATIVE_AUDIO_START')) {
-    $t = Replace-Exactly $t '^[ \t]*int result = NetworkIO\.StartAudioNative\(\);[ \t]*$' @"
+    $t = Replace-Exactly $t '^[ \t]*int result = NetworkIO\.StartAudioNative\(\);[ \t]*\r?$' @"
 #if FLEX5000_NATIVE
             // FLEX5000_NATIVE_AUDIO_START
             int result = Flex5000Transport.Start();
@@ -104,7 +104,7 @@ if (!$t.Contains('FLEX5000_NATIVE_AUDIO_START')) {
 "@ 1 'Audio.StartAudioNative'
 }
 if (!$t.Contains('FLEX5000_NATIVE_AUDIO_STOP')) {
-    $t = Replace-Exactly $t '^[ \t]*NetworkIO\.StopAudio\(\);[ \t]*$' @"
+    $t = Replace-Exactly $t '^[ \t]*NetworkIO\.StopAudio\(\);[ \t]*\r?$' @"
 #if FLEX5000_NATIVE
             // FLEX5000_NATIVE_AUDIO_STOP
             Flex5000Transport.Stop();
@@ -120,7 +120,7 @@ $t = Inject-After-Once $t '(?s)public static bool MOX\s*\{.*?set\s*\{\s*mox = va
 #endif
 "@ 'Audio.MOX'
 if (!$t.Contains('FLEX5000_NATIVE_OUTPUT_POWER')) {
-    $pattern = '^[ \t]*NetworkIO\.SetOutputPower\(\(float\)\(value \* 1\.02\)\);[ \t]*$'
+    $pattern = '^[ \t]*NetworkIO\.SetOutputPower\(\(float\)\(value \* 1\.02\)\);[ \t]*\r?$'
     $rx = [regex]::new($pattern, [System.Text.RegularExpressions.RegexOptions]::Multiline)
     $count = $rx.Matches($t).Count
     if ($count -ne 1) { throw "Audio output-power anchor count expected=1 actual=$count" }
@@ -147,7 +147,7 @@ $t = Inject-After-Once $t 'private void HdwMOXChanged\(bool tx, double freq\)\s*
 #endif
 "@ 'Console.HdwMOXChanged'
 if (!$t.Contains('FLEX5000_NATIVE_PTT_POLL')) {
-    $rx = [regex]::new('^[ \t]*int dotdashptt = NetworkIO\.nativeGetDotDashPTT\(\);[ \t]*$', [System.Text.RegularExpressions.RegexOptions]::Multiline)
+    $rx = [regex]::new('^[ \t]*int dotdashptt = NetworkIO\.nativeGetDotDashPTT\(\);[ \t]*\r?$', [System.Text.RegularExpressions.RegexOptions]::Multiline)
     $count = $rx.Matches($t).Count
     if ($count -lt 1) { throw 'Console nativeGetDotDashPTT anchors not found' }
     $script:firstPtt = $true
@@ -170,7 +170,7 @@ Write-Utf8 $consolePath $t
 $cmPath = Join-Path $consoleDir 'cmaster.cs'
 $t = Read-Utf8 $cmPath
 if (!$t.Contains('FLEX5000_NATIVE_NO_RNET')) {
-    $t = Replace-Exactly $t '^[ \t]*NetworkIO\.CreateRNet\(\);[ \t]*$' @"
+    $t = Replace-Exactly $t '^[ \t]*NetworkIO\.CreateRNet\(\);[ \t]*\r?$' @"
 #if !FLEX5000_NATIVE
             NetworkIO.CreateRNet();
 #else
