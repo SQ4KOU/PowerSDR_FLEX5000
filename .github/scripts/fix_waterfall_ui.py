@@ -130,7 +130,7 @@ method = r'''        private void InitWaterfallQualityControls()
             // DeepBlue 256 names are always readable without disturbing adjacent controls.
             if (comboColorPalette != null) comboColorPalette.DropDownWidth = 125;
             if (comboRX2ColorPalette != null) comboRX2ColorPalette.DropDownWidth = 125;
-            if (comboTXColorPalette != null) comboTXColorPalette.DropDownWidth = 125;
+            if (comboColorPalette_tx != null) comboColorPalette_tx.DropDownWidth = 125;
         }'''
 
 text = text[:start] + method + text[end:]
@@ -141,12 +141,12 @@ required = [
     'comboColorDepth.Items.AddRange(new object[] { "8-bit", "16-bit Float" });',
     'comboColorPalette.DropDownWidth = 125;',
     'comboRX2ColorPalette.DropDownWidth = 125;',
-    'comboTXColorPalette.DropDownWidth = 125;',
+    'comboColorPalette_tx.DropDownWidth = 125;',
     'SyncWaterfallEnhancerFromControls();',
 ]
 for marker in required:
     if marker not in text:
         raise SystemExit(f"postcheck failed: {marker}")
 
-path.write_text(text, encoding="utf-8-sig")
+path.write_text(text, encoding="utf-8")
 print("Waterfall UI completed in setup.cs")
