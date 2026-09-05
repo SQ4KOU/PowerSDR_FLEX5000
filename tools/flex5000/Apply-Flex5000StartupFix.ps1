@@ -13,61 +13,54 @@ function Write-Utf8([string]$Path, [string]$Text) {
 }
 
 # -----------------------------------------------------------------------------
-# 1. MiniSpec analyzers must not be allocated before ChannelMaster CreateRadio().
-#    In stock startup InitConsole() runs before radio = new Radio(AppDataPath),
-#    while alloc_analyzer() requires create_analyzer_alloc() created by cmaster.
+# 1. FLEX5000 P0 startup: do NOT create MiniSpec additional analyzers here.
+#
+# Stock Thetis creates these optional spectrum analyzers during Console startup.
+# Moving them merely behind Radio/ChannelMaster creation is still too early for
+# FLEX5000: clsMiniSpec.setupSpecDetails() reads Console/display state that is not
+# fully initialised yet and throws NullReferenceException.
+#
+# These are ADDITIONAL analyzers used by the meter system; they are not the main
+# RX/TX DSP path.  For the dedicated FLEX5000 build the safe P0 behaviour is to
+# suppress this optional startup block entirely.  We can re-enable it later at a
+# proven post-initialisation point, but it must not gate application startup.
 # -----------------------------------------------------------------------------
 $t = Read-Utf8 $consolePath
-$miniMarker = 'FLEX5000_NATIVE_MINISPEC_AFTER_CM'
+$miniMarker = 'FLEX5000_NATIVE_MINISPEC_DISABLED_P0'
 
 if (!$t.Contains($miniMarker)) {
     $oldBlockRx = [regex]::new('(?ms)^[ \t]*// setup additional spectrum analysers, used by meter system\r?\n[ \t]*if \(_use_additional_sas\)\r?\n[ \t]*\{\r?\n[ \t]*MiniSpec\.Init\(this\);\r?\n[ \t]*MiniSpec\.Add\(1, 0, false\);[^\r\n]*\r?\n[ \t]*MiniSpec\.Add\(2, 1, false\);[^\r\n]*\r?\n[ \t]*//MiniSpec\.Add\(1, 0, true\);[^\r\n]*\r?\n[ \t]*\}\r?\n[ \t]*//\r?\n')
-    $oldMatches = $oldBlockRx.Matches($t)
-    if ($oldMatches.Count -ne 1) {
-        throw "MiniSpec early-init block anchor expected=1 actual=$($oldMatches.Count)"
+    $matches = $oldBlockRx.Matches($t)
+    if ($matches.Count -ne 1) {
+        throw "MiniSpec startup block anchor expected=1 actual=$($matches.Count)"
     }
-    $old = $oldMatches[0]
+
+    $old = $matches[0]
     $replacement = @"
 #if !FLEX5000_NATIVE
 $($old.Value.TrimEnd())
 #else
-            // FLEX5000: delayed until ChannelMaster CreateRadio() has created analyzer allocator.
+            // FLEX5000_NATIVE_MINISPEC_DISABLED_P0
+            // Optional meter spectrum analyzers are intentionally suppressed during startup.
+            // Main RX/TX DSP and display analyzers remain untouched.
 #endif
 "@ + "`r`n"
+
     $t = $t.Substring(0, $old.Index) + $replacement + $t.Substring($old.Index + $old.Length)
-
-    $radioRx = [regex]::new('(?m)^(?<indent>[ \t]*)radio = new Radio\(AppDataPath\);[^\r\n]*\r?$')
-    $radioMatches = $radioRx.Matches($t)
-    if ($radioMatches.Count -ne 1) {
-        throw "radio = new Radio(AppDataPath) anchor expected=1 actual=$($radioMatches.Count)"
-    }
-    $m = $radioMatches[0]
-    $indent = $m.Groups['indent'].Value
-    $insert = @"
-
-#if FLEX5000_NATIVE
-${indent}// FLEX5000_NATIVE_MINISPEC_AFTER_CM: ChannelMaster CreateRadio() and
-${indent}// create_analyzer_alloc() have completed inside RadioDSP.CreateDSP().
-${indent}if (_use_additional_sas)
-${indent}{
-${indent}    MiniSpec.Init(this);
-${indent}    MiniSpec.Add(1, 0, false);
-${indent}    MiniSpec.Add(2, 1, false);
-${indent}}
-#endif
-"@
-    $t = $t.Substring(0, $m.Index + $m.Length) + $insert + $t.Substring($m.Index + $m.Length)
     Write-Utf8 $consolePath $t
 }
 
 $verifyConsole = Read-Utf8 $consolePath
 if (!$verifyConsole.Contains($miniMarker)) {
-    throw 'FLEX5000 delayed MiniSpec marker missing'
+    throw 'FLEX5000 MiniSpec-disable marker missing'
 }
-$radioPos = $verifyConsole.IndexOf('radio = new Radio(AppDataPath);', [System.StringComparison]::Ordinal)
-$miniPos = $verifyConsole.IndexOf($miniMarker, [System.StringComparison]::Ordinal)
-if ($radioPos -lt 0 -or $miniPos -lt 0 -or $miniPos -lt $radioPos) {
-    throw 'FLEX5000 MiniSpec is not physically after Radio/ChannelMaster creation'
+
+# Hard gate: the FLEX5000 side of the conditional must contain no MiniSpec.Add.
+$markerPos = $verifyConsole.IndexOf($miniMarker, [System.StringComparison]::Ordinal)
+if ($markerPos -lt 0) { throw 'FLEX5000 MiniSpec marker position missing' }
+$afterMarker = $verifyConsole.Substring($markerPos, [Math]::Min(500, $verifyConsole.Length - $markerPos))
+if ($afterMarker.Contains('MiniSpec.Add(')) {
+    throw 'FLEX5000 MiniSpec.Add still present in enabled FLEX5000 startup path'
 }
 
 # -----------------------------------------------------------------------------
@@ -109,4 +102,4 @@ if (!$verifyDisplay.Contains('initDX2D(DriverType.Warp, null);')) {
     throw 'FLEX5000 DirectX WARP retry call missing'
 }
 
-Write-Host 'FLEX5000 startup fixes applied: MiniSpec delayed until ChannelMaster ready; DirectX hardware failure falls back to WARP.'
+Write-Host 'FLEX5000 startup fixes applied: optional MiniSpec startup analyzers disabled; DirectX hardware failure falls back to WARP.'
