@@ -4,6 +4,7 @@ Set-StrictMode -Version Latest
 $repo = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
 $src  = Join-Path $repo 'Project Files\Source'
 $consoleDir = Join-Path $src 'Console'
+$flexTransportPath = Join-Path $consoleDir 'Flex5000Transport.cs'
 
 function Read-Utf8([string]$Path) {
     return [System.IO.File]::ReadAllText($Path)
@@ -180,6 +181,69 @@ if (!$t.Contains('FLEX5000_NATIVE_NO_RNET')) {
 }
 Write-Utf8 $cmPath $t
 
+# Correct the FLEX-5000 native transport contract against the original PAL/FWC and 8x8 ASIO layout.
+$t = Read-Utf8 $flexTransportPath
+if (!$t.Contains('FLEX5000_NATIVE_INIT_ORDER_V2')) {
+    $pattern = '(?ms)^[ \t]*_setBufferSize\(1024\);\r?\n[ \t]*int initRc = _writeUInt\(OpInitialize, 0, 0\);\r?\n[ \t]*_writeUInt\(OpSetTrxPreamp, 0, 0\);\r?\n[ \t]*uint fw;\r?\n[ \t]*int fwRc = _readOp\(OpGetFirmwareRev, 0, 0, out fw\);\r?\n[ \t]*if \(fwRc != 0\) _firmware = fw;'
+    $t = Replace-Exactly $t $pattern @"
+                    // FLEX5000_NATIVE_INIT_ORDER_V2: match the proven PowerSDR PAL/FWC sequence.
+                    _setBufferSize(1024);
+                    uint fw;
+                    int fwRc = _readOp(OpGetFirmwareRev, 0, 0, out fw);
+                    _firmware = fw;
+                    int initRc = _writeUInt(OpInitialize, 0, 0);
+                    _writeUInt(OpSetTrxPreamp, 0, 0);
+"@ 1 'Flex5000 PAL/FWC initialization order'
+}
+if (!$t.Contains('FLEX5000_NATIVE_MODEL_GUARD')) {
+    $t = Inject-After-Once $t '^[ \t]*if \(!_getDeviceInfo\(0, out model, out _serial\)\) throw new InvalidOperationException\("PAL GetDeviceInfo failed"\);[ \t]*\r?$' 'FLEX5000_NATIVE_MODEL_GUARD' @"
+
+                    // FLEX5000_NATIVE_MODEL_GUARD: PowerSDR maps PAL model 3 to FLEX-3000.
+                    if (model == 3) throw new InvalidOperationException("PAL device is FLEX-3000; dedicated FLEX-5000 build requires FLEX-5000");
+"@ 'Flex5000 model guard'
+}
+if (!$t.Contains('FLEX5000_NATIVE_TX_RATE_192K')) {
+    $t = Replace-Exactly $t '^[ \t]*cmaster\.SetXcmInrate\(_txStream, TxInputRate\);[ \t]*\r?$' @"
+                    // FLEX5000_NATIVE_TX_RATE_192K: ASIO FlexRadio supplies TX input at the device rate.
+                    cmaster.SetXcmInrate(_txStream, SampleRate);
+"@ 1 'Flex5000 TX ChannelMaster input rate'
+    $t = Replace-Exactly $t '^[ \t]*_txBlock = cmaster\.GetBuffSize\(TxInputRate\);[ \t]*\r?$' @"
+                    _txBlock = cmaster.GetBuffSize(SampleRate);
+"@ 1 'Flex5000 TX ChannelMaster block size'
+}
+if (!$t.Contains('FLEX5000_NATIVE_TX_ASIO_6_7')) {
+    $pattern = '(?ms)^[ \t]*if \(in7 != IntPtr\.Zero && _txCmBuffer != IntPtr\.Zero\)\r?\n[ \t]*\{.*?^[ \t]*\}\r?\n\r?\n[ \t]*RenderAudio\('
+    $replacement = @"
+                // FLEX5000_NATIVE_TX_ASIO_6_7: native FLEX-5000 mic/TX input is ASIO channels 6/7.
+                if (in6 != IntPtr.Zero && in7 != IntPtr.Zero && _txCmBuffer != IntPtr.Zero)
+                {
+                    float* micL = (float*)in6.ToPointer();
+                    float* micR = (float*)in7.ToPointer();
+                    double* tx = (double*)_txCmBuffer.ToPointer();
+                    for (int n = 0; n < frames; n++)
+                    {
+                        int p = _txFill;
+                        tx[2 * p] = micL[n];
+                        tx[2 * p + 1] = micR[n];
+                        p++;
+                        if (p >= _txBlock)
+                        {
+                            cmaster.Inbound(_txStream, _txBlock, tx);
+                            p = 0;
+                        }
+                        _txFill = p;
+                    }
+                }
+
+                RenderAudio(
+"@
+    $t = Replace-Exactly $t $pattern $replacement 1 'Flex5000 native TX ASIO 6/7 mapping'
+}
+if (!$t.Contains('FW_RC=')) {
+    $t = Replace-Exactly $t '\|INIT_RC=" \+ initRc\);' '|INIT_RC=" + initRc + "|FW_RC=" + fwRc);' 1 'Flex5000 init log FW return code'
+}
+Write-Utf8 $flexTransportPath $t
+
 $gates = @(
     @{ Path=$thetisProj; Text='FLEX5000_NATIVE' },
     @{ Path=$thetisProj; Text='Flex5000Transport.cs' },
@@ -189,7 +253,11 @@ $gates = @(
     @{ Path=$audioPath; Text='FLEX5000_NATIVE_AUDIO_START' },
     @{ Path=$audioPath; Text='FLEX5000_NATIVE_AUDIO_STOP' },
     @{ Path=$consolePath; Text='FLEX5000_NATIVE_HDW_MOX' },
-    @{ Path=$cmPath; Text='FLEX5000_NATIVE_NO_RNET' }
+    @{ Path=$cmPath; Text='FLEX5000_NATIVE_NO_RNET' },
+    @{ Path=$flexTransportPath; Text='FLEX5000_NATIVE_INIT_ORDER_V2' },
+    @{ Path=$flexTransportPath; Text='FLEX5000_NATIVE_MODEL_GUARD' },
+    @{ Path=$flexTransportPath; Text='FLEX5000_NATIVE_TX_RATE_192K' },
+    @{ Path=$flexTransportPath; Text='FLEX5000_NATIVE_TX_ASIO_6_7' }
 )
 foreach ($g in $gates) {
     if (!(Read-Utf8 $g.Path).Contains($g.Text)) { throw "Overlay verification failed: $($g.Text)" }
