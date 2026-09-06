@@ -27,7 +27,7 @@ function Copy-AppTree([string]$Root,[string]$Label) {
     }
     $best=$ranked|Sort-Object Dlls -Descending|Select-Object -First 1
     Write-Host "$Label APPDIR=$($best.Dir) DLLS=$($best.Dlls)"
-    Copy-Item -LiteralPath (Join-Path $best.Dir '*') -Destination $OutDir -Recurse -Force
+    Copy-Item -Path (Join-Path $best.Dir '*') -Destination $OutDir -Recurse -Force
 }
 
 New-Item -ItemType Directory -Force -Path $OutDir,$LogRoot | Out-Null
