@@ -9,6 +9,7 @@ $ArtifactRoot=Join-Path $HarnessRoot 'artifacts\powersdr'
 $LogRoot=Join-Path $ArtifactRoot 'logs'
 $SourceRepo='https://github.com/ke9ns/PowerSDR-KE9NS-v2.8.0.git'
 $SourceSha='fb05ec170fd09f32039afc4cdee7c119e08a2c29'
+$ExpectedFileVersion='2.8.0.334'
 $FullInstallerSha='ee31af4f244b4a0939bf6bed9987d0afc23d09cc64632c4772d6bb283ea767cd'
 $IncInstallerSha='6cb0f4aa820e4d7366e962e4c6f06eaf50326d886e87038d465e8a1f86e4e41c'
 
@@ -28,9 +29,8 @@ try{
     $outDir=Join-Path $WorkRoot 'bin\Release'
     New-Item -ItemType Directory -Force -Path $outDir | Out-Null
 
-    # Build prerequisite exactly follows KE9NS model: his source requires DLLs
-    # from an installed PowerSDR. We reconstruct that official runtime from the
-    # KE9NS release assets, without changing FLEX/PAL/FWC/FireWire/ASIO/DttSP.
+    # Reconstruct only the official KE9NS runtime dependencies required by the
+    # upstream build.  FLEX/PAL/FWC/FireWire/ASIO/DttSP remain native PowerSDR.
     & (Join-Path $PSScriptRoot 'Prepare-PowerSDR-Runtime.ps1') -WorkRoot $WorkRoot -OutDir $outDir -LogRoot $LogRoot
 
     nuget restore (Join-Path $WorkRoot 'PowerSDR.sln') -NonInteractive |
@@ -55,7 +55,7 @@ try{
         Copy-Item $builtPM $powerMateDll -Force
     }
 
-    # Clean-CI wiring only; no application/backend code is altered.
+    # Clean-CI wiring only; no application/backend code is altered here.
     $csproj=Join-Path $WorkRoot 'Console\PowerSDR.csproj'
     $cs=[IO.File]::ReadAllText($csproj)
     $rx=[regex]::new('(?ms)\s*<ProjectReference Include="\.\.\\PowerMate\\PowerMate\.vcxproj">.*?</ProjectReference>')
@@ -64,9 +64,9 @@ try{
     $cs=$rx.Replace($cs,$pmRef,1)
     [IO.File]::WriteAllText($csproj,$cs,(New-Object Text.UTF8Encoding($false)))
 
-    # UI port only. This overlay is forbidden from touching native hardware/DSP.
-    $ui=Join-Path $PSScriptRoot 'Apply-PowerSDR-ThetisUI.ps1'
-    if(Test-Path $ui){& $ui -SourceRoot $WorkRoot}
+    # DISPLAY-ONLY transplant.  No Console layout, Designer, RESX, Skin, radio,
+    # audio or DSP backend file is modified by this patcher.
+    & (Join-Path $PSScriptRoot 'Apply-PowerSDR-Display.ps1') -SourceRoot $WorkRoot
 
     $buildLog=Join-Path $LogRoot 'MSBUILD_POWERSDR.log'
     $binlog=Join-Path $LogRoot 'MSBUILD_POWERSDR.binlog'
@@ -86,11 +86,19 @@ try{
         if(!$designer.Contains($token)){throw "Native PowerSDR function gate failed: $token"}
     }
 
+    # The executable identity is intentionally kept at the user's selected
+    # immutable base: KE9NS 2.8.0.334.  MSI ProductVersion is independent and
+    # monotonic so Windows Installer can replace earlier test packages without
+    # falsifying the actual PowerSDR file version.
     $fv=[Diagnostics.FileVersionInfo]::GetVersionInfo($exe).FileVersion
-    if(!$fv){$fv='2.8.0.0'}
-    $vm=[regex]::Match($fv,'(\d+)\.(\d+)\.(\d+)')
-    if(!$vm.Success){throw "Invalid PowerSDR version: $fv"}
-    $msiVersion="$($vm.Groups[1].Value).$($vm.Groups[2].Value).$($vm.Groups[3].Value)"
+    if(!$fv){throw 'PowerSDR file version missing'}
+    if($fv -ne $ExpectedFileVersion){throw "Base version changed: '$fv' != '$ExpectedFileVersion'"}
+
+    $runBuild=1
+    if($env:GITHUB_RUN_NUMBER -match '^\d+$'){$runBuild=[int]$env:GITHUB_RUN_NUMBER}
+    if($runBuild -lt 1){$runBuild=1}
+    if($runBuild -gt 65535){$runBuild=65535}
+    $msiVersion="2.8.$runBuild"
 
     $wixWork=Join-Path $WorkRoot '_sq4kou_msi'
     New-Item -ItemType Directory -Force -Path $wixWork | Out-Null
@@ -106,7 +114,7 @@ try{
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
  <Product Id="*" Name="PowerSDR" Language="1033" Version="$msiVersion" Manufacturer="FlexRadio Systems / KE9NS / SQ4KOU" UpgradeCode="A7432079-7327-4DAB-B044-8749A16C53A1">
   <Package InstallerVersion="500" Compressed="yes" InstallScope="perMachine" Platform="x86" />
-  <MajorUpgrade DowngradeErrorMessage="A newer version of PowerSDR is already installed." />
+  <MajorUpgrade DowngradeErrorMessage="A newer version of this PowerSDR package is already installed." />
   <MediaTemplate EmbedCab="yes" CompressionLevel="high" />
   <Property Id="WIXUI_INSTALLDIR" Value="INSTALLFOLDER"/><UIRef Id="WixUI_InstallDir"/>
   <Directory Id="TARGETDIR" Name="SourceDir">
@@ -124,8 +132,7 @@ try{
     try{
         & $candle '-arch' 'x86' "-dSourceDir=$outDir" '-ext' 'WixUIExtension' 'Product.wxs' 'Harvest.wxs'
         if($LASTEXITCODE -ne 0){throw "WiX candle failed rc=$LASTEXITCODE"}
-        $safe=$fv -replace '[^0-9A-Za-z._-]','_'
-        $name="PowerSDR-SQ4KOU-FLEX5000-v$safe.x86.msi"
+        $name='PowerSDR-SQ4KOU-FLEX5000-KE9NS-v2.8.0.334-DISPLAY-P01.x86.msi'
         $final=Join-Path $ArtifactRoot $name
         & $light '-ext' 'WixUIExtension' '-sice:ICE61' '-out' $final 'Product.wixobj' 'Harvest.wixobj'
         if($LASTEXITCODE -ne 0){throw "WiX light failed rc=$LASTEXITCODE"}
@@ -134,13 +141,15 @@ try{
     $sha=(Get-FileHash -Algorithm SHA256 $final).Hash.ToLowerInvariant()
     "$sha  $name"|Set-Content (Join-Path $ArtifactRoot ($name+'.sha256')) -Encoding ASCII
     @(
-      'PRODUCT=PowerSDR','EXE=PowerSDR.exe',"POWERSDR_FILE_VERSION=$fv",
+      'PRODUCT=PowerSDR','EXE=PowerSDR.exe',"POWERSDR_FILE_VERSION=$fv","MSI_PRODUCT_VERSION=$msiVersion",
       "POWERSDR_SOURCE_REPO=$SourceRepo","POWERSDR_SOURCE_SHA=$SourceSha",
       "KE9NS_FULL_INSTALLER_SHA256=$FullInstallerSha","KE9NS_INCREMENTAL_SHA256=$IncInstallerSha",
-      'ARCH=x86','BASE=KE9NS_POWERSDR','FLEX5000_BACKEND=POWERSDR_NATIVE_PAL_FWC_FIREWIRE_ASIO',
+      'ARCH=x86','BASE=KE9NS_2.8.0.334','FLEX5000_BACKEND=POWERSDR_NATIVE_PAL_FWC_FIREWIRE_ASIO',
       'ATU=POWERSDR_NATIVE','MIXER=POWERSDR_NATIVE','DSP=POWERSDR_NATIVE_DTTSP',
+      'CONSOLE_LAYOUT=KE9NS_NATIVE','SKIN=KE9NS_NATIVE','DISPLAY_TARGET=POWERSDR_PICDISPLAY',
+      'DISPLAY_PATCH=SQ4KOU_PANAFALL_P01','DISPLAY_DATA_SOURCE=POWERSDR_DTTSP',
       'THETIS_BACKEND=ABSENT','THETIS_NETWORKIO=ABSENT','THETIS_CHANNELMASTER=ABSENT','THETIS_WDSP=ABSENT',
-      'UI_DIRECTION=THETIS_LAYOUT_ON_POWERSDR',"MSI=$name","MSI_SHA256=$sha"
+      "MSI=$name","MSI_SHA256=$sha"
     )|Set-Content (Join-Path $ArtifactRoot 'POWERSDR_BUILD_MANIFEST.txt') -Encoding UTF8
     Write-Host "POWERSDR_MSI_READY=$final"
     Write-Host "POWERSDR_MSI_SHA256=$sha"
