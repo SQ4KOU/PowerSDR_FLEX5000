@@ -1,508 +1,232 @@
-// PowerSDR -> Thetis UI Stage 2 - SQ4KOU
-// Native KE9NS PowerSDR FLEX-5000 radio/DSP backend remains unchanged.
-// This file only rearranges existing PowerSDR WinForms controls.
+// SQ4KOU PowerSDR / Thetis direct console layout
+// UI geometry only. Native PowerSDR radio and DSP paths are unchanged.
 
-using System;
-using System.Collections.Generic;
 using System.Drawing;
-using System.Windows.Forms;
 
 namespace PowerSDR
 {
-    internal static class ThetisStage1Ui
+    public partial class Console
     {
-        private const string RootName = "sq4kouThetisStage2Root";
-        private static readonly Color Bg = Color.FromArgb(18, 20, 24);
-        private static readonly Color PanelBg = Color.FromArgb(29, 32, 37);
-        private static readonly Color PanelBg2 = Color.FromArgb(37, 41, 47);
-        private static readonly Color Fg = Color.FromArgb(226, 230, 235);
-        private static readonly Color Muted = Color.FromArgb(137, 148, 160);
-        private static readonly Color Accent = Color.FromArgb(76, 174, 255);
-        private static readonly Color Tx = Color.FromArgb(238, 92, 92);
+        private const bool SQ4KOU_ThetisUiEnabled = true;
 
-        private sealed class UiState
+        // Called immediately after InitializeComponent() and before
+        // GrabConsoleSizeBasis().  The .resx has already been rewritten with
+        // the pinned Thetis geometry; this method handles PowerSDR-only items
+        // that have no one-to-one donor control.
+        private void SQ4KOU_ApplyThetisBaseLayout()
         {
-            public Form Form;
-            public Label Status;
-            public Panel BandHost;
-            public Panel ModeSpecificHost;
-            public Panel RX2BandHost;
-            public Timer Timer;
-        }
+            if (!SQ4KOU_ThetisUiEnabled) return;
 
-        private static readonly Dictionary<Form, UiState> States = new Dictionary<Form, UiState>();
-
-        public static void Install(Form form)
-        {
-            if (form == null) return;
-            form.Shown += delegate
-            {
-                try { form.BeginInvoke((MethodInvoker)delegate { Apply(form); }); }
-                catch { }
-            };
-        }
-
-        private static void Apply(Form form)
-        {
-            if (form == null || form.IsDisposed) return;
-            if (form.Controls.Find(RootName, true).Length != 0) return;
-
-            form.SuspendLayout();
+            SuspendLayout();
             try
             {
-                form.BackColor = Bg;
-                form.ForeColor = Fg;
-                form.MinimumSize = new Size(Math.Max(1180, form.MinimumSize.Width), Math.Max(720, form.MinimumSize.Height));
+                ClientSize = new Size(1018, 721);
 
-                Control menu = Find(form, "menuStrip1");
-                if (menu != null) menu.Dock = DockStyle.Top;
+                // Thetis reference geometry.  These assignments are deliberate
+                // invariants and also act as a runtime guard against a stale skin
+                // or an older resource file restoring the KE9NS arrangement.
+                grpVFOA.Location = new Point(125, 24);
+                grpVFOA.Size = new Size(232, 88);
+                grpVFOBetween.Location = new Point(360, 24);
+                grpVFOBetween.Size = new Size(240, 88);
+                grpVFOB.Location = new Point(603, 24);
+                grpVFOB.Size = new Size(232, 88);
+                grpMultimeter.Location = new Point(841, 24);
+                grpMultimeter.Size = new Size(172, 88);
 
-                Panel root = new Panel();
-                root.Name = RootName;
-                root.Dock = DockStyle.Fill;
-                root.BackColor = Bg;
-                root.Padding = new Padding(4);
+                panelDisplay.Location = new Point(124, 118);
+                panelDisplay.Size = new Size(710, 300);
 
-                Panel header = new Panel();
-                header.Name = "sq4kouThetisHeader";
-                header.Dock = DockStyle.Top;
-                header.Height = 172;
-                header.BackColor = Bg;
-                header.Padding = new Padding(0, 0, 0, 4);
+                panelBandHF.Location = new Point(840, 150);
+                panelBandGN.Location = new Point(840, 150);
+                panelBandVHF.Location = new Point(840, 150);
+                panelBandHF.Size = new Size(173, 128);
+                panelBandGN.Size = new Size(173, 128);
+                panelBandVHF.Size = new Size(173, 128);
 
-                TableLayoutPanel vfoRow = new TableLayoutPanel();
-                vfoRow.Dock = DockStyle.Top;
-                vfoRow.Height = 88;
-                vfoRow.ColumnCount = 4;
-                vfoRow.RowCount = 1;
-                vfoRow.Margin = new Padding(0);
-                vfoRow.Padding = new Padding(0);
-                vfoRow.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 38F));
-                vfoRow.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 12F));
-                vfoRow.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 38F));
-                vfoRow.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 12F));
-                vfoRow.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
-                vfoRow.BackColor = Bg;
+                panelMode.Location = new Point(840, 284);
+                panelMode.Size = new Size(173, 104);
+                panelFilter.Location = new Point(840, 392);
+                panelFilter.Size = new Size(173, 192);
 
-                Control vfoA = Find(form, "grpVFOA");
-                Control vfoTools = Find(form, "grpVFOBetween");
-                Control vfoB = Find(form, "grpVFOB");
-                PrepareDockPanel(vfoA);
-                PrepareDockPanel(vfoTools);
-                PrepareDockPanel(vfoB);
-                if (vfoA != null) vfoRow.Controls.Add(vfoA, 0, 0);
-                if (vfoTools != null) vfoRow.Controls.Add(vfoTools, 1, 0);
-                if (vfoB != null) vfoRow.Controls.Add(vfoB, 2, 0);
+                panelVFO.Location = new Point(128, 420);
+                panelVFO.Size = new Size(130, 168);
+                panelDSP.Location = new Point(264, 420);
+                panelDSP.Size = new Size(120, 96);
+                panelDisplay2.Location = new Point(386, 420);
+                panelDisplay2.Size = new Size(110, 96);
+                panelMultiRX.Location = new Point(264, 516);
+                panelMultiRX.Size = new Size(232, 72);
 
-                Panel quick = MakeQuickPanel(form);
-                Label status = (Label)quick.Controls[0];
-                vfoRow.Controls.Add(quick, 3, 0);
+                panelModeSpecificPhone.Location = new Point(499, 420);
+                panelModeSpecificCW.Location = new Point(499, 420);
+                panelModeSpecificDigital.Location = new Point(499, 420);
+                panelModeSpecificFM.Location = new Point(499, 420);
 
-                TableLayoutPanel commandRow = new TableLayoutPanel();
-                commandRow.Dock = DockStyle.Fill;
-                commandRow.ColumnCount = 4;
-                commandRow.RowCount = 1;
-                commandRow.Margin = new Padding(0);
-                commandRow.Padding = new Padding(0);
-                commandRow.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 34F));
-                commandRow.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 23F));
-                commandRow.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 27F));
-                commandRow.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 16F));
-                commandRow.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
-                commandRow.BackColor = Bg;
+                // PowerSDR has no Thetis panelPower container.  Keep the native
+                // Power control as a direct form child at the equivalent absolute
+                // position instead of changing its parent.
+                chkPower.Location = new Point(6, 30);
 
-                Panel bandHost = MakeSection("BAND");
-                Panel modeHost = MakeSection("MODE");
-                Panel filterHost = MakeSection("FILTER");
-                Panel dspHost = MakeSection("DSP");
-                commandRow.Controls.Add(bandHost, 0, 0);
-                commandRow.Controls.Add(modeHost, 1, 0);
-                commandRow.Controls.Add(filterHost, 2, 0);
-                commandRow.Controls.Add(dspHost, 3, 0);
+                // PowerSDR-only controls remain available in unused Thetis space.
+                panelAntenna.Location = new Point(6, 528);
+                panelAntenna.Size = new Size(117, 58);
+                panelDateTime.Location = new Point(6, 590);
+                panelDateTime.Size = new Size(117, 126);
 
-                MoveOverlay(form, bandHost, "panelBandGN", "panelBandVHF", "panelBandHF");
-                MoveSingle(form, modeHost, "panelMode");
-                MoveSingle(form, filterHost, "panelFilter");
-                MoveSingle(form, dspHost, "panelDSP");
+                // Preserve the KE9NS band-stack panel without allowing it to
+                // displace VFO A/B or the Thetis BAND/MODE/FILTER column.
+                panelTSBandStack.Location = new Point(840, 588);
+                panelTSBandStack.Size = new Size(173, 128);
 
-                header.Controls.Add(commandRow);
-                header.Controls.Add(vfoRow);
-
-                TableLayoutPanel body = new TableLayoutPanel();
-                body.Dock = DockStyle.Fill;
-                body.ColumnCount = 2;
-                body.RowCount = 1;
-                body.Margin = new Padding(0);
-                body.Padding = new Padding(0);
-                body.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
-                body.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 320F));
-                body.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
-                body.BackColor = Bg;
-
-                Panel displayHost = new Panel();
-                displayHost.Dock = DockStyle.Fill;
-                displayHost.Margin = new Padding(0, 0, 4, 0);
-                displayHost.Padding = new Padding(0);
-                displayHost.BackColor = Color.Black;
-
-                Control displayTools = Find(form, "panelDisplay2");
-                Control display = Find(form, "panelDisplay");
-                if (displayTools != null)
-                {
-                    displayTools.Parent = displayHost;
-                    displayTools.Dock = DockStyle.Top;
-                    displayTools.Height = Math.Max(34, Math.Min(52, displayTools.Height));
-                    displayTools.Margin = new Padding(0);
-                    displayTools.BackColor = PanelBg;
-                }
-                if (display != null)
-                {
-                    display.Parent = displayHost;
-                    display.Dock = DockStyle.Fill;
-                    display.Margin = new Padding(0);
-                    display.BackColor = Color.Black;
-                }
-
-                TabControl sideTabs = MakeSideTabs(form);
-                body.Controls.Add(displayHost, 0, 0);
-                body.Controls.Add(sideTabs, 1, 0);
-
-                root.Controls.Add(body);
-                root.Controls.Add(header);
-                form.Controls.Add(root);
-                root.BringToFront();
-                if (menu != null) menu.BringToFront();
-
-                StyleTree(root);
-                if (menu != null) StyleMenu(menu as MenuStrip);
-                BringVisibleToFront(bandHost);
-
-                UiState state = new UiState();
-                state.Form = form;
-                state.Status = status;
-                state.BandHost = bandHost;
-                state.ModeSpecificHost = FindHost(sideTabs, "sq4kouModeSpecificHost");
-                state.RX2BandHost = FindHost(sideTabs, "sq4kouRX2BandHost");
-                state.Timer = new Timer();
-                state.Timer.Interval = 150;
-                state.Timer.Tick += delegate { RefreshState(state); };
-                state.Timer.Start();
-                States[form] = state;
-
-                form.FormClosed += delegate
-                {
-                    UiState s;
-                    if (States.TryGetValue(form, out s))
-                    {
-                        try { s.Timer.Stop(); s.Timer.Dispose(); } catch { }
-                        States.Remove(form);
-                    }
-                };
-
-                RefreshState(state);
+                // The analog VFO dials belong to the old KE9NS geometry and can
+                // cover the Thetis VFO row when enabled.  The VFO text controls
+                // remain native and fully interactive.
+                VFODialA.Visible = false;
+                VFODialB.Visible = false;
+                VFODialAA.Visible = false;
+                VFODialBB.Visible = false;
             }
             finally
             {
-                form.ResumeLayout(true);
+                ResumeLayout(false);
             }
         }
 
-        private static Panel MakeQuickPanel(Form form)
+        // This is the only resize path used by the SQ4KOU layout.  It is adapted
+        // from the pinned Thetis Console resize geometry and operates on the
+        // existing PowerSDR controls; no controls are reparented or recreated.
+        private void SQ4KOU_ResizeThetis(int hDelta, int vDelta)
         {
-            Panel p = new Panel();
-            p.Dock = DockStyle.Fill;
-            p.Margin = new Padding(2);
-            p.Padding = new Padding(5, 4, 5, 4);
-            p.BackColor = PanelBg;
+            if (!SQ4KOU_ThetisUiEnabled) return;
 
-            Label status = new Label();
-            status.Dock = DockStyle.Top;
-            status.Height = 26;
-            status.Text = "RX";
-            status.TextAlign = ContentAlignment.MiddleCenter;
-            status.Font = new Font("Segoe UI", 12F, FontStyle.Bold);
-            status.ForeColor = Accent;
-            status.BackColor = Color.Transparent;
-
-            FlowLayoutPanel f = new FlowLayoutPanel();
-            f.Dock = DockStyle.Fill;
-            f.FlowDirection = FlowDirection.LeftToRight;
-            f.WrapContents = true;
-            f.AutoScroll = false;
-            f.Padding = new Padding(0, 3, 0, 0);
-            f.BackColor = Color.Transparent;
-
-            string[] names = new string[]
+            SuspendLayout();
+            try
             {
-                "chkPower", "chkMOX", "chkTUN", "chkVFOSplit",
-                "chkRIT", "chkXIT", "chkMUT", "chkFWCATU"
-            };
-            foreach (string name in names)
-            {
-                Control c = Find(form, name);
-                if (c == null) continue;
-                c.Parent = f;
-                c.Dock = DockStyle.None;
-                c.AutoSize = false;
-                c.Width = Math.Max(48, Math.Min(78, c.Width));
-                c.Height = 22;
-                c.Margin = new Padding(1);
+                panelFilter.Location = new Point(gr_filter_basis_location.X + hDelta,
+                    gr_filter_basis_location.Y + vDelta);
+
+                panelBandHF.Location = new Point(gr_BandHF_basis_location.X + hDelta,
+                    gr_BandHF_basis_location.Y + (vDelta / 4));
+                panelBandGN.Location = new Point(gr_BandGEN_basis_location.X + hDelta,
+                    gr_BandGEN_basis_location.Y + (vDelta / 4));
+                panelBandVHF.Location = new Point(gr_BandVHF_basis_location.X + hDelta,
+                    gr_BandVHF_basis_location.Y + (vDelta / 4));
+
+                panelMode.Location = new Point(gr_Mode_basis_location.X + hDelta,
+                    gr_Mode_basis_location.Y + (vDelta / 2));
+
+                grpVFOA.Size = new Size(232, 88);
+                grpVFOB.Size = new Size(232, 88);
+                grpVFOBetween.Size = new Size(240, 88);
+                grpMultimeter.Size = new Size(172, 88);
+
+                grpVFOA.Location = new Point(gr_VFOA_basis_location.X + (hDelta / 4),
+                    gr_VFOA_basis_location.Y);
+                grpVFOBetween.Location = new Point(gr_vfobetween_basis_location.X + (hDelta / 2),
+                    gr_vfobetween_basis_location.Y);
+                grpVFOB.Location = new Point(gr_VFOB_basis_location.X + hDelta - (hDelta / 4),
+                    gr_VFOB_basis_location.Y);
+                grpMultimeter.Location = new Point(gr_Multimeter_basis_location.X + hDelta,
+                    gr_Multimeter_basis_location.Y);
+
+                panelDisplay.Size = new Size(gr_display_size_basis.Width + hDelta,
+                    gr_display_size_basis.Height + vDelta);
+                picDisplay.Size = new Size(pic_display_size_basis.Width + hDelta,
+                    pic_display_size_basis.Height + vDelta);
+
+                panelVFO.Location = new Point(gr_VFO_basis_location.X + (hDelta / 4),
+                    gr_VFO_basis_location.Y + vDelta);
+                panelDisplay2.Location = new Point(gr_display2_basis.X + (hDelta / 2),
+                    gr_display2_basis.Y + vDelta);
+                panelDSP.Location = new Point(gr_dsp_basis.X + (hDelta / 2),
+                    gr_dsp_basis.Y + vDelta);
+                panelMultiRX.Location = new Point(gr_multirx_basis.X + (hDelta / 2),
+                    gr_multirx_basis.Y + vDelta);
+
+                panelModeSpecificPhone.Location = new Point(gr_ModePhone_basis_location.X + hDelta - (hDelta / 4),
+                    gr_ModePhone_basis_location.Y + vDelta);
+                panelModeSpecificCW.Location = new Point(gr_ModeCW_basis_location.X + hDelta - (hDelta / 4),
+                    gr_ModeCW_basis_location.Y + vDelta);
+                panelModeSpecificDigital.Location = new Point(gr_ModeDig_basis_location.X + hDelta - (hDelta / 4),
+                    gr_ModeDig_basis_location.Y + vDelta);
+                panelModeSpecificFM.Location = new Point(gr_ModeFM_basis_location.X + hDelta - (hDelta / 4),
+                    gr_ModeFM_basis_location.Y + vDelta);
+
+                panelOptions.Location = new Point(gr_options_basis.X,
+                    gr_options_basis.Y + (vDelta / 4));
+                panelSoundControls.Location = new Point(gr_sound_controls_basis.X,
+                    gr_sound_controls_basis.Y + (vDelta / 8) + (vDelta / 4));
+                chkPower.Location = new Point(chk_power_basis.X,
+                    chk_power_basis.Y + (vDelta / 8));
+                chkSquelch.Location = new Point(chk_squelch_basis.X,
+                    chk_squelch_basis.Y + (vDelta / 2));
+                picSquelch.Location = new Point(pic_sql_basis.X,
+                    pic_sql_basis.Y + (vDelta / 2));
+                ptbSquelch.Location = new Point(tb_sql_basis.X,
+                    tb_sql_basis.Y + (vDelta / 2));
+
+                panelAntenna.Location = new Point(gr_antenna_basis.X,
+                    gr_antenna_basis.Y + ((vDelta * 3) / 4));
+                panelDateTime.Location = new Point(gr_date_time_basis.X,
+                    gr_date_time_basis.Y + ((vDelta * 3) / 4));
+
+                grpDisplaySplit.Location = new Point(gr_display_split_basis.X + (hDelta / 2),
+                    gr_display_split_basis.Y + vDelta);
+
+                grpRX2Meter.Location = new Point(gr_rx2_meter_basis.X + hDelta,
+                    gr_rx2_meter_basis.Y + vDelta);
+                panelBandHFRX2.Location = new Point(gr_BandHFRX2_basis_location.X + hDelta,
+                    gr_BandHFRX2_basis_location.Y + vDelta);
+                panelBandGNRX2.Location = new Point(gr_BandGENRX2_basis_location.X + hDelta,
+                    gr_BandGENRX2_basis_location.Y + vDelta);
+                panelBandVHFRX2.Location = new Point(gr_BandVHFRX2_basis_location.X + hDelta,
+                    gr_BandVHFRX2_basis_location.Y + vDelta);
+
+                panelRX2Filter.Location = new Point(gr_rx2_filter_basis.X + (int)(hDelta * 0.66),
+                    gr_rx2_filter_basis.Y + vDelta);
+                panelRX2Mode.Location = new Point(gr_rx2_mode_basis.X + (int)(hDelta * 0.492),
+                    gr_rx2_mode_basis.Y + vDelta);
+                panelRX2Display.Location = new Point(gr_rx2_display_basis.X + (int)(hDelta * 0.383),
+                    gr_rx2_display_basis.Y + vDelta);
+                panelRX2DSP.Location = new Point(gr_rx2_dsp_basis.X + (int)(hDelta * 0.258),
+                    gr_rx2_dsp_basis.Y + vDelta);
+                panelRX2Mixer.Location = new Point(gr_rx2_mixer_basis.X + (int)(hDelta * 0.078),
+                    gr_rx2_mixer_basis.Y + vDelta);
+
+                lblRX2RF.Location = new Point(lbl_rx2_rf_basis.X + (int)(hDelta * 0.164),
+                    lbl_rx2_rf_basis.Y + vDelta);
+                ptbRX2RF.Location = new Point(tb_rx2_rf_basis.X + (int)(hDelta * 0.164),
+                    tb_rx2_rf_basis.Y + vDelta);
+                chkRX2Squelch.Location = new Point(chk_rx2_squelch_basis.X + (int)(hDelta * 0.164),
+                    chk_rx2_squelch_basis.Y + vDelta);
+                ptbRX2Squelch.Location = new Point(tb_rx2_squelch_basis.X + (int)(hDelta * 0.164),
+                    tb_rx2_squelch_basis.Y + vDelta);
+                picRX2Squelch.Location = new Point(pic_rx2_squelch_basis.X + (int)(hDelta * 0.164),
+                    pic_rx2_squelch_basis.Y + vDelta);
+                chkRX2.Location = new Point(chk_rx2_enable_basis.X,
+                    chk_rx2_enable_basis.Y + vDelta);
+                chkRX2Preamp.Location = new Point(chk_rx2_preamp_basis.X,
+                    chk_rx2_preamp_basis.Y + vDelta);
+                lblRX2Band.Location = new Point(lbl_rx2_band_basis.X,
+                    lbl_rx2_band_basis.Y + vDelta);
+                comboRX2Band.Location = new Point(combo_rx2_band_basis.X,
+                    combo_rx2_band_basis.Y + vDelta);
+
+                // PowerSDR-only band stack occupies the otherwise unused area
+                // below the Thetis filter column.
+                panelTSBandStack.Location = new Point(840 + hDelta, 588 + vDelta);
+                panelTSBandStack.Size = new Size(173, 128);
+
+                VFODialA.Visible = false;
+                VFODialB.Visible = false;
+                VFODialAA.Visible = false;
+                VFODialBB.Visible = false;
             }
-
-            p.Controls.Add(f);
-            p.Controls.Add(status);
-            return p;
-        }
-
-        private static TabControl MakeSideTabs(Form form)
-        {
-            TabControl tabs = new TabControl();
-            tabs.Name = "sq4kouThetisSideTabs";
-            tabs.Dock = DockStyle.Fill;
-            tabs.Margin = new Padding(0);
-            tabs.Padding = new Point(10, 4);
-            tabs.Font = new Font("Segoe UI", 8.5F, FontStyle.Bold);
-
-            TabPage rx = MakeTab("RX");
-            TabPage tx = MakeTab("TX");
-            TabPage rx2 = MakeTab("RX2");
-            TabPage misc = MakeTab("TOOLS");
-            tabs.TabPages.Add(rx);
-            tabs.TabPages.Add(tx);
-            tabs.TabPages.Add(rx2);
-            tabs.TabPages.Add(misc);
-
-            Control meter = Find(form, "grpMultimeter");
-            Control sound = Find(form, "panelSoundControls");
-            Control antenna = Find(form, "panelAntenna");
-            Control options = Find(form, "panelOptions");
-            StackTop(rx, meter, 115);
-            StackTop(rx, sound, 185);
-            StackTop(rx, antenna, 92);
-            FillLast(rx, options);
-
-            Panel modeSpecific = new Panel();
-            modeSpecific.Name = "sq4kouModeSpecificHost";
-            modeSpecific.Dock = DockStyle.Fill;
-            modeSpecific.BackColor = PanelBg;
-            tx.Controls.Add(modeSpecific);
-            MoveOverlay(form, modeSpecific,
-                "panelModeSpecificPhone", "panelModeSpecificFM",
-                "panelModeSpecificCW", "panelModeSpecificDigital");
-
-            Panel rx2Band = new Panel();
-            rx2Band.Name = "sq4kouRX2BandHost";
-            rx2Band.Dock = DockStyle.Top;
-            rx2Band.Height = 102;
-            rx2Band.BackColor = PanelBg;
-            rx2.Controls.Add(rx2Band);
-            MoveOverlay(form, rx2Band, "panelBandGNRX2", "panelBandVHFRX2", "panelBandHFRX2");
-            StackTop(rx2, Find(form, "grpRX2Meter"), 112);
-            StackTop(rx2, Find(form, "panelRX2Mode"), 92);
-            StackTop(rx2, Find(form, "panelRX2Filter"), 155);
-            StackTop(rx2, Find(form, "panelRX2DSP"), 92);
-            FillLast(rx2, Find(form, "panelRX2Mixer"));
-
-            StackTop(misc, Find(form, "panelMultiRX"), 120);
-            StackTop(misc, Find(form, "grpDisplaySplit"), 110);
-            StackTop(misc, Find(form, "panelDateTime"), 90);
-            FillLast(misc, Find(form, "panelTSRadar"));
-
-            BringVisibleToFront(modeSpecific);
-            BringVisibleToFront(rx2Band);
-            return tabs;
-        }
-
-        private static TabPage MakeTab(string text)
-        {
-            TabPage t = new TabPage(text);
-            t.BackColor = PanelBg;
-            t.ForeColor = Fg;
-            t.Padding = new Padding(4);
-            return t;
-        }
-
-        private static Panel MakeSection(string caption)
-        {
-            Panel outer = new Panel();
-            outer.Dock = DockStyle.Fill;
-            outer.Margin = new Padding(2);
-            outer.Padding = new Padding(3, 17, 3, 3);
-            outer.BackColor = PanelBg;
-
-            Label l = new Label();
-            l.Dock = DockStyle.Top;
-            l.Height = 15;
-            l.Location = new Point(3, 1);
-            l.Text = caption;
-            l.TextAlign = ContentAlignment.MiddleLeft;
-            l.Font = new Font("Segoe UI", 7.5F, FontStyle.Bold);
-            l.ForeColor = Muted;
-            l.BackColor = Color.Transparent;
-            outer.Controls.Add(l);
-            l.BringToFront();
-            return outer;
-        }
-
-        private static void MoveSingle(Form form, Panel host, string name)
-        {
-            Control c = Find(form, name);
-            if (c == null) return;
-            c.Parent = host;
-            c.Dock = DockStyle.Fill;
-            c.Margin = new Padding(0);
-            c.BackColor = Color.Transparent;
-            c.BringToFront();
-        }
-
-        private static void MoveOverlay(Form form, Panel host, params string[] names)
-        {
-            foreach (string name in names)
+            finally
             {
-                Control c = Find(form, name);
-                if (c == null) continue;
-                c.Parent = host;
-                c.Dock = DockStyle.Fill;
-                c.Margin = new Padding(0);
-                c.BackColor = Color.Transparent;
+                ResumeLayout(true);
             }
-            BringVisibleToFront(host);
-        }
-
-        private static void StackTop(Control host, Control c, int height)
-        {
-            if (host == null || c == null) return;
-            c.Parent = host;
-            c.Dock = DockStyle.Top;
-            c.Height = Math.Max(height, c.Height);
-            c.Margin = new Padding(0, 0, 0, 3);
-            c.BackColor = Color.Transparent;
-            c.BringToFront();
-        }
-
-        private static void FillLast(Control host, Control c)
-        {
-            if (host == null || c == null) return;
-            c.Parent = host;
-            c.Dock = DockStyle.Fill;
-            c.Margin = new Padding(0);
-            c.BackColor = Color.Transparent;
-            c.SendToBack();
-        }
-
-        private static void PrepareDockPanel(Control c)
-        {
-            if (c == null) return;
-            c.Dock = DockStyle.Fill;
-            c.Margin = new Padding(2);
-            c.BackColor = PanelBg;
-        }
-
-        private static Control Find(Form form, string name)
-        {
-            if (form == null || String.IsNullOrEmpty(name)) return null;
-            Control[] a = form.Controls.Find(name, true);
-            return a == null || a.Length == 0 ? null : a[0];
-        }
-
-        private static Panel FindHost(Control root, string name)
-        {
-            if (root == null) return null;
-            Control[] a = root.Controls.Find(name, true);
-            if (a == null || a.Length == 0) return null;
-            return a[0] as Panel;
-        }
-
-        private static void BringVisibleToFront(Control host)
-        {
-            if (host == null) return;
-            foreach (Control c in host.Controls)
-            {
-                if (c is Label) continue;
-                if (c.Visible)
-                {
-                    c.BringToFront();
-                    return;
-                }
-            }
-        }
-
-        private static void RefreshState(UiState state)
-        {
-            if (state == null || state.Form == null || state.Form.IsDisposed) return;
-            BringVisibleToFront(state.BandHost);
-            BringVisibleToFront(state.ModeSpecificHost);
-            BringVisibleToFront(state.RX2BandHost);
-
-            bool tx = ReadChecked(state.Form, "chkMOX") || ReadChecked(state.Form, "chkTUN");
-            bool power = ReadChecked(state.Form, "chkPower");
-            if (state.Status != null)
-            {
-                state.Status.Text = tx ? "TX" : (power ? "RX" : "OFF");
-                state.Status.ForeColor = tx ? Tx : (power ? Accent : Muted);
-            }
-        }
-
-        private static bool ReadChecked(Form form, string name)
-        {
-            Control c = Find(form, name);
-            CheckBox cb = c as CheckBox;
-            if (cb != null) return cb.Checked;
-            RadioButton rb = c as RadioButton;
-            if (rb != null) return rb.Checked;
-            return false;
-        }
-
-        private static void StyleTree(Control root)
-        {
-            if (root == null) return;
-            foreach (Control c in root.Controls)
-            {
-                if (c is MenuStrip || c is StatusStrip || c is ToolStrip) { }
-                else if (c is TabPage)
-                {
-                    c.BackColor = PanelBg;
-                    c.ForeColor = Fg;
-                }
-                else if (c is TextBoxBase)
-                {
-                    c.BackColor = Color.FromArgb(12, 14, 17);
-                    c.ForeColor = Fg;
-                }
-                else if (c is ComboBox)
-                {
-                    c.BackColor = PanelBg2;
-                    c.ForeColor = Fg;
-                }
-                else if (c is ButtonBase)
-                {
-                    ButtonBase b = (ButtonBase)c;
-                    b.ForeColor = Fg;
-                    b.BackColor = PanelBg2;
-                    b.FlatStyle = FlatStyle.Flat;
-                    b.FlatAppearance.BorderSize = 1;
-                    b.FlatAppearance.BorderColor = Color.FromArgb(67, 73, 82);
-                }
-                else if (c is Label)
-                {
-                    c.ForeColor = c.ForeColor == Color.Yellow ? Color.Yellow : Fg;
-                    if (c.BackColor != Color.Transparent) c.BackColor = Color.Transparent;
-                }
-                else if (c is Panel || c is GroupBox)
-                {
-                    if (c.BackColor != Color.Black) c.BackColor = PanelBg;
-                    c.ForeColor = Fg;
-                }
-                if (c.HasChildren) StyleTree(c);
-            }
-        }
-
-        private static void StyleMenu(MenuStrip menu)
-        {
-            if (menu == null) return;
-            menu.BackColor = Color.FromArgb(10, 11, 13);
-            menu.ForeColor = Fg;
-            foreach (ToolStripItem item in menu.Items) item.ForeColor = Fg;
         }
     }
 }
