@@ -132,7 +132,7 @@ try{
     try{
         & $candle '-arch' 'x86' "-dSourceDir=$outDir" '-ext' 'WixUIExtension' 'Product.wxs' 'Harvest.wxs'
         if($LASTEXITCODE -ne 0){throw "WiX candle failed rc=$LASTEXITCODE"}
-        $name='PowerSDR-SQ4KOU-FLEX5000-KE9NS-v2.8.0.334-DISPLAY-P01.x86.msi'
+        $name='PowerSDR-SQ4KOU-FLEX5000-KE9NS-v2.8.0.334-DISPLAY-P02-THETIS.x86.msi'
         $final=Join-Path $ArtifactRoot $name
         & $light '-ext' 'WixUIExtension' '-sice:ICE61' '-out' $final 'Product.wixobj' 'Harvest.wixobj'
         if($LASTEXITCODE -ne 0){throw "WiX light failed rc=$LASTEXITCODE"}
@@ -147,7 +147,7 @@ try{
       'ARCH=x86','BASE=KE9NS_2.8.0.334','FLEX5000_BACKEND=POWERSDR_NATIVE_PAL_FWC_FIREWIRE_ASIO',
       'ATU=POWERSDR_NATIVE','MIXER=POWERSDR_NATIVE','DSP=POWERSDR_NATIVE_DTTSP',
       'CONSOLE_LAYOUT=KE9NS_NATIVE','SKIN=KE9NS_NATIVE','DISPLAY_TARGET=POWERSDR_PICDISPLAY',
-      'DISPLAY_PATCH=SQ4KOU_PANAFALL_P01','DISPLAY_DATA_SOURCE=POWERSDR_DTTSP',
+      'DISPLAY_PATCH=SQ4KOU_PANAFALL_P02_THETIS_VISUAL','DISPLAY_DATA_SOURCE=POWERSDR_DTTSP',
       'THETIS_BACKEND=ABSENT','THETIS_NETWORKIO=ABSENT','THETIS_CHANNELMASTER=ABSENT','THETIS_WDSP=ABSENT',
       "MSI=$name","MSI_SHA256=$sha"
     )|Set-Content (Join-Path $ArtifactRoot 'POWERSDR_BUILD_MANIFEST.txt') -Encoding UTF8
