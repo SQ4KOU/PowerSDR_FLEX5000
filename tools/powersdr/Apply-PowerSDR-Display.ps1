@@ -138,7 +138,8 @@ $classMatches = $classRx.Matches($displayText)
 if($classMatches.Count -ne 1) { throw "Display class anchor count=$($classMatches.Count)" }
 $displayText = $classRx.Replace($displayText,'sealed partial class Display',1)
 
-# P02 PANAFALL dispatch remains unchanged.
+# P02 PANAFALL dispatch remains unchanged. Its unique normal-RX anchor is also
+# used below to select the matching PANADAPTER case from KE9NS's 12 switches.
 $panafallRx = [regex]'(?m)^(\s*case\s+DisplayMode\.PANAFALL:\s*\r?\n\s*\r?\n)(\s*if\s*\(map\s*==\s*1\))'
 if($panafallRx.Matches($displayText).Count -ne 1) { throw 'Unsplit PANAFALL dispatch anchor count mismatch' }
 $panafallHook = @'
@@ -155,13 +156,23 @@ $2
 '@
 $displayText = $panafallRx.Replace($displayText,$panafallHook,1)
 
-# P03: add a separate PANADAPTER dispatch. It reuses the confirmed P02 grid,
-# filter, ruler and cursor primitives, but does not create or touch waterfall.
-$panadapterRx = [regex]'(?m)^(\s*case\s+DisplayMode\.PANADAPTER:\s*\r?\n)'
-$panadapterMatches = $panadapterRx.Matches($displayText)
-if($panadapterMatches.Count -ne 1) { throw "PANADAPTER dispatch anchor count=$($panadapterMatches.Count)" }
+# P03: KE9NS display.cs contains 12 PANADAPTER case labels in independent
+# switches. The old global-count anchor therefore failed before compilation.
+# Select only the PANADAPTER case in the same normal RX display switch as the
+# already-proven unique P02 PANAFALL dispatch: the nearest preceding case label.
+$panafallMarker = '// SQ4KOU P02: isolated RX1 panafall renderer.'
+$panafallMarkerIndex = $displayText.IndexOf($panafallMarker, [StringComparison]::Ordinal)
+if($panafallMarkerIndex -lt 0) { throw 'P02 PANAFALL marker missing after dispatch patch' }
+
+$panToken = 'case DisplayMode.PANADAPTER:'
+$panCaseIndex = $displayText.LastIndexOf($panToken, $panafallMarkerIndex, [StringComparison]::Ordinal)
+if($panCaseIndex -lt 0) { throw 'Normal RX PANADAPTER case not found before P02 PANAFALL dispatch' }
+
+$panLineEnd = $displayText.IndexOf("`n", $panCaseIndex)
+if($panLineEnd -lt 0 -or $panLineEnd -ge $panafallMarkerIndex) { throw 'Normal RX PANADAPTER case line boundary invalid' }
+
 $panadapterHook = @'
-$1                        // SQ4KOU P03: isolated RX1 panadapter renderer.
+                        // SQ4KOU P03: isolated RX1 panadapter renderer.
                         if (SQ4KOU_CanUseCleanPanafall() && SQ4KOU_DrawCleanPanadapter(e.Graphics, W, H))
                         {
                             update = true;
@@ -169,9 +180,14 @@ $1                        // SQ4KOU P03: isolated RX1 panadapter renderer.
                         }
 
 '@
-$displayText = $panadapterRx.Replace($displayText,$panadapterHook,1)
+$displayText = $displayText.Insert($panLineEnd + 1, $panadapterHook)
+
+if(([regex]::Matches($displayText, 'SQ4KOU_DrawCleanPanadapter\(')).Count -ne 1) {
+    throw 'P03 PANADAPTER dispatch insertion count mismatch'
+}
+
 [IO.File]::WriteAllText($displayCs,$displayText,$utf8)
-Stage 'Patched PANAFALL P02 and PANADAPTER P03 dispatches only'
+Stage 'Patched P02 PANAFALL and the matching normal-RX P03 PANADAPTER dispatch only'
 
 $projectText = [IO.File]::ReadAllText($projectCs)
 $compileRx = [regex]'(?s)(<Compile Include="display\.cs">\s*<SubType>Code</SubType>\s*</Compile>)'
