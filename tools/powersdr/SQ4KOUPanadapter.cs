@@ -1,5 +1,5 @@
 // SQ4KOU P03: Thetis-style RX1 PANADAPTER for KE9NS PowerSDR 2.8.0.334.
-// Rendering only.  Acquisition remains native PowerSDR/DttSP and all FLEX-5000
+// Rendering only. Acquisition remains native PowerSDR/DttSP and all FLEX-5000
 // PAL/FWC/FireWire/ASIO paths remain untouched.
 
 using System;
@@ -12,7 +12,7 @@ namespace PowerSDR
     {
         unsafe private static bool SQ4KOU_DrawCleanPanadapter(Graphics g, int width, int fullHeight)
         {
-            if (g == null || width < 64 || fullHeight < 82) return false;
+            if (g == null || width < 64 || fullHeight < 84) return false;
             if (console == null || console.setupForm == null) return false;
 
             int panHeight = fullHeight - SQ4KOU_FREQ_SCALE_HEIGHT;
@@ -41,6 +41,7 @@ namespace PowerSDR
 
             if (high <= low || sample_rate <= 0) return false;
 
+            // One native PowerSDR/DttSP acquisition feeds the P03 renderer.
             if (data_ready)
             {
                 fixed (void* rptr = &new_display_data[0])
@@ -88,29 +89,24 @@ namespace PowerSDR
                 g.SmoothingMode = SmoothingMode.AntiAlias;
                 g.PixelOffsetMode = PixelOffsetMode.HighQuality;
 
-                // Use exactly the same visual primitives as the confirmed P02
-                // PANAFALL renderer: background, grid, filter, fill, trace and ruler.
-                using (SolidBrush bg = new SolidBrush(display_background_color))
+                // Keep the already-confirmed P02 visual language unchanged.
+                using (SolidBrush bg = new SolidBrush(Color.Black))
                     g.FillRectangle(bg, 0, 0, width, fullHeight);
 
                 SQ4KOU_DrawPanGrid(g, width, panHeight, low, high);
                 SQ4KOU_DrawFilter(g, width, panHeight, low, high);
 
-                if (pan_fill && width > 1)
+                if (width > 1)
                 {
                     PointF[] polygon = new PointF[width + 2];
                     Array.Copy(sq4kou_pan_points, polygon, width);
                     polygon[width] = new PointF(width - 1, panHeight - 1);
                     polygon[width + 1] = new PointF(0, panHeight - 1);
-                    int alpha = panfillalpha;
-                    if (alpha < 0) alpha = 0;
-                    if (alpha > 180) alpha = 180;
-                    using (SolidBrush fill = new SolidBrush(Color.FromArgb(alpha, data_line_pen.Color)))
+                    using (SolidBrush fill = new SolidBrush(Color.FromArgb(100, 0, 0, 127)))
                         g.FillPolygon(fill, polygon);
+                    using (Pen trace = new Pen(Color.White, 1.0f))
+                        g.DrawLines(trace, sq4kou_pan_points);
                 }
-
-                if (width > 1)
-                    g.DrawLines(data_line_pen, sq4kou_pan_points);
 
                 SQ4KOU_DrawFrequencyScale(g, width, panHeight, low, high);
                 SQ4KOU_DrawCursor(g, width, fullHeight);
