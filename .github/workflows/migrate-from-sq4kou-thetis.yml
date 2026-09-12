@@ -12,7 +12,7 @@ jobs:
   migrate:
     runs-on: ubuntu-latest
     steps:
-      - name: Mirror selected FLEX histories
+      - name: Mirror selected FLEX histories without foreign CI workflows
         env:
           GH_TOKEN: ${{ github.token }}
         shell: bash
@@ -20,6 +20,12 @@ jobs:
           set -euo pipefail
           git clone --mirror https://github.com/SQ4KOU/SQ4KOU-THETIS.git source.git
           cd source.git
+          python3 -m pip install --quiet git-filter-repo
+          git filter-repo --force --invert-paths --path .github/workflows/ --refs \
+            refs/heads/flex5000-wdsp-native \
+            refs/heads/flex5000-hpsdr-isolation-fix \
+            refs/heads/powersdr-flex5000-display \
+            refs/heads/powersdr-flex5000-thetis-ui
           git remote add target "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
           git push --force target refs/heads/flex5000-wdsp-native:refs/heads/baseline/flex5000-wdsp-native
           git push --force target refs/heads/flex5000-hpsdr-isolation-fix:refs/heads/archive/flex5000-hpsdr-isolation-fix
