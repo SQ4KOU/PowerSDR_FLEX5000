@@ -1,0 +1,92 @@
+name: PowerSDR KE9NS 2.8.0.336 DB compile
+
+on:
+  push:
+    branches:
+      - feature/ke9ns-2.8.0.336-db-reliability
+  workflow_dispatch:
+
+jobs:
+  compile:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout SQ4KOU harness
+        uses: actions/checkout@v4
+
+      - name: Ensure extraction tools
+        shell: pwsh
+        run: |
+          if (!(Get-Command innoextract.exe -ErrorAction SilentlyContinue) -and !(Get-Command innoextract -ErrorAction SilentlyContinue)) {
+            choco install innoextract -y --no-progress
+          }
+          if (!(Get-Command nuget.exe -ErrorAction SilentlyContinue) -and !(Get-Command nuget -ErrorAction SilentlyContinue)) {
+            choco install nuget.commandline -y --no-progress
+          }
+
+      - name: Fetch clean KE9NS 2.8.0.336
+        shell: pwsh
+        run: |
+          git clone --no-tags https://github.com/ke9ns/PowerSDR-KE9NS-v2.8.0.git _build_source
+          Push-Location _build_source
+          git checkout --detach d558979570c4c2e4572b63ac218d3d4477926cb8
+          if ((git rev-parse HEAD).Trim() -ne 'd558979570c4c2e4572b63ac218d3d4477926cb8') {
+            throw 'KE9NS 2.8.0.336 source pin mismatch'
+          }
+          Pop-Location
+
+      - name: Apply DB-only hardening
+        shell: pwsh
+        run: |
+          ./tools/powersdr/Apply-PowerSDR-DatabaseReliability.ps1 -SourceRoot ./_build_source
+          Push-Location _build_source
+          $changed = @(git diff --name-only)
+          if ($changed.Count -ne 1 -or $changed[0] -ne 'Console/database.cs') {
+            throw ('Unexpected source changes: ' + ($changed -join ', '))
+          }
+          Pop-Location
+
+      - name: Prepare official KE9NS runtime
+        shell: pwsh
+        run: |
+          $work = (Resolve-Path './_build_source').Path
+          $out = Join-Path $work 'bin\Release'
+          $logs = Join-Path $work '_sq4kou_logs'
+          New-Item -ItemType Directory -Force -Path $out,$logs | Out-Null
+          ./tools/powersdr/Prepare-PowerSDR-Runtime.ps1 -WorkRoot $work -OutDir $out -LogRoot $logs
+
+      - name: Restore NuGet
+        shell: pwsh
+        run: |
+          nuget restore ./_build_source/PowerSDR.sln -NonInteractive
+          if ($LASTEXITCODE -ne 0) { throw ('NuGet restore failed rc=' + $LASTEXITCODE) }
+
+      - name: Wire runtime PowerMate reference
+        shell: pwsh
+        run: |
+          $csproj = (Resolve-Path './_build_source/Console/PowerSDR.csproj').Path
+          $cs = [IO.File]::ReadAllText($csproj)
+          $rx = [regex]::new('(?ms)\s*<ProjectReference Include="\.\.\\PowerMate\\PowerMate\.vcxproj">.*?</ProjectReference>')
+          if ($rx.Matches($cs).Count -ne 1) { throw 'Unexpected PowerMate ProjectReference layout' }
+          $pmRef = "`r`n    <Reference Include=`"PowerMate`">`r`n      <HintPath>..\bin\Release\PowerMate.dll</HintPath>`r`n      <Private>True</Private>`r`n    </Reference>"
+          $cs = $rx.Replace($cs,$pmRef,1)
+          [IO.File]::WriteAllText($csproj,$cs,[Text.UTF8Encoding]::new($false))
+
+      - name: Compile PowerSDR x86
+        shell: pwsh
+        run: |
+          $vswhere = Join-Path ${env:ProgramFiles(x86)} 'Microsoft Visual Studio\Installer\vswhere.exe'
+          $msbuild = & $vswhere -latest -products * -requires Microsoft.Component.MSBuild -find 'MSBuild\**\Bin\MSBuild.exe' | Select-Object -First 1
+          if (!$msbuild) { throw 'MSBuild not found' }
+
+          $csproj = (Resolve-Path './_build_source/Console/PowerSDR.csproj').Path
+          & $msbuild $csproj '/m' '/t:Rebuild' '/p:Configuration=Release' '/p:Platform=x86' '/p:BuildProjectReferences=false' '/v:minimal'
+          if ($LASTEXITCODE -ne 0) { throw ('PowerSDR x86 build failed rc=' + $LASTEXITCODE) }
+
+          $exe = (Resolve-Path './_build_source/bin/Release/PowerSDR.exe').Path
+          $fv = [Diagnostics.FileVersionInfo]::GetVersionInfo($exe).FileVersion
+          if ($fv -ne '2.8.0.336') { throw ("Unexpected PowerSDR file version: " + $fv) }
+
+          "POWERSDR_FILE_VERSION=$fv" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+          "BASE_SHA=d558979570c4c2e4572b63ac218d3d4477926cb8" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+          "DB_PATCH=PASS" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+          "DTTSP_RUNTIME=published KE9NS .329 binary; .336 DttSP source not claimed by this compile gate" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
