@@ -1,9 +1,9 @@
-name: PowerSDR KE9NS 2.8.0.336 P05 audio-before-FWC compile
+name: PowerSDR KE9NS 2.8.0.336 P06 shutdown-evidence compile
 
 on:
   push:
     branches:
-      - feature/ke9ns-2.8.0.336-p05-audio-before-fwc-standby
+      - feature/ke9ns-2.8.0.336-p06-shutdown-evidence
   workflow_dispatch:
 
 jobs:
@@ -42,9 +42,10 @@ jobs:
           ./tools/powersdr/Apply-PowerSDR-FastShutdown.ps1 -SourceRoot ./_build_source
           ./tools/powersdr/Apply-PowerSDR-FastAudioExit.ps1 -SourceRoot ./_build_source
           ./tools/powersdr/Apply-PowerSDR-AudioBeforeStandby.ps1 -SourceRoot ./_build_source
+          ./tools/powersdr/Apply-PowerSDR-ShutdownEvidence.ps1 -SourceRoot ./_build_source
           Push-Location _build_source
           $changed = @(git diff --name-only | Sort-Object)
-          $expected = @('Console/audio.cs','Console/console.cs','Console/database.cs')
+          $expected = @('Console/audio.cs','Console/console.cs','Console/database.cs','Console/setup.cs')
           if ($changed.Count -ne 3 -or (Compare-Object $expected $changed)) {
             throw ('Unexpected source changes: ' + ($changed -join ', '))
           }
@@ -98,4 +99,5 @@ jobs:
           "FAST_SHUTDOWN_PATCH=P03_GLOBAL_JOIN_BUDGET_PASS" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
           "FAST_ASIO_EXIT_PATCH=P04_ABORTSTREAM_ON_APP_CLOSE_PASS" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
           "POWER_OFF_ORDER_PATCH=P05_AUDIO_BEFORE_FWC_STANDBY_PASS" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+          "SHUTDOWN_EVIDENCE=P06_PHASE_DB_SWR_TIMING_PASS" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
           "DTTSP_RUNTIME=published KE9NS .329 binary; .336 DttSP source not claimed by this compile gate" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
