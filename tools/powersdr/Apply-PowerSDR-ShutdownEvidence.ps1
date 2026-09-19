@@ -10,17 +10,12 @@ Set-StrictMode -Version Latest
 function Stage([string]$s) { Write-Host "[SQ4KOU-P06] $s" }
 
 $consoleCs = Join-Path $SourceRoot 'Console\console.cs'
-$databaseCs = Join-Path $SourceRoot 'Console\database.cs'
 if(!(Test-Path -LiteralPath $consoleCs)) { throw "Missing $consoleCs" }
-if(!(Test-Path -LiteralPath $databaseCs)) { throw "Missing $databaseCs" }
 
 $utf8 = New-Object System.Text.UTF8Encoding($false)
 $consoleRaw = [IO.File]::ReadAllText($consoleCs)
-$databaseRaw = [IO.File]::ReadAllText($databaseCs)
 $consoleEol = if($consoleRaw.Contains("`r`n")) { "`r`n" } else { "`n" }
-$databaseEol = if($databaseRaw.Contains("`r`n")) { "`r`n" } else { "`n" }
 $console = $consoleRaw.Replace("`r`n", "`n")
-$database = $databaseRaw.Replace("`r`n", "`n")
 
 function Replace-InMethod([string]$Text, [string]$Signature, [scriptblock]$Transform) {
     $start = $Text.IndexOf($Signature, [StringComparison]::Ordinal)
@@ -44,40 +39,6 @@ function Replace-InMethod([string]$Text, [string]$Signature, [scriptblock]$Trans
     $changed = & $Transform $method
     if($changed -eq $method) { throw "P06 transform made no change: $Signature" }
     return $Text.Substring(0,$start) + $changed + $Text.Substring($end)
-}
-
-# DB.SaveVars timing: pure DataSet in-memory update, no file write.
-$dbSig='        public static void SaveVars(string tableName, ref ArrayList list)'
-$dbIdx=$database.IndexOf($dbSig,[StringComparison]::Ordinal)
-if($dbIdx -lt 0){ throw 'P06 DB.SaveVars insertion point missing' }
-$dbFields=@'
-        // SQ4KOU P06 shutdown evidence; diagnostic only.
-        public static long Sq4kouLastSaveVarsStateMs = -1;
-        public static long Sq4kouLastSaveVarsOptionsMs = -1;
-
-'@
-$database=$database.Substring(0,$dbIdx)+$dbFields+$database.Substring($dbIdx)
-
-$database=Replace-InMethod $database $dbSig {
-    param($m)
-    $sig="public static void SaveVars(string tableName, ref ArrayList list)`n        {"
-    if(!$m.Contains($sig)){ throw 'P06 DB.SaveVars body anchor missing' }
-    $m=$m.Replace($sig,$sig + @'
-
-            System.Diagnostics.Stopwatch sq4kouSaveVarsTimer = System.Diagnostics.Stopwatch.StartNew();
-'@)
-
-    $endMarker='            } //foreach'
-    if(!$m.Contains($endMarker)){ throw 'P06 DB.SaveVars foreach end anchor missing' }
-    $insert=@'
-            } //foreach
-
-            long sq4kouSaveVarsMs = sq4kouSaveVarsTimer.ElapsedMilliseconds;
-            if (tableName == "State") Sq4kouLastSaveVarsStateMs = sq4kouSaveVarsMs;
-            else if (tableName == "Options") Sq4kouLastSaveVarsOptionsMs = sq4kouSaveVarsMs;
-'@
-    $m=$m.Replace($endMarker,$insert)
-    return $m
 }
 
 # SaveState detailed timings.
@@ -223,15 +184,13 @@ $console=Replace-InMethod $console '        public void Console_Closing(object s
         '            writer.WriteLine("SQ4KOU_SAVESTATE_BUILD_STATE_MS=" + sq4kouSaveStateBuildMs.ToString());' + "`n" +
         '            writer.WriteLine("SQ4KOU_SAVESTATE_PURGE_NOTCHES_MS=" + sq4kouSaveStatePurgeMs.ToString());' + "`n" +
         '            writer.WriteLine("SQ4KOU_SAVESTATE_DB_SAVEVARS_MS=" + sq4kouSaveStateDbVarsMs.ToString());' + "`n" +
-        '            writer.WriteLine("SQ4KOU_DB_STATIC_STATE_SAVEVARS_MS=" + DB.Sq4kouLastSaveVarsStateMs.ToString());' + "`n" +
         '            writer.WriteLine("SQ4KOU_SAVESTATE_INTERNAL_TOTAL_MS=" + sq4kouSaveStateTotalMs.ToString());'
     if(!$m.Contains($old)){ throw 'P06 SaveState call anchor missing' }
     $m=$m.Replace($old,$new)
 
     $old='            if (setupForm != null) setupForm.SaveOptions();'
     $new=$old + "`n" +
-        '            writer.WriteLine("SQ4KOU_STEP6_SAVEOPTIONS_TOTAL_MS=" + sq4kouStageTimer.ElapsedMilliseconds.ToString());' + "`n" +
-        '            writer.WriteLine("SQ4KOU_SAVEOPTIONS_DB_SAVEVARS_MS=" + DB.Sq4kouLastSaveVarsOptionsMs.ToString());'
+        '            writer.WriteLine("SQ4KOU_STEP6_SAVEOPTIONS_TOTAL_MS=" + sq4kouStageTimer.ElapsedMilliseconds.ToString());'
     if(!$m.Contains($old)){ throw 'P06 SaveOptions call anchor missing' }
     $m=$m.Replace($old,$new)
 
@@ -256,14 +215,10 @@ $checks=@(
  @{Name='step4 timing';Ok=$console.Contains('SQ4KOU_STEP4_SAVESTATE_TOTAL_MS=')},
  @{Name='step7 timing';Ok=$console.Contains('SQ4KOU_STEP7_CLOSE_FORMS_MS=')},
  @{Name='SWR timing';Ok=$console.Contains('SQ4KOU_SAVESTATE_SWR_LOGGER_MS=')},
- @{Name='state DB timing';Ok=$console.Contains('SQ4KOU_DB_STATIC_STATE_SAVEVARS_MS=')},
- @{Name='options DB timing';Ok=$console.Contains('SQ4KOU_SAVEOPTIONS_DB_SAVEVARS_MS=')},
- @{Name='physical DB timing';Ok=$console.Contains('SQ4KOU_DB_EXIT_PHYSICAL_WRITE_MS=')},
- @{Name='DB SaveVars fields';Ok=$database.Contains('Sq4kouLastSaveVarsOptionsMs')}
+ @{Name='physical DB timing';Ok=$console.Contains('SQ4KOU_DB_EXIT_PHYSICAL_WRITE_MS=')}
 )
 $failed=@($checks|Where-Object{-not $_.Ok})
 if($failed.Count -gt 0){throw ('P06 post-check failed: '+(($failed|ForEach-Object{$_.Name})-join ', '))}
 
 [IO.File]::WriteAllText($consoleCs,$console.Replace("`n",$consoleEol),$utf8)
-[IO.File]::WriteAllText($databaseCs,$database.Replace("`n",$databaseEol),$utf8)
-Stage 'PASS: evidence-only timing for shutdown phases, SaveState/SWR, in-memory SaveVars and physical DB write'
+Stage 'PASS: evidence-only timing for shutdown phases, SaveState/SWR, State SaveVars, SaveOptions total and physical DB write'
