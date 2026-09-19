@@ -1,9 +1,9 @@
-name: PowerSDR KE9NS 2.8.0.336 DB+window P02 audit
+name: PowerSDR KE9NS 2.8.0.336 P03 fast-shutdown audit
 
 on:
   push:
     branches:
-      - feature/ke9ns-2.8.0.336-db-reliability-p02
+      - feature/ke9ns-2.8.0.336-db-reliability-p03-fast-shutdown
   workflow_dispatch:
 
 jobs:
@@ -29,6 +29,7 @@ jobs:
         run: |
           ./tools/powersdr/Apply-PowerSDR-DatabaseReliability.ps1 -SourceRoot ./_audit_source
           ./tools/powersdr/Apply-PowerSDR-WindowState.ps1 -SourceRoot ./_audit_source
+          ./tools/powersdr/Apply-PowerSDR-FastShutdown.ps1 -SourceRoot ./_audit_source
 
       - name: Enforce P02 boundary
         shell: pwsh
@@ -67,8 +68,20 @@ jobs:
           }
 
           $console = [IO.File]::ReadAllText((Resolve-Path 'Console/console.cs'))
-          foreach ($token in @('consoleBoundsToSave','this.RestoreBounds','this.WindowState = FormWindowState.Maximized;')) {
+          foreach ($token in @(
+            'consoleBoundsToSave',
+            'this.RestoreBounds',
+            'this.WindowState = FormWindowState.Maximized;',
+            '500 - (int)shutdownJoinWatch.ElapsedMilliseconds',
+            'SQ4KOU_SHUTDOWN1_TOTAL_MS=',
+            'SQ4KOU_SHUTDOWN2_TOTAL_MS=',
+            'SQ4KOU_SHUTDOWN3_TOTAL_MS='
+          )) {
             if (!$console.Contains($token)) { throw ('Required window-state marker missing: ' + $token) }
+          }
+
+          foreach ($forbiddenToken in @('draw_display_thread.Join(500)','poll_ptt_thread.Join(500)')) {
+            if ($console.Contains($forbiddenToken)) { throw ('Legacy cumulative shutdown wait still present: ' + $forbiddenToken) }
           }
 
           $native = @(
@@ -94,3 +107,4 @@ jobs:
           'PATCH_SCOPE=Console/database.cs + Console/console.cs only' | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
           'DB_IO=atomic write + streaming XML verification + validated backup fallback' | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
           'WINDOW_STATE=Maximized + RestoreBounds persistence' | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+          'SHUTDOWN=global 500ms worker budget + redundant sleep removal + timing logs' | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
