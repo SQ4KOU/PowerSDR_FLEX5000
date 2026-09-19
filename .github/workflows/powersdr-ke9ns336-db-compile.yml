@@ -1,9 +1,9 @@
-name: PowerSDR KE9NS 2.8.0.336 DB+window P02 compile
+name: PowerSDR KE9NS 2.8.0.336 P03 fast-shutdown compile
 
 on:
   push:
     branches:
-      - feature/ke9ns-2.8.0.336-db-reliability-p02
+      - feature/ke9ns-2.8.0.336-db-reliability-p03-fast-shutdown
   workflow_dispatch:
 
 jobs:
@@ -39,6 +39,7 @@ jobs:
         run: |
           ./tools/powersdr/Apply-PowerSDR-DatabaseReliability.ps1 -SourceRoot ./_build_source
           ./tools/powersdr/Apply-PowerSDR-WindowState.ps1 -SourceRoot ./_build_source
+          ./tools/powersdr/Apply-PowerSDR-FastShutdown.ps1 -SourceRoot ./_build_source
           Push-Location _build_source
           $changed = @(git diff --name-only | Sort-Object)
           $expected = @('Console/console.cs','Console/database.cs')
@@ -92,4 +93,5 @@ jobs:
           "BASE_SHA=d558979570c4c2e4572b63ac218d3d4477926cb8" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
           "DB_PATCH=P02_FAST_XML_VERIFY_PASS" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
           "WINDOW_STATE_PATCH=P02_MAXIMIZED_RESTOREBOUNDS_PASS" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+          "FAST_SHUTDOWN_PATCH=P03_GLOBAL_JOIN_BUDGET_PASS" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
           "DTTSP_RUNTIME=published KE9NS .329 binary; .336 DttSP source not claimed by this compile gate" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
