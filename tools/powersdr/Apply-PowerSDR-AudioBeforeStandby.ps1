@@ -25,6 +25,20 @@ function Replace-ExactOnce([string]$Text, [string]$Old, [string]$New, [string]$L
     return $Text.Substring(0,$first) + $New + $Text.Substring($first + $Old.Length)
 }
 
+# 0) Persist direct FWC standby timing across chkPower -> Console_Closing.
+$oldField = @'
+        private bool one_time = true;
+        private void chkPower_CheckedChanged(object sender, System.EventArgs e)
+'@
+
+$newField = @'
+        private bool one_time = true;
+        private long sq4kouLastFwcStandbyMs = -1;
+        private void chkPower_CheckedChanged(object sender, System.EventArgs e)
+'@
+
+$text = Replace-ExactOnce $text $oldField $newField 'P05 standby timing field'
+
 # 1) Start terminal audio teardown before FWC standby only on application close.
 $oldStandby = @'
                 if (!(fwc_init && (current_model == Model.FLEX5000 || current_model == Model.FLEX3000)))
@@ -67,7 +81,7 @@ $newStandby = @'
                     FWC.SetStandby(true);
                 }
 
-                long sq4kouFwcStandbyMs = sq4kouFwcStandbyTimer.ElapsedMilliseconds;
+                sq4kouLastFwcStandbyMs = sq4kouFwcStandbyTimer.ElapsedMilliseconds;
 '@
 
 $text = Replace-ExactOnce $text $oldStandby $newStandby 'audio before FWC standby'
@@ -131,18 +145,9 @@ $newVac2 = @'
 $text = Replace-ExactOnce $text $oldVac2 $newVac2 'skip duplicate VAC2 stop'
 
 # 3) Persist timing from the initial application Power OFF phase into shutdown1.log.
-$oldWriter = @'
-            StreamWriter writer = new StreamWriter(app_data_path + "shutdown1.log"); //   // look for %userprofile%AppDataRoamingFlexRadio SystemsPowerSDR v2.8.0
-            writer.WriteLine("This is a PowerSDR powering downlog: 1-8");
-'@
-
-$newWriter = @'
-            StreamWriter writer = new StreamWriter(app_data_path + "shutdown1.log"); //   // look for %userprofile%AppDataRoamingFlexRadio SystemsPowerSDR v2.8.0
-            writer.WriteLine("This is a PowerSDR powering downlog: 1-8");
-            writer.WriteLine("SQ4KOU_POWER_OFF_PHASE_MS=" + sq4kouShutdown1Timer.ElapsedMilliseconds.ToString());
-'@
-
-$text = Replace-ExactOnce $text $oldWriter $newWriter 'initial power off timing'
+$oldTitle = '            writer.WriteLine("This is a PowerSDR powering downlog: 1-8");'
+$newTitle = $oldTitle + "`n" + '            writer.WriteLine("SQ4KOU_POWER_OFF_PHASE_MS=" + sq4kouShutdown1Timer.ElapsedMilliseconds.ToString());'
+$text = Replace-ExactOnce $text $oldTitle $newTitle 'initial power off timing'
 
 # 4) Persist direct FWC standby timing once the writer exists.
 $oldStep1Done = @'
@@ -151,13 +156,14 @@ $oldStep1Done = @'
 '@
 $newStep1Done = @'
             writer.WriteLine("1) Done");
-            writer.WriteLine("SQ4KOU_FWC_STANDBY_MS=" + sq4kouFwcStandbyMs.ToString());
+            writer.WriteLine("SQ4KOU_FWC_STANDBY_MS=" + sq4kouLastFwcStandbyMs.ToString());
             writer.WriteLine("2) Hide all forms ");
 '@
 $text = Replace-ExactOnce $text $oldStep1Done $newStep1Done 'FWC standby timing log'
 
 $checks = @(
     @{ Name='terminal audio before standby'; Ok=$text.Contains('SQ4KOU P05: on application close only, stop FireWire/ASIO first.') },
+    @{ Name='standby timing field'; Ok=$text.Contains('private long sq4kouLastFwcStandbyMs = -1;') },
     @{ Name='direct standby timer'; Ok=$text.Contains('Stopwatch sq4kouFwcStandbyTimer = Stopwatch.StartNew();') },
     @{ Name='power off phase timing'; Ok=$text.Contains('SQ4KOU_POWER_OFF_PHASE_MS=') },
     @{ Name='standby timing'; Ok=$text.Contains('SQ4KOU_FWC_STANDBY_MS=') },
