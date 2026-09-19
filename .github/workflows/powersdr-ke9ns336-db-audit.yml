@@ -1,9 +1,9 @@
-name: PowerSDR KE9NS 2.8.0.336 P03 fast-shutdown audit
+name: PowerSDR KE9NS 2.8.0.336 P04 fast-ASIO-exit audit
 
 on:
   push:
     branches:
-      - feature/ke9ns-2.8.0.336-db-reliability-p03-fast-shutdown
+      - feature/ke9ns-2.8.0.336-db-reliability-p04-fast-asio-exit
   workflow_dispatch:
 
 jobs:
@@ -30,14 +30,15 @@ jobs:
           ./tools/powersdr/Apply-PowerSDR-DatabaseReliability.ps1 -SourceRoot ./_audit_source
           ./tools/powersdr/Apply-PowerSDR-WindowState.ps1 -SourceRoot ./_audit_source
           ./tools/powersdr/Apply-PowerSDR-FastShutdown.ps1 -SourceRoot ./_audit_source
+          ./tools/powersdr/Apply-PowerSDR-FastAudioExit.ps1 -SourceRoot ./_audit_source
 
       - name: Enforce P02 boundary
         shell: pwsh
         run: |
           Push-Location _audit_source
           $changed = @(git diff --name-only | Sort-Object)
-          $expected = @('Console/console.cs','Console/database.cs')
-          if ($changed.Count -ne 2 -or (Compare-Object $expected $changed)) {
+          $expected = @('Console/audio.cs','Console/console.cs','Console/database.cs')
+          if ($changed.Count -ne 3 -or (Compare-Object $expected $changed)) {
             throw ('P02 patch escaped boundary. Changed files: ' + ($changed -join ', '))
           }
           git diff --check
@@ -68,6 +69,7 @@ jobs:
           }
 
           $console = [IO.File]::ReadAllText((Resolve-Path 'Console/console.cs'))
+          $audio = [IO.File]::ReadAllText((Resolve-Path 'Console/audio.cs'))
           foreach ($token in @(
             'consoleBoundsToSave',
             'this.RestoreBounds',
@@ -80,12 +82,24 @@ jobs:
             if (!$console.Contains($token)) { throw ('Required window-state marker missing: ' + $token) }
           }
 
+          foreach ($audioToken in @(
+            'public static bool FastApplicationShutdown',
+            'SQ4KOU P04 FAST APPLICATION ASIO EXIT',
+            'PA19.PA_AbortStream(stream1)',
+            'SQ4KOU P04 FAST APPLICATION VAC EXIT',
+            'SQ4KOU P04 FAST APPLICATION VAC2 EXIT'
+          )) {
+            if (!$audio.Contains($audioToken)) { throw ('Required P04 audio marker missing: ' + $audioToken) }
+          }
+          if (!$console.Contains('Audio.FastApplicationShutdown = true;')) {
+            throw 'Console does not enable P04 fast audio exit before Power OFF'
+          }
+
           foreach ($forbiddenToken in @('draw_display_thread.Join(500)','poll_ptt_thread.Join(500)')) {
             if ($console.Contains($forbiddenToken)) { throw ('Legacy cumulative shutdown wait still present: ' + $forbiddenToken) }
           }
 
           $native = @(
-            'Console/audio.cs',
             'Console/FWC/fwc.cs',
             'Console/FWC/pal.cs',
             'Console/portaudio.cs',
@@ -104,7 +118,8 @@ jobs:
         run: |
           'BASE=KE9NS_2.8.0.336' | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
           'SOURCE_SHA=d558979570c4c2e4572b63ac218d3d4477926cb8' | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
-          'PATCH_SCOPE=Console/database.cs + Console/console.cs only' | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+          'PATCH_SCOPE=Console/database.cs + Console/console.cs + Console/audio.cs only' | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
           'DB_IO=atomic write + streaming XML verification + validated backup fallback' | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
           'WINDOW_STATE=Maximized + RestoreBounds persistence' | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
           'SHUTDOWN=global 500ms worker budget + redundant sleep removal + timing logs' | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+          'AUDIO_EXIT=terminal PA_AbortStream for ASIO/VAC only; native normal Stop/Start preserved' | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
