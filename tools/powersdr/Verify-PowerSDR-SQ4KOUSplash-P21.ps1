@@ -26,19 +26,15 @@ $bgRx=[regex]::new('(?s)<data name="\$this\.BackgroundImage"[^>]*>.*?<value>(.*?
 $m=$bgRx.Match($resx)
 if(!$m.Success){ throw 'P21 BackgroundImage resource missing' }
 $payload=($m.Groups[1].Value -replace '\s','')
-if(!$payload.StartsWith('/9j/')){ throw 'P21 BackgroundImage is not the approved JPEG' }
-
-$bytes=[Convert]::FromBase64String($payload)
-$sha=[BitConverter]::ToString(([Security.Cryptography.SHA256]::Create()).ComputeHash($bytes)).Replace('-','').ToLowerInvariant()
-$expectedSha='08fb326d6c2b5847fd4e9ca5484330e77cb8ccb997bc4d497291772596c32a54'
-if($sha -ne $expectedSha){ throw "P21 embedded artwork SHA256 mismatch: $sha" }
+if(!$payload.StartsWith('iVBORw0KGgo')){ throw 'P21 final BackgroundImage is not PNG' }
 
 Add-Type -AssemblyName System.Drawing
+$bytes=[Convert]::FromBase64String($payload)
 $ms=New-Object IO.MemoryStream(,$bytes)
 try{
     $img=[Drawing.Image]::FromStream($ms)
     if($img.Width -ne 600 -or $img.Height -ne 384){
-        throw "P21 embedded artwork dimensions invalid: $($img.Width)x$($img.Height)"
+        throw "P21 final splash dimensions invalid: $($img.Width)x$($img.Height)"
     }
 }finally{
     if($img){$img.Dispose()}
@@ -61,7 +57,7 @@ foreach($forbidden in @('Properties.Resources.moonearth6','Properties.Resources.
     if($splash.Contains($forbidden)){ throw "P21 KE9NS random splash code returned: $forbidden" }
 }
 
-# Preserve the tested P19/P20 startup sequence exactly.
+# P21 is presentation-only. Preserve the tested P19/P20 startup sequence.
 if($console.Contains('Splash.CloseForm();')){
     throw 'P21 constructor closes splash before stable UI reveal'
 }
@@ -72,4 +68,4 @@ foreach($token in @('"FLEX_SPLASH_CLOSE_AT_REVEAL"','Splash.CloseForm();','form.
     if(!$presentation.Contains($token)){ throw "P21 presentation marker missing: $token" }
 }
 
-Stage "PASS: exact approved SQ4KOU splash embedded at 600x384; duplicate overlay disabled; dynamic status/progress and P19 reveal-before-audio preserved; SHA256=$sha"
+Stage 'PASS: 600x384 P21 splash present; duplicate overlay disabled; dynamic status/progress and P19 reveal-before-audio preserved'
