@@ -13,7 +13,13 @@ $consoleCs = Join-Path $SourceRoot 'Console\console.cs'
 if(!(Test-Path -LiteralPath $consoleCs)) { throw "Missing $consoleCs" }
 
 $utf8 = New-Object System.Text.UTF8Encoding($false)
-$console = [IO.File]::ReadAllText($consoleCs).Replace("`r`n", "`n")
+$consoleRaw = [IO.File]::ReadAllText($consoleCs)
+$beforeLen = (New-Object IO.FileInfo($consoleCs)).Length
+$beforeCrCrLf = ([regex]::Matches($consoleRaw, "`r`r`n")).Count
+$beforeCrLf = ([regex]::Matches($consoleRaw, "(?<!`r)`r`n")).Count
+$beforeLfOnly = ([regex]::Matches($consoleRaw, "(?<!`r)`n")).Count
+Stage ("INPUT bytes={0} CRCRLF={1} CRLF={2} LF={3}" -f $beforeLen,$beforeCrCrLf,$beforeCrLf,$beforeLfOnly)
+$console = $consoleRaw.Replace("`r`n", "`n")
 
 function Replace-InMethod([string]$Text, [string]$Signature, [scriptblock]$Transform) {
     $start = $Text.IndexOf($Signature, [StringComparison]::Ordinal)
@@ -219,4 +225,10 @@ $failed=@($checks|Where-Object{-not $_.Ok})
 if($failed.Count -gt 0){throw ('P06 post-check failed: '+(($failed|ForEach-Object{$_.Name})-join ', '))}
 
 [IO.File]::WriteAllText($consoleCs, $console.Replace("`n", "`r`n"), $utf8)
+$afterRaw = [IO.File]::ReadAllText($consoleCs)
+$afterLen = (New-Object IO.FileInfo($consoleCs)).Length
+$afterCrCrLf = ([regex]::Matches($afterRaw, "`r`r`n")).Count
+$afterCrLf = ([regex]::Matches($afterRaw, "(?<!`r)`r`n")).Count
+$afterLfOnly = ([regex]::Matches($afterRaw, "(?<!`r)`n")).Count
+Stage ("OUTPUT bytes={0} CRCRLF={1} CRLF={2} LF={3}" -f $afterLen,$afterCrCrLf,$afterCrLf,$afterLfOnly)
 Stage 'PASS: evidence-only timing for shutdown phases, SaveState/SWR, State SaveVars, SaveOptions total and physical DB write'
