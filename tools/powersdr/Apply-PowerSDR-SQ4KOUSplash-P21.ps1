@@ -43,14 +43,14 @@ if(!$m.Success){ throw 'P21 BackgroundImage resource missing after P20' }
 $payload=($m.Groups[2].Value -replace '\s','')
 $bytes=[Convert]::FromBase64String($payload)
 
-$input=New-Object IO.MemoryStream(,$bytes)
+$input=[IO.MemoryStream]::new($bytes)
 try{
     $src=[Drawing.Image]::FromStream($input)
     if($src.Width -ne 600 -or $src.Height -ne 384){
         throw "P21 source splash dimensions invalid: $($src.Width)x$($src.Height)"
     }
 
-    $bmp=New-Object Drawing.Bitmap 600,384,[Drawing.Imaging.PixelFormat]::Format24bppRgb
+    $bmp=[Drawing.Bitmap]::new(600,384,[Drawing.Imaging.PixelFormat]::Format24bppRgb)
     $g=[Drawing.Graphics]::FromImage($bmp)
     try{
         $g.SmoothingMode=[Drawing.Drawing2D.SmoothingMode]::HighQuality
@@ -62,7 +62,7 @@ try{
         # Remove the baked KE9NS callsign and ke9ns.com/flexpage.html line from
         # the original P20 bitmap.  Rebuild the local blue background using
         # colours sampled immediately around the original inscription area.
-        $rect=New-Object Drawing.Rectangle 14,136,252,67
+        $rect=[Drawing.Rectangle]::new(14,136,252,67)
         $leftTop=$bmp.GetPixel(14,132)
         $rightTop=$bmp.GetPixel(266,132)
         $leftBottom=$bmp.GetPixel(14,207)
@@ -79,26 +79,26 @@ try{
             $ty=[double]$yy/[Math]::Max(1,$rect.Height-1)
             $lc=Mix-Color $leftTop $leftBottom $ty
             $rc=Mix-Color $rightTop $rightBottom $ty
-            $lineRect=New-Object Drawing.Rectangle $rect.X,($rect.Y+$yy),$rect.Width,1
-            $brush=New-Object Drawing.Drawing2D.LinearGradientBrush $lineRect,$lc,$rc,0
+            $lineRect=[Drawing.Rectangle]::new($rect.X,($rect.Y+$yy),$rect.Width,1)
+            $brush=[Drawing.Drawing2D.LinearGradientBrush]::new($lineRect,$lc,$rc,0.0)
             try{ $g.FillRectangle($brush,$lineRect) } finally { $brush.Dispose() }
         }
 
         # Put SQ4KOU in the former KE9NS position, using the same metallic/shadow
         # visual language as the PowerSDR title.  No KE9NS text remains.
-        $font=New-Object Drawing.Font 'Arial',30,[Drawing.FontStyle]::Bold,[Drawing.GraphicsUnit]::Pixel
+        $font=[Drawing.Font]::new('Arial',30,[Drawing.FontStyle]::Bold,[Drawing.GraphicsUnit]::Pixel)
         try{
-            $shadow=New-Object Drawing.SolidBrush ([Drawing.Color]::FromArgb(100,15,18,22))
+            $shadow=[Drawing.SolidBrush]::new([Drawing.Color]::FromArgb(100,15,18,22))
             try{ $g.DrawString('SQ4KOU',$font,$shadow,21,144) } finally { $shadow.Dispose() }
 
-            $textRect=New-Object Drawing.RectangleF 18,140,190,42
-            $metal=New-Object Drawing.Drawing2D.LinearGradientBrush $textRect,([Drawing.Color]::White),([Drawing.Color]::FromArgb(145,145,145)),90
+            $textRect=[Drawing.RectangleF]::new(18,140,190,42)
+            $metal=[Drawing.Drawing2D.LinearGradientBrush]::new($textRect,[Drawing.Color]::White,[Drawing.Color]::FromArgb(145,145,145),90.0)
             try{ $g.DrawString('SQ4KOU',$font,$metal,18,140) } finally { $metal.Dispose() }
         }finally{
             $font.Dispose()
         }
 
-        $output=New-Object IO.MemoryStream
+        $output=[IO.MemoryStream]::new()
         try{
             $bmp.Save($output,[Drawing.Imaging.ImageFormat]::Png)
             $newPayload=[Convert]::ToBase64String($output.ToArray())
