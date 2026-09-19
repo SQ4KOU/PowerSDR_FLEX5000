@@ -260,7 +260,8 @@ $console=Replace-InMethod $console '        public void ExitConsole()' {
 }
 
 $checks=@(
- @{Name='phase timings';Ok=$console.Contains('SQ4KOU_STEP4_SAVESTATE_TOTAL_MS=') -and $console.Contains('SQ4KOU_STEP7_CLOSE_FORMS_MS=')},
+ @{Name='step4 timing';Ok=$console.Contains('SQ4KOU_STEP4_SAVESTATE_TOTAL_MS=')},
+ @{Name='step7 timing';Ok=$console.Contains('SQ4KOU_STEP7_CLOSE_FORMS_MS=')},
  @{Name='SWR timing';Ok=$console.Contains('SQ4KOU_SAVESTATE_SWR_LOGGER_MS=')},
  @{Name='state DB timing';Ok=$console.Contains('SQ4KOU_DB_STATIC_STATE_SAVEVARS_MS=')},
  @{Name='options DB timing';Ok=$console.Contains('SQ4KOU_SAVEOPTIONS_DB_SAVEVARS_MS=')},
