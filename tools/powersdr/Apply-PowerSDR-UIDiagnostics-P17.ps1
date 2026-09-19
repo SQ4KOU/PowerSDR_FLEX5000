@@ -117,10 +117,10 @@ $console = Replace-ExactOnce $console @'
 '@ 'PortAudio/FWC settle timing'
 
 $console = Replace-ExactOnce $console @'
-            InitConsole();											// Initialize all forms and main variables           
+            InitConsole();
 '@ @'
             long sq4kouInitConsoleStart = SQ4KOUUIDiagnostics.OperationBegin("STARTUP", "INIT_CONSOLE", null);
-            InitConsole();											// Initialize all forms and main variables           
+            InitConsole();
             SQ4KOUUIDiagnostics.OperationEnd(sq4kouInitConsoleStart, "STARTUP", "INIT_CONSOLE", null);
 '@ 'InitConsole timing'
 
@@ -163,9 +163,15 @@ $console = Replace-ExactOnce $console @'
 
 $console = Replace-ExactOnce $console @'
                 UpdateDisplay(); // ke9ns 
+
+
+                if (chkPower.Checked)
 '@ @'
                 SQ4KOUUIDiagnostics.ProducerTick();
                 UpdateDisplay(); // ke9ns 
+
+
+                if (chkPower.Checked)
 '@ 'RunDisplay producer counter'
 
 $console = Replace-ExactOnce $console @'
