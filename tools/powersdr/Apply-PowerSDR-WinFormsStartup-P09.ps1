@@ -191,9 +191,10 @@ $spot = Replace-ExactOnce $spot @'
 # Post-checks.
 $checks = @(
     @{Name='early buffering'; Ok=$console.Contains('SQ4KOU P09: enable the existing WinForms double-buffer policy')},
-    @{Name='no SpotForm show-hide'; Ok=(!$console.Contains('SpotForm.Show();') -and !$console.Contains('SpotForm.Hide();'))},
-    @{Name='no ID/TOT warm show'; Ok=(!$console.Contains('IDBOXForm.Show();') -and !$console.Contains('TOTBOXForm.Show();'))},
-    @{Name='spot child no show-hide'; Ok=(!$spot.Contains('SpotAge.Show();') -and !$spot.Contains('SpotWatch.Show();'))},
+    @{Name='SpotForm hidden prime'; Ok=($console.Contains('IntPtr sq4kouSpotFormHandle = SpotForm.Handle;') -and $console.Contains('SpotForm.SpotControl_Load(SpotForm, EventArgs.Empty);'))},
+    @{Name='ID/TOT hidden prime'; Ok=($console.Contains('IntPtr sq4kouIDBoxHandle = IDBOXForm.Handle;') -and $console.Contains('IntPtr sq4kouTOTBoxHandle = TOTBOXForm.Handle;'))},
+    @{Name='SpotWatchBox hidden prime'; Ok=$console.Contains('IntPtr sq4kouSpotWatchBoxHandle = SpotWatchBoxForm.Handle;')},
+    @{Name='spot child hidden prime'; Ok=($spot.Contains('IntPtr sq4kouSpotAgeHandle = SpotAge.Handle;') -and $spot.Contains('IntPtr sq4kouSpotWatchHandle = SpotWatch.Handle;'))},
     @{Name='spot load guard'; Ok=$spot.Contains('sq4kouSpotControlLoadDone')},
     @{Name='startup timing'; Ok=$console.Contains('SQ4KOU_STARTUP_TO_FINISHED_MS=')}
 )
