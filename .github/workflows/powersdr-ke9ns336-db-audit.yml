@@ -1,0 +1,87 @@
+name: PowerSDR KE9NS 2.8.0.336 DB audit
+
+on:
+  push:
+    branches:
+      - feature/ke9ns-2.8.0.336-db-reliability
+  workflow_dispatch:
+
+jobs:
+  db-source-audit:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout SQ4KOU harness
+        uses: actions/checkout@v4
+
+      - name: Fetch clean KE9NS 2.8.0.336
+        shell: pwsh
+        run: |
+          git clone --no-tags https://github.com/ke9ns/PowerSDR-KE9NS-v2.8.0.git _audit_source
+          Push-Location _audit_source
+          git checkout --detach d558979570c4c2e4572b63ac218d3d4477926cb8
+          if ((git rev-parse HEAD).Trim() -ne 'd558979570c4c2e4572b63ac218d3d4477926cb8') {
+            throw 'KE9NS 2.8.0.336 source pin mismatch'
+          }
+          Pop-Location
+
+      - name: Apply DB reliability patch
+        shell: pwsh
+        run: |
+          ./tools/powersdr/Apply-PowerSDR-DatabaseReliability.ps1 -SourceRoot ./_audit_source
+
+      - name: Enforce DB-only boundary
+        shell: pwsh
+        run: |
+          Push-Location _audit_source
+          $changed = @(git diff --name-only)
+          if ($changed.Count -ne 1 -or $changed[0] -ne 'Console/database.cs') {
+            throw ('DB patch escaped boundary. Changed files: ' + ($changed -join ', '))
+          }
+          git diff --check
+          if ($LASTEXITCODE -ne 0) { throw 'git diff --check failed' }
+
+          $db = [IO.File]::ReadAllText((Resolve-Path 'Console/database.cs'))
+          $required = @(
+            'private static void AtomicWriteDataSet',
+            'FileOptions.WriteThrough',
+            'Database write verification failed',
+            'File.Replace(temp, destination, null)',
+            'TryLoadFirstValidBackup',
+            'DatabaseSiblingPath("_bak3")',
+            'PreserveCorruptDatabase(file_name)',
+            'The original file was left unchanged'
+          )
+          foreach ($token in $required) {
+            if (!$db.Contains($token)) { throw ('Required DB hardening marker missing: ' + $token) }
+          }
+
+          $forbidden = @(
+            'ds.WriteXml(file_name, XmlWriteMode.WriteSchema)',
+            'ds.ReadXml(recovery_db)'
+          )
+          foreach ($token in $forbidden) {
+            if ($db.Contains($token)) { throw ('Unsafe legacy DB path still present: ' + $token) }
+          }
+
+          $native = @(
+            'Console/audio.cs',
+            'Console/FWC/fwc.cs',
+            'Console/FWC/pal.cs',
+            'Console/portaudio.cs',
+            'Console/display.cs',
+            'DttSP/fm_demod.c',
+            'DttSP/update.c'
+          )
+          foreach ($path in $native) {
+            $status = (git status --porcelain -- $path)
+            if ($status) { throw ('Native non-DB source changed unexpectedly: ' + $path) }
+          }
+          Pop-Location
+
+      - name: Summary
+        shell: pwsh
+        run: |
+          'BASE=KE9NS_2.8.0.336' | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+          'SOURCE_SHA=d558979570c4c2e4572b63ac218d3d4477926cb8' | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+          'PATCH_SCOPE=Console/database.cs only' | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+          'DB_IO=atomic write + readback verification + validated backup fallback' | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
