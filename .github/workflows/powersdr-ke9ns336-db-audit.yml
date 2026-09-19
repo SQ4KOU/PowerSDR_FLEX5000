@@ -1,9 +1,9 @@
-name: PowerSDR KE9NS 2.8.0.336 DB audit
+name: PowerSDR KE9NS 2.8.0.336 DB+window P02 audit
 
 on:
   push:
     branches:
-      - feature/ke9ns-2.8.0.336-db-reliability
+      - feature/ke9ns-2.8.0.336-db-reliability-p02
   workflow_dispatch:
 
 jobs:
@@ -24,18 +24,20 @@ jobs:
           }
           Pop-Location
 
-      - name: Apply DB reliability patch
+      - name: Apply P02 reliability patches
         shell: pwsh
         run: |
           ./tools/powersdr/Apply-PowerSDR-DatabaseReliability.ps1 -SourceRoot ./_audit_source
+          ./tools/powersdr/Apply-PowerSDR-WindowState.ps1 -SourceRoot ./_audit_source
 
-      - name: Enforce DB-only boundary
+      - name: Enforce P02 boundary
         shell: pwsh
         run: |
           Push-Location _audit_source
-          $changed = @(git diff --name-only)
-          if ($changed.Count -ne 1 -or $changed[0] -ne 'Console/database.cs') {
-            throw ('DB patch escaped boundary. Changed files: ' + ($changed -join ', '))
+          $changed = @(git diff --name-only | Sort-Object)
+          $expected = @('Console/console.cs','Console/database.cs')
+          if ($changed.Count -ne 2 -or (Compare-Object $expected $changed)) {
+            throw ('P02 patch escaped boundary. Changed files: ' + ($changed -join ', '))
           }
           git diff --check
           if ($LASTEXITCODE -ne 0) { throw 'git diff --check failed' }
@@ -44,7 +46,8 @@ jobs:
           $required = @(
             'private static void AtomicWriteDataSet',
             'FileOptions.WriteThrough',
-            'Database write verification failed',
+            'System.Xml.XmlReader.Create(temp, verifySettings)',
+            'temporary XML file is empty',
             'File.Replace(temp, destination, null)',
             'TryLoadFirstValidBackup',
             'DatabaseSiblingPath("_bak3")',
@@ -61,6 +64,11 @@ jobs:
           )
           foreach ($token in $forbidden) {
             if ($db.Contains($token)) { throw ('Unsafe legacy DB path still present: ' + $token) }
+          }
+
+          $console = [IO.File]::ReadAllText((Resolve-Path 'Console/console.cs'))
+          foreach ($token in @('consoleBoundsToSave','this.RestoreBounds','this.WindowState = FormWindowState.Maximized;')) {
+            if (!$console.Contains($token)) { throw ('Required window-state marker missing: ' + $token) }
           }
 
           $native = @(
@@ -83,5 +91,6 @@ jobs:
         run: |
           'BASE=KE9NS_2.8.0.336' | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
           'SOURCE_SHA=d558979570c4c2e4572b63ac218d3d4477926cb8' | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
-          'PATCH_SCOPE=Console/database.cs only' | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
-          'DB_IO=atomic write + readback verification + validated backup fallback' | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+          'PATCH_SCOPE=Console/database.cs + Console/console.cs only' | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+          'DB_IO=atomic write + streaming XML verification + validated backup fallback' | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+          'WINDOW_STATE=Maximized + RestoreBounds persistence' | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
