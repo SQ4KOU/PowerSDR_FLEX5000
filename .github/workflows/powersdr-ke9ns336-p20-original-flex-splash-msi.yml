@@ -58,7 +58,7 @@ jobs:
           "P20=original FlexRadio PowerSDR splash + SQ4KOU retained until stable UI reveal; native AutoStart/audio begins after reveal" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
           "LOG=%APPDATA%\FlexRadio Systems\PowerSDR v2.8.0\SQ4KOU Diagnostics\" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
 
-      - name: Upload P19 MSI artifact
+      - name: Upload P20 MSI artifact
         uses: actions/upload-artifact@v4
         with:
           name: PowerSDR-FLEX5000-KE9NS-2.8.0.336-P20-ORIGINAL-FLEX-SPLASH
