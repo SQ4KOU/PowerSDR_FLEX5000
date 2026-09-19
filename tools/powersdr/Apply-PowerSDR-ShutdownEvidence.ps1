@@ -15,8 +15,12 @@ if(!(Test-Path -LiteralPath $consoleCs)) { throw "Missing $consoleCs" }
 if(!(Test-Path -LiteralPath $setupCs)) { throw "Missing $setupCs" }
 
 $utf8 = New-Object System.Text.UTF8Encoding($false)
-$console = [IO.File]::ReadAllText($consoleCs).Replace("`r`n", "`n")
-$setup = [IO.File]::ReadAllText($setupCs).Replace("`r`n", "`n")
+$consoleRaw = [IO.File]::ReadAllText($consoleCs)
+$setupRaw = [IO.File]::ReadAllText($setupCs)
+$consoleEol = if($consoleRaw.Contains("`r`n")) { "`r`n" } else { "`n" }
+$setupEol = if($setupRaw.Contains("`r`n")) { "`r`n" } else { "`n" }
+$console = $consoleRaw.Replace("`r`n", "`n")
+$setup = $setupRaw.Replace("`r`n", "`n")
 
 function Replace-InMethod([string]$Text, [string]$Signature, [scriptblock]$Transform) {
     $start = $Text.IndexOf($Signature, [StringComparison]::Ordinal)
@@ -310,6 +314,6 @@ $checks=@(
 $failed=@($checks|Where-Object{-not $_.Ok})
 if($failed.Count -gt 0){throw ('P06 post-check failed: '+(($failed|ForEach-Object{$_.Name})-join ', '))}
 
-[IO.File]::WriteAllText($consoleCs,$console.Replace("`n","`r`n"),$utf8)
-[IO.File]::WriteAllText($setupCs,$setup.Replace("`n","`r`n"),$utf8)
+[IO.File]::WriteAllText($consoleCs,$console.Replace("`n",$consoleEol),$utf8)
+[IO.File]::WriteAllText($setupCs,$setup.Replace("`n",$setupEol),$utf8)
 Stage 'PASS: evidence-only timing for shutdown phases, SaveState/SWR, SaveOptions and physical DB write'
