@@ -7,7 +7,7 @@ namespace PowerSDR
 {
     internal static class SQ4KOUStartupPresentation
     {
-        internal static void Install(Form form, Control display)
+        internal static void Install(Form form, Control display, Action afterReveal)
         {
             if (form == null || display == null) return;
 
@@ -52,6 +52,24 @@ namespace PowerSDR
                     // happened while the form was fully transparent.
                     form.Opacity = 1.0;
                     form.Activate();
+                    form.Update();
+
+                    if (afterReveal != null)
+                    {
+                        SQ4KOUUIDiagnostics.Mark("STARTUP", "AFTER_REVEAL_SCHEDULED", null);
+                        form.BeginInvoke(new MethodInvoker(delegate
+                        {
+                            SQ4KOUUIDiagnostics.Mark("STARTUP", "AFTER_REVEAL_BEGIN", null);
+                            try
+                            {
+                                afterReveal();
+                            }
+                            finally
+                            {
+                                SQ4KOUUIDiagnostics.Mark("STARTUP", "AFTER_REVEAL_END", null);
+                            }
+                        }));
+                    }
                 }
                 catch
                 {
