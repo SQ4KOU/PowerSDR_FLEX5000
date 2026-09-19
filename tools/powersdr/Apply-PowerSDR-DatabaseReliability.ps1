@@ -16,6 +16,8 @@ $utf8 = New-Object System.Text.UTF8Encoding($false)
 $text = [IO.File]::ReadAllText($databaseCs).Replace("`r`n", "`n")
 
 function Replace-ExactOnce([string]$Text, [string]$Old, [string]$New, [string]$Label) {
+    $Old = $Old.Replace("`r`n", "`n")
+    $New = $New.Replace("`r`n", "`n")
     $first = $Text.IndexOf($Old, [StringComparison]::Ordinal)
     if($first -lt 0) { throw "DB anchor missing: $Label" }
     $second = $Text.IndexOf($Old, $first + $Old.Length, [StringComparison]::Ordinal)
@@ -24,6 +26,7 @@ function Replace-ExactOnce([string]$Text, [string]$Old, [string]$New, [string]$L
 }
 
 function Replace-CSharpMethod([string]$Text, [string]$Signature, [string]$Replacement, [string]$Label) {
+    $Replacement = $Replacement.Replace("`r`n", "`n")
     $start = $Text.IndexOf($Signature, [StringComparison]::Ordinal)
     if($start -lt 0) { throw "DB method signature missing: $Label" }
     if($Text.IndexOf($Signature, $start + $Signature.Length, [StringComparison]::Ordinal) -ge 0) {
