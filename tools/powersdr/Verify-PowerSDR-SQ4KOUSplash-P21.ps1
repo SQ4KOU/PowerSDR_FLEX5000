@@ -30,7 +30,7 @@ if(!$payload.StartsWith('/9j/')){ throw 'P21 BackgroundImage is not the approved
 
 $bytes=[Convert]::FromBase64String($payload)
 $sha=[BitConverter]::ToString(([Security.Cryptography.SHA256]::Create()).ComputeHash($bytes)).Replace('-','').ToLowerInvariant()
-$expectedSha='63e1b8eb2d6a3b36698db80b09da76b668001cedf1042812969fc81894473a0b'
+$expectedSha='08fb326d6c2b5847fd4e9ca5484330e77cb8ccb997bc4d497291772596c32a54'
 if($sha -ne $expectedSha){ throw "P21 embedded artwork SHA256 mismatch: $sha" }
 
 Add-Type -AssemblyName System.Drawing
