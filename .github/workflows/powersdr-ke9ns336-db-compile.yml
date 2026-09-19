@@ -45,8 +45,8 @@ jobs:
           ./tools/powersdr/Apply-PowerSDR-ShutdownEvidence.ps1 -SourceRoot ./_build_source
           Push-Location _build_source
           $changed = @(git diff --name-only | Sort-Object)
-          $expected = @('Console/audio.cs','Console/console.cs','Console/database.cs','Console/setup.cs')
-          if ($changed.Count -ne 4 -or (Compare-Object $expected $changed)) {
+          $expected = @('Console/audio.cs','Console/console.cs','Console/database.cs')
+          if ($changed.Count -ne 3 -or (Compare-Object $expected $changed)) {
             throw ('Unexpected source changes: ' + ($changed -join ', '))
           }
           Pop-Location
