@@ -8,8 +8,8 @@ $WorkRoot=Join-Path $HarnessRoot '.work\powersdr-ke9ns'
 $ArtifactRoot=Join-Path $HarnessRoot 'artifacts\powersdr'
 $LogRoot=Join-Path $ArtifactRoot 'logs'
 $SourceRepo='https://github.com/ke9ns/PowerSDR-KE9NS-v2.8.0.git'
-$SourceSha='fb05ec170fd09f32039afc4cdee7c119e08a2c29'
-$ExpectedFileVersion='2.8.0.334'
+$SourceSha='d558979570c4c2e4572b63ac218d3d4477926cb8'
+$ExpectedFileVersion='2.8.0.336'
 $FullInstallerSha='ee31af4f244b4a0939bf6bed9987d0afc23d09cc64632c4772d6bb283ea767cd'
 $IncInstallerSha='6cb0f4aa820e4d7366e962e4c6f06eaf50326d886e87038d465e8a1f86e4e41c'
 
@@ -30,7 +30,8 @@ try{
     New-Item -ItemType Directory -Force -Path $outDir | Out-Null
 
     # Reconstruct only the official KE9NS runtime dependencies required by the
-    # upstream build.  FLEX/PAL/FWC/FireWire/ASIO/DttSP remain native PowerSDR.
+    # upstream build. FLEX/PAL/FWC/FireWire/ASIO remain native PowerSDR. The published
+    # KE9NS runtime is still .329; this DB-only branch records that DttSP limitation explicitly.
     & (Join-Path $PSScriptRoot 'Prepare-PowerSDR-Runtime.ps1') -WorkRoot $WorkRoot -OutDir $outDir -LogRoot $LogRoot
 
     nuget restore (Join-Path $WorkRoot 'PowerSDR.sln') -NonInteractive |
@@ -44,7 +45,8 @@ try{
 
     # PowerMate is only a compile-time C++/CLI reference. Prefer the official
     # runtime copy; otherwise build the unchanged upstream project. DttSP is not
-    # rebuilt and remains the official native PowerSDR DttSP.dll.
+    # rebuilt here; the manifest explicitly identifies the .329 release runtime so
+    # this DB validation package cannot be mistaken for a full binary .336 rebuild.
     $powerMateDll=Join-Path $outDir 'PowerMate.dll'
     if(!(Test-Path $powerMateDll)){
         $pmLog=Join-Path $LogRoot 'MSBUILD_POWERMATE.log'
@@ -64,9 +66,9 @@ try{
     $cs=$rx.Replace($cs,$pmRef,1)
     [IO.File]::WriteAllText($csproj,$cs,(New-Object Text.UTF8Encoding($false)))
 
-    # DISPLAY-ONLY transplant.  No Console layout, Designer, RESX, Skin, radio,
-    # audio or DSP backend file is modified by this patcher.
-    & (Join-Path $PSScriptRoot 'Apply-PowerSDR-Display.ps1') -SourceRoot $WorkRoot
+    # DB-only hardening on the clean KE9NS 2.8.0.336 source. No display/UI,
+    # PAL/FWC/FireWire/ASIO or DSP source is modified by this patcher.
+    & (Join-Path $PSScriptRoot 'Apply-PowerSDR-DatabaseReliability.ps1') -SourceRoot $WorkRoot
 
     $buildLog=Join-Path $LogRoot 'MSBUILD_POWERSDR.log'
     $binlog=Join-Path $LogRoot 'MSBUILD_POWERSDR.binlog'
@@ -132,7 +134,7 @@ try{
     try{
         & $candle '-arch' 'x86' "-dSourceDir=$outDir" '-ext' 'WixUIExtension' 'Product.wxs' 'Harvest.wxs'
         if($LASTEXITCODE -ne 0){throw "WiX candle failed rc=$LASTEXITCODE"}
-        $name='PowerSDR-SQ4KOU-FLEX5000-KE9NS-v2.8.0.334-DISPLAY-P02-THETIS.x86.msi'
+        $name='PowerSDR-SQ4KOU-FLEX5000-KE9NS-v2.8.0.336-DB-RELIABILITY-P01.x86.msi'
         $final=Join-Path $ArtifactRoot $name
         & $light '-ext' 'WixUIExtension' '-sice:ICE61' '-out' $final 'Product.wixobj' 'Harvest.wixobj'
         if($LASTEXITCODE -ne 0){throw "WiX light failed rc=$LASTEXITCODE"}
@@ -144,10 +146,11 @@ try{
       'PRODUCT=PowerSDR','EXE=PowerSDR.exe',"POWERSDR_FILE_VERSION=$fv","MSI_PRODUCT_VERSION=$msiVersion",
       "POWERSDR_SOURCE_REPO=$SourceRepo","POWERSDR_SOURCE_SHA=$SourceSha",
       "KE9NS_FULL_INSTALLER_SHA256=$FullInstallerSha","KE9NS_INCREMENTAL_SHA256=$IncInstallerSha",
-      'ARCH=x86','BASE=KE9NS_2.8.0.334','FLEX5000_BACKEND=POWERSDR_NATIVE_PAL_FWC_FIREWIRE_ASIO',
+      'ARCH=x86','BASE=KE9NS_2.8.0.336','FLEX5000_BACKEND=POWERSDR_NATIVE_PAL_FWC_FIREWIRE_ASIO',
       'ATU=POWERSDR_NATIVE','MIXER=POWERSDR_NATIVE','DSP=POWERSDR_NATIVE_DTTSP',
-      'CONSOLE_LAYOUT=KE9NS_NATIVE','SKIN=KE9NS_NATIVE','DISPLAY_TARGET=POWERSDR_PICDISPLAY',
-      'DISPLAY_PATCH=SQ4KOU_PANAFALL_P02_THETIS_VISUAL','DISPLAY_DATA_SOURCE=POWERSDR_DTTSP',
+      'CONSOLE_LAYOUT=KE9NS_NATIVE','SKIN=KE9NS_NATIVE','DISPLAY_PATCH=NONE',
+      'DATABASE_PATCH=SQ4KOU_ATOMIC_IO_VALIDATED_BACKUP_RECOVERY_P01','DATABASE_SCHEMA=KE9NS_NATIVE',
+      'DTTSP_RUNTIME=KE9NS_2.8.0.329_RELEASE_BINARY','DTTSP_SOURCE_336_NOT_BUILT=TRUE',
       'THETIS_BACKEND=ABSENT','THETIS_NETWORKIO=ABSENT','THETIS_CHANNELMASTER=ABSENT','THETIS_WDSP=ABSENT',
       "MSI=$name","MSI_SHA256=$sha"
     )|Set-Content (Join-Path $ArtifactRoot 'POWERSDR_BUILD_MANIFEST.txt') -Encoding UTF8
