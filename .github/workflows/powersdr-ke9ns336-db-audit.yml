@@ -1,9 +1,9 @@
-name: PowerSDR KE9NS 2.8.0.336 P04 fast-ASIO-exit audit
+name: PowerSDR KE9NS 2.8.0.336 P05 audio-before-FWC audit
 
 on:
   push:
     branches:
-      - feature/ke9ns-2.8.0.336-db-reliability-p04-fast-asio-exit
+      - feature/ke9ns-2.8.0.336-p05-audio-before-fwc-standby
   workflow_dispatch:
 
 jobs:
@@ -31,6 +31,7 @@ jobs:
           ./tools/powersdr/Apply-PowerSDR-WindowState.ps1 -SourceRoot ./_audit_source
           ./tools/powersdr/Apply-PowerSDR-FastShutdown.ps1 -SourceRoot ./_audit_source
           ./tools/powersdr/Apply-PowerSDR-FastAudioExit.ps1 -SourceRoot ./_audit_source
+          ./tools/powersdr/Apply-PowerSDR-AudioBeforeStandby.ps1 -SourceRoot ./_audit_source
 
       - name: Enforce P02 boundary
         shell: pwsh
@@ -94,6 +95,14 @@ jobs:
           if (!$console.Contains('Audio.FastApplicationShutdown = true;')) {
             throw 'Console does not enable P04 fast audio exit before Power OFF'
           }
+          foreach ($p05Token in @(
+            'SQ4KOU P05: on application close only, stop FireWire/ASIO first.',
+            'Stopwatch sq4kouFwcStandbyTimer = Stopwatch.StartNew();',
+            'SQ4KOU_POWER_OFF_PHASE_MS=',
+            'SQ4KOU_FWC_STANDBY_MS='
+          )) {
+            if (!$console.Contains($p05Token)) { throw ('Required P05 marker missing: ' + $p05Token) }
+          }
 
           foreach ($forbiddenToken in @('draw_display_thread.Join(500)','poll_ptt_thread.Join(500)')) {
             if ($console.Contains($forbiddenToken)) { throw ('Legacy cumulative shutdown wait still present: ' + $forbiddenToken) }
@@ -123,3 +132,4 @@ jobs:
           'WINDOW_STATE=Maximized + RestoreBounds persistence' | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
           'SHUTDOWN=global 500ms worker budget + redundant sleep removal + timing logs' | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
           'AUDIO_EXIT=terminal PA_AbortStream for ASIO/VAC only; native normal Stop/Start preserved' | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+          'P05_ORDER=terminal close stops audio before synchronous FWC standby + timing markers' | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
