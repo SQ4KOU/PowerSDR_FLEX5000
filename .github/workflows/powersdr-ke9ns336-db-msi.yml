@@ -1,9 +1,9 @@
-name: Build PowerSDR FLEX5000 KE9NS 2.8.0.336 P05 AUDIO BEFORE FWC STANDBY MSI
+name: Build PowerSDR FLEX5000 KE9NS 2.8.0.336 P06 SHUTDOWN EVIDENCE MSI
 
 on:
   push:
     branches:
-      - feature/ke9ns-2.8.0.336-p05-audio-before-fwc-standby
+      - feature/ke9ns-2.8.0.336-p06-shutdown-evidence
   workflow_dispatch:
 
 jobs:
@@ -54,13 +54,13 @@ jobs:
           Write-Host "SHA256=$sha"
           "MSI=$($msi.Name)" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
           "SHA256=$sha" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
-          "BASE=KE9NS 2.8.0.336 / DB reliability + window state + fast shutdown + fast ASIO exit + audio-before-FWC P05" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+          "BASE=KE9NS 2.8.0.336 / DB reliability + window state + fast shutdown + P05 + evidence-only P06" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
           "DTTSP_RUNTIME=official published .329 binary" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
 
       - name: Upload MSI artifact
         uses: actions/upload-artifact@v4
         with:
-          name: PowerSDR-FLEX5000-KE9NS-2.8.0.336-P05-AUDIO-BEFORE-FWC-STANDBY
+          name: PowerSDR-FLEX5000-KE9NS-2.8.0.336-P06-SHUTDOWN-EVIDENCE
           path: |
             artifacts/powersdr/*.msi
             artifacts/powersdr/*.sha256
