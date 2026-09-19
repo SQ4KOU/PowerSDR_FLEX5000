@@ -174,29 +174,22 @@ $console=Replace-InMethod $console '        public void Console_Closing(object s
     if(!$m.Contains($old)){ throw 'P06 shutdown writer anchor missing' }
     $m=$m.Replace($old,$new)
 
-    $starts=@(
-      @('            writer.WriteLine("1) Disable Audio, CAT, CXAuto, Rotor, VFODIAL, N1MM, QuicRec, Powermate, CWX Polling, timers, VOARUN, MUF");','            writer.WriteLine("1) Disable Audio, CAT, CXAuto, Rotor, VFODIAL, N1MM, QuicRec, Powermate, CWX Polling, timers, VOARUN, MUF");'+"`n"+'            sq4kouStageTimer.Restart();'),
-      @('            writer.WriteLine("2) Hide all forms ");','            writer.WriteLine("2) Hide all forms ");'+"`n"+'            sq4kouStageTimer.Restart();'),
-      @('            writer.WriteLine("3) Save MemoryList and DXMemList");','            writer.WriteLine("3) Save MemoryList and DXMemList");'+"`n"+'            sq4kouStageTimer.Restart();'),
-      @('            writer.WriteLine("4) Save SWL_logger, ke9ns8.dat, and Database STATE variables, and Power.csv file");','            writer.WriteLine("4) Save SWL_logger, ke9ns8.dat, and Database STATE variables, and Power.csv file");'+"`n"+'            sq4kouStageTimer.Restart();'),
-      @('            writer.WriteLine("5) turn off PABias and MIDI");','            writer.WriteLine("5) turn off PABias and MIDI");'+"`n"+'            sq4kouStageTimer.Restart();'),
-      @('            writer.WriteLine("6) Save SetupForm OPTIONS variables for Database");','            writer.WriteLine("6) Save SetupForm OPTIONS variables for Database");'+"`n"+'            sq4kouStageTimer.Restart();'),
-      @('            writer.WriteLine("7) CLOSE all forms");','            writer.WriteLine("7) CLOSE all forms");'+"`n"+'            sq4kouStageTimer.Restart();')
+    $stageReplacements=@(
+      @{ Old='            writer.WriteLine("1) Disable Audio, CAT, CXAuto, Rotor, VFODIAL, N1MM, QuicRec, Powermate, CWX Polling, timers, VOARUN, MUF");'; New='            writer.WriteLine("1) Disable Audio, CAT, CXAuto, Rotor, VFODIAL, N1MM, QuicRec, Powermate, CWX Polling, timers, VOARUN, MUF");' + "`n" + '            sq4kouStageTimer.Restart();' },
+      @{ Old='            writer.WriteLine("1) Done");'; New='            writer.WriteLine("1) Done");' + "`n" + '            writer.WriteLine("SQ4KOU_STEP1_DISABLE_SERVICES_MS=" + sq4kouStageTimer.ElapsedMilliseconds.ToString());' },
+      @{ Old='            writer.WriteLine("2) Hide all forms ");'; New='            writer.WriteLine("2) Hide all forms ");' + "`n" + '            sq4kouStageTimer.Restart();' },
+      @{ Old='            writer.WriteLine("2) Done");'; New='            writer.WriteLine("2) Done");' + "`n" + '            writer.WriteLine("SQ4KOU_STEP2_HIDE_FORMS_MS=" + sq4kouStageTimer.ElapsedMilliseconds.ToString());' },
+      @{ Old='            writer.WriteLine("3) Save MemoryList and DXMemList");'; New='            writer.WriteLine("3) Save MemoryList and DXMemList");' + "`n" + '            sq4kouStageTimer.Restart();' },
+      @{ Old='            writer.WriteLine("4) Save SWL_logger, ke9ns8.dat, and Database STATE variables, and Power.csv file");'; New='            writer.WriteLine("4) Save SWL_logger, ke9ns8.dat, and Database STATE variables, and Power.csv file");' + "`n" + '            sq4kouStageTimer.Restart();' },
+      @{ Old='            writer.WriteLine("5) turn off PABias and MIDI");'; New='            writer.WriteLine("5) turn off PABias and MIDI");' + "`n" + '            sq4kouStageTimer.Restart();' },
+      @{ Old='            writer.WriteLine("5) DONE");'; New='            writer.WriteLine("5) DONE");' + "`n" + '            writer.WriteLine("SQ4KOU_STEP5_PABIAS_MIDI_MS=" + sq4kouStageTimer.ElapsedMilliseconds.ToString());' },
+      @{ Old='            writer.WriteLine("6) Save SetupForm OPTIONS variables for Database");'; New='            writer.WriteLine("6) Save SetupForm OPTIONS variables for Database");' + "`n" + '            sq4kouStageTimer.Restart();' },
+      @{ Old='            writer.WriteLine("7) CLOSE all forms");'; New='            writer.WriteLine("7) CLOSE all forms");' + "`n" + '            sq4kouStageTimer.Restart();' },
+      @{ Old='            writer.WriteLine("7) DONE");'; New='            writer.WriteLine("7) DONE");' + "`n" + '            writer.WriteLine("SQ4KOU_STEP7_CLOSE_FORMS_MS=" + sq4kouStageTimer.ElapsedMilliseconds.ToString());' }
     )
-    foreach($pair in $starts){
-      if(!$m.Contains($pair[0])){ throw ('P06 stage anchor missing: '+$pair[0]) }
-      $m=$m.Replace($pair[0],$pair[1])
-    }
-
-    $endMap=@(
-      @('            writer.WriteLine("1) Done");','            writer.WriteLine("1) Done");'+"`n"+'            writer.WriteLine("SQ4KOU_STEP1_DISABLE_SERVICES_MS=" + sq4kouStageTimer.ElapsedMilliseconds.ToString());'),
-      @('            writer.WriteLine("2) Done");','            writer.WriteLine("2) Done");'+"`n"+'            writer.WriteLine("SQ4KOU_STEP2_HIDE_FORMS_MS=" + sq4kouStageTimer.ElapsedMilliseconds.ToString());'),
-      @('            writer.WriteLine("5) DONE");','            writer.WriteLine("5) DONE");'+"`n"+'            writer.WriteLine("SQ4KOU_STEP5_PABIAS_MIDI_MS=" + sq4kouStageTimer.ElapsedMilliseconds.ToString());'),
-      @('            writer.WriteLine("7) DONE");','            writer.WriteLine("7) DONE");'+"`n"+'            writer.WriteLine("SQ4KOU_STEP7_CLOSE_FORMS_MS=" + sq4kouStageTimer.ElapsedMilliseconds.ToString());')
-    )
-    foreach($pair in $endMap){
-      if(!$m.Contains($pair[0])){ throw ('P06 stage end anchor missing: '+$pair[0]) }
-      $m=$m.Replace($pair[0],$pair[1])
+    foreach($r in $stageReplacements){
+      if(!$m.Contains([string]$r.Old)){ throw ('P06 stage anchor missing: '+[string]$r.Old) }
+      $m=$m.Replace([string]$r.Old,[string]$r.New)
     }
 
     $old='            MemoryList.Save();'
