@@ -1,9 +1,9 @@
-name: PowerSDR KE9NS 2.8.0.336 P05 audio-before-FWC audit
+name: PowerSDR KE9NS 2.8.0.336 P06 shutdown-evidence audit
 
 on:
   push:
     branches:
-      - feature/ke9ns-2.8.0.336-p05-audio-before-fwc-standby
+      - feature/ke9ns-2.8.0.336-p06-shutdown-evidence
   workflow_dispatch:
 
 jobs:
@@ -32,13 +32,14 @@ jobs:
           ./tools/powersdr/Apply-PowerSDR-FastShutdown.ps1 -SourceRoot ./_audit_source
           ./tools/powersdr/Apply-PowerSDR-FastAudioExit.ps1 -SourceRoot ./_audit_source
           ./tools/powersdr/Apply-PowerSDR-AudioBeforeStandby.ps1 -SourceRoot ./_audit_source
+          ./tools/powersdr/Apply-PowerSDR-ShutdownEvidence.ps1 -SourceRoot ./_audit_source
 
       - name: Enforce P02 boundary
         shell: pwsh
         run: |
           Push-Location _audit_source
           $changed = @(git diff --name-only | Sort-Object)
-          $expected = @('Console/audio.cs','Console/console.cs','Console/database.cs')
+          $expected = @('Console/audio.cs','Console/console.cs','Console/database.cs','Console/setup.cs')
           if ($changed.Count -ne 3 -or (Compare-Object $expected $changed)) {
             throw ('P02 patch escaped boundary. Changed files: ' + ($changed -join ', '))
           }
@@ -133,3 +134,4 @@ jobs:
           'SHUTDOWN=global 500ms worker budget + redundant sleep removal + timing logs' | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
           'AUDIO_EXIT=terminal PA_AbortStream for ASIO/VAC only; native normal Stop/Start preserved' | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
           'P05_ORDER=terminal close stops audio before synchronous FWC standby + timing markers' | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+          'P06_EVIDENCE=phase + SaveState/SWR + SaveOptions + physical DB.Exit timing only' | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
