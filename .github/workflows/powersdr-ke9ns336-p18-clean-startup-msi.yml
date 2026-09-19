@@ -38,12 +38,12 @@ jobs:
           $path = Split-Path $candle.Source -Parent
           "WIXBIN=$path" | Out-File -FilePath $env:GITHUB_ENV -Append
 
-      - name: Build diagnostic MSI
+      - name: Build clean-startup MSI
         shell: pwsh
         run: |
           ./tools/powersdr/Build-PowerSDR-MSI.ps1 -WixBin "$env:WIXBIN"
 
-      - name: Verify diagnostic MSI
+      - name: Verify clean-startup MSI
         shell: pwsh
         run: |
           $msi = Get-ChildItem ./artifacts/powersdr -Filter '*P18-CLEAN-STARTUP*.msi' -File | Select-Object -First 1
@@ -55,7 +55,7 @@ jobs:
           "P18=hide intermediate startup frames; reveal once after first display Paint + WinForms Idle" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
           "LOG=%APPDATA%\FlexRadio Systems\PowerSDR v2.8.0\SQ4KOU Diagnostics\" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
 
-      - name: Upload diagnostic MSI artifact
+      - name: Upload clean-startup MSI artifact
         uses: actions/upload-artifact@v4
         with:
           name: PowerSDR-FLEX5000-KE9NS-2.8.0.336-P18-CLEAN-STARTUP
