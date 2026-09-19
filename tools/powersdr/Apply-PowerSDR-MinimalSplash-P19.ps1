@@ -226,16 +226,12 @@ $designer = Replace-ExactOnce $designer @'
 
 # 3) Do not close splash in the constructor. That created the blank gap while
 # P18 was intentionally keeping the main form transparent.
-$console = Replace-ExactOnce $console @'
-            Splash.CloseForm();								// End splash screen
-'@ @'
-            Splash.SetStatus("Finalizing Main Window");          // P19: keep splash visible until stable UI reveal
-'@ 'defer splash close'
-
-# The spacing in KE9NS can vary due to tabs. Fall back to the exact semantic line.
-if($console.Contains('Splash.CloseForm();')){
-    $console = Replace-ExactOnce $console '            Splash.CloseForm();' '            Splash.SetStatus("Finalizing Main Window");          // P19: keep splash visible until stable UI reveal' 'defer remaining splash close'
-}
+$closeNeedle = 'Splash.CloseForm();'
+$closeCount = ([regex]::Matches($console,[regex]::Escape($closeNeedle))).Count
+if($closeCount -ne 1){ throw "P19 expected exactly one constructor Splash.CloseForm(), found $closeCount" }
+$console = $console.Replace(
+    $closeNeedle,
+    'Splash.SetStatus("Finalizing Main Window"); // P19: keep splash visible until stable UI reveal')
 
 # 4) At the exact transition to the stable main UI, reveal it and then fade
 # the splash away. The main form is already painted underneath, so no blank gap.
