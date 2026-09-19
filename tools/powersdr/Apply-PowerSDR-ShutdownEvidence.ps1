@@ -224,6 +224,7 @@ $checks=@(
 $failed=@($checks|Where-Object{-not $_.Ok})
 if($failed.Count -gt 0){throw ('P06 post-check failed: '+(($failed|ForEach-Object{$_.Name})-join ', '))}
 
+$console = $console.Replace("`r`r`n", "`n").Replace("`r`n", "`n")
 [IO.File]::WriteAllText($consoleCs, $console.Replace("`n", "`r`n"), $utf8)
 $afterRaw = [IO.File]::ReadAllText($consoleCs)
 $afterLen = (New-Object IO.FileInfo($consoleCs)).Length
