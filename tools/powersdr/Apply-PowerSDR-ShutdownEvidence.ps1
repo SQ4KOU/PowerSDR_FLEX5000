@@ -263,23 +263,19 @@ $console = Replace-InMethod $console '        public void Console_Closing(object
     if(!$m.Contains($old)){ throw 'P06 step5 end anchor missing' }
     $m=$m.Replace($old,$new)
 
-    $old=@'
-            if (setupForm != null) setupForm.SaveOptions();
-            writer.WriteLine("6) DONE");
-'@
-    $new=@'
-            if (setupForm != null) setupForm.SaveOptions();
-            writer.WriteLine("6) DONE");
-            writer.WriteLine("SQ4KOU_STEP6_SAVEOPTIONS_TOTAL_MS=" + sq4kouStageTimer.ElapsedMilliseconds.ToString());
-            if (setupForm != null)
-            {
-                writer.WriteLine("SQ4KOU_SAVEOPTIONS_INTERNAL_TOTAL_MS=" + setupForm.Sq4kouLastSaveOptionsTotalMs.ToString());
-                writer.WriteLine("SQ4KOU_SAVEOPTIONS_BUILD_CONTROLS_MS=" + setupForm.Sq4kouLastSaveOptionsBuildMs.ToString());
-                writer.WriteLine("SQ4KOU_SAVEOPTIONS_DB_SAVEVARS_MS=" + setupForm.Sq4kouLastSaveOptionsDbVarsMs.ToString());
-            }
-'@
-    if(!$m.Contains($old)){ throw 'P06 SaveOptions timing anchor missing' }
+    $old='            if (setupForm != null) setupForm.SaveOptions();'
+    $new=$old + "`n" + '            writer.WriteLine("SQ4KOU_STEP6_SAVEOPTIONS_TOTAL_MS=" + sq4kouStageTimer.ElapsedMilliseconds.ToString());' + "`n" +
+        '            if (setupForm != null)' + "`n" +
+        '            {' + "`n" +
+        '                writer.WriteLine("SQ4KOU_SAVEOPTIONS_INTERNAL_TOTAL_MS=" + setupForm.Sq4kouLastSaveOptionsTotalMs.ToString());' + "`n" +
+        '                writer.WriteLine("SQ4KOU_SAVEOPTIONS_BUILD_CONTROLS_MS=" + setupForm.Sq4kouLastSaveOptionsBuildMs.ToString());' + "`n" +
+        '                writer.WriteLine("SQ4KOU_SAVEOPTIONS_DB_SAVEVARS_MS=" + setupForm.Sq4kouLastSaveOptionsDbVarsMs.ToString());' + "`n" +
+        '            }'
+    if(!$m.Contains($old)){ throw 'P06 SaveOptions call anchor missing' }
     $m=$m.Replace($old,$new)
+
+    $old='            writer.WriteLine("6) DONE");'
+    if(!$m.Contains($old)){ throw 'P06 step6 end anchor missing' }
 
     $old='            writer.WriteLine("7) DONE");'
     $new='            writer.WriteLine("7) DONE");'+"`n"+'            writer.WriteLine("SQ4KOU_STEP7_CLOSE_FORMS_MS=" + sq4kouStageTimer.ElapsedMilliseconds.ToString());'
