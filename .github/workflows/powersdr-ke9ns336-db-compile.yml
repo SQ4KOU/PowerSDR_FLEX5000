@@ -46,7 +46,7 @@ jobs:
           Push-Location _build_source
           $changed = @(git diff --name-only | Sort-Object)
           $expected = @('Console/audio.cs','Console/console.cs','Console/database.cs','Console/setup.cs')
-          if ($changed.Count -ne 3 -or (Compare-Object $expected $changed)) {
+          if ($changed.Count -ne 4 -or (Compare-Object $expected $changed)) {
             throw ('Unexpected source changes: ' + ($changed -join ', '))
           }
           Pop-Location
