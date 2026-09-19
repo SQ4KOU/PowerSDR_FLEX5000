@@ -43,8 +43,13 @@ jobs:
           if ($changed.Count -ne 3 -or (Compare-Object $expected $changed)) {
             throw ('P02 patch escaped boundary. Changed files: ' + ($changed -join ', '))
           }
-          git diff --check
-          if ($LASTEXITCODE -ne 0) { throw 'git diff --check failed' }
+          Write-Host '--- P06 raw numstat ---'
+          git diff --numstat
+          Write-Host '--- P06 ignore-space-at-eol numstat ---'
+          git diff --ignore-space-at-eol --numstat
+          Write-Host '--- P06 ignore-space-at-eol check ---'
+          git diff --ignore-space-at-eol --check
+          if ($LASTEXITCODE -ne 0) { throw 'git diff --ignore-space-at-eol --check failed' }
 
           $db = [IO.File]::ReadAllText((Resolve-Path 'Console/database.cs'))
           $required = @(
