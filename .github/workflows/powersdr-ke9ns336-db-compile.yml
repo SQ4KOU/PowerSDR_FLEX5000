@@ -1,9 +1,9 @@
-name: PowerSDR KE9NS 2.8.0.336 DB compile
+name: PowerSDR KE9NS 2.8.0.336 DB+window P02 compile
 
 on:
   push:
     branches:
-      - feature/ke9ns-2.8.0.336-db-reliability
+      - feature/ke9ns-2.8.0.336-db-reliability-p02
   workflow_dispatch:
 
 jobs:
@@ -34,13 +34,15 @@ jobs:
           }
           Pop-Location
 
-      - name: Apply DB-only hardening
+      - name: Apply P02 reliability fixes
         shell: pwsh
         run: |
           ./tools/powersdr/Apply-PowerSDR-DatabaseReliability.ps1 -SourceRoot ./_build_source
+          ./tools/powersdr/Apply-PowerSDR-WindowState.ps1 -SourceRoot ./_build_source
           Push-Location _build_source
-          $changed = @(git diff --name-only)
-          if ($changed.Count -ne 1 -or $changed[0] -ne 'Console/database.cs') {
+          $changed = @(git diff --name-only | Sort-Object)
+          $expected = @('Console/console.cs','Console/database.cs')
+          if ($changed.Count -ne 2 -or (Compare-Object $expected $changed)) {
             throw ('Unexpected source changes: ' + ($changed -join ', '))
           }
           Pop-Location
@@ -88,5 +90,6 @@ jobs:
 
           "POWERSDR_FILE_VERSION=$fv" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
           "BASE_SHA=d558979570c4c2e4572b63ac218d3d4477926cb8" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
-          "DB_PATCH=PASS" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+          "DB_PATCH=P02_FAST_XML_VERIFY_PASS" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+          "WINDOW_STATE_PATCH=P02_MAXIMIZED_RESTOREBOUNDS_PASS" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
           "DTTSP_RUNTIME=published KE9NS .329 binary; .336 DttSP source not claimed by this compile gate" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
