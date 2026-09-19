@@ -1,0 +1,69 @@
+name: Build PowerSDR FLEX5000 KE9NS 2.8.0.336 DB MSI
+
+on:
+  push:
+    branches:
+      - feature/ke9ns-2.8.0.336-db-reliability
+  workflow_dispatch:
+
+jobs:
+  build-msi:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Ensure build tools
+        shell: pwsh
+        run: |
+          if (!(Get-Command innoextract.exe -ErrorAction SilentlyContinue) -and !(Get-Command innoextract -ErrorAction SilentlyContinue)) {
+            choco install innoextract -y --no-progress
+          }
+          if (!(Get-Command nuget.exe -ErrorAction SilentlyContinue) -and !(Get-Command nuget -ErrorAction SilentlyContinue)) {
+            choco install nuget.commandline -y --no-progress
+          }
+          if (!(Get-Command candle.exe -ErrorAction SilentlyContinue)) {
+            choco install wixtoolset -y --no-progress
+          }
+
+      - name: Locate WiX
+        id: wix
+        shell: pwsh
+        run: |
+          $candle = Get-Command candle.exe -ErrorAction SilentlyContinue
+          if (!$candle) {
+            $candle = Get-ChildItem 'C:\Program Files (x86)' -Recurse -Filter candle.exe -ErrorAction SilentlyContinue | Select-Object -First 1
+          }
+          if (!$candle) { throw 'candle.exe not found' }
+          $path = Split-Path $candle.Source -Parent
+          "WIXBIN=$path" | Out-File -FilePath $env:GITHUB_ENV -Append
+          Write-Host "WIXBIN=$path"
+
+      - name: Build MSI
+        shell: pwsh
+        run: |
+          ./tools/powersdr/Build-PowerSDR-MSI.ps1 -WixBin "$env:WIXBIN"
+
+      - name: Verify MSI
+        shell: pwsh
+        run: |
+          $msi = Get-ChildItem ./artifacts/powersdr -Filter '*.msi' -File | Select-Object -First 1
+          if (!$msi) { throw 'MSI artifact missing' }
+          $sha = (Get-FileHash -Algorithm SHA256 $msi.FullName).Hash.ToLowerInvariant()
+          Write-Host "MSI=$($msi.FullName)"
+          Write-Host "SHA256=$sha"
+          "MSI=$($msi.Name)" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+          "SHA256=$sha" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+          "BASE=KE9NS 2.8.0.336 / DB reliability P01" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+          "DTTSP_RUNTIME=official published .329 binary" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+
+      - name: Upload MSI artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: PowerSDR-FLEX5000-KE9NS-2.8.0.336-DB-RELIABILITY-P01
+          path: |
+            artifacts/powersdr/*.msi
+            artifacts/powersdr/*.sha256
+            artifacts/powersdr/POWERSDR_BUILD_MANIFEST.txt
+            artifacts/powersdr/logs/**
+          if-no-files-found: error
