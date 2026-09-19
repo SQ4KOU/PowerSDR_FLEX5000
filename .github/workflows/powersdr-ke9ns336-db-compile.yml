@@ -1,9 +1,9 @@
-name: PowerSDR KE9NS 2.8.0.336 P03 fast-shutdown compile
+name: PowerSDR KE9NS 2.8.0.336 P04 fast-ASIO-exit compile
 
 on:
   push:
     branches:
-      - feature/ke9ns-2.8.0.336-db-reliability-p03-fast-shutdown
+      - feature/ke9ns-2.8.0.336-db-reliability-p04-fast-asio-exit
   workflow_dispatch:
 
 jobs:
@@ -40,10 +40,11 @@ jobs:
           ./tools/powersdr/Apply-PowerSDR-DatabaseReliability.ps1 -SourceRoot ./_build_source
           ./tools/powersdr/Apply-PowerSDR-WindowState.ps1 -SourceRoot ./_build_source
           ./tools/powersdr/Apply-PowerSDR-FastShutdown.ps1 -SourceRoot ./_build_source
+          ./tools/powersdr/Apply-PowerSDR-FastAudioExit.ps1 -SourceRoot ./_build_source
           Push-Location _build_source
           $changed = @(git diff --name-only | Sort-Object)
-          $expected = @('Console/console.cs','Console/database.cs')
-          if ($changed.Count -ne 2 -or (Compare-Object $expected $changed)) {
+          $expected = @('Console/audio.cs','Console/console.cs','Console/database.cs')
+          if ($changed.Count -ne 3 -or (Compare-Object $expected $changed)) {
             throw ('Unexpected source changes: ' + ($changed -join ', '))
           }
           Pop-Location
@@ -94,4 +95,5 @@ jobs:
           "DB_PATCH=P02_FAST_XML_VERIFY_PASS" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
           "WINDOW_STATE_PATCH=P02_MAXIMIZED_RESTOREBOUNDS_PASS" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
           "FAST_SHUTDOWN_PATCH=P03_GLOBAL_JOIN_BUDGET_PASS" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+          "FAST_ASIO_EXIT_PATCH=P04_ABORTSTREAM_ON_APP_CLOSE_PASS" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
           "DTTSP_RUNTIME=published KE9NS .329 binary; .336 DttSP source not claimed by this compile gate" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
