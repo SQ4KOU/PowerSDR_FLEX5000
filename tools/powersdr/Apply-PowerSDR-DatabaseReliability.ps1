@@ -197,10 +197,17 @@ $helperBlock = @'
                     stream.Flush(true);
                 }
 
-                DataSet verified;
-                string verifyError;
-                if (!TryLoadDatabaseFile(temp, out verified, out verifyError))
-                    throw new InvalidDataException("Database write verification failed. " + verifyError);
+                FileInfo tempInfo = new FileInfo(temp);
+                if (!tempInfo.Exists || tempInfo.Length == 0)
+                    throw new InvalidDataException("Database write verification failed: temporary XML file is empty.");
+
+                System.Xml.XmlReaderSettings verifySettings = new System.Xml.XmlReaderSettings();
+                verifySettings.DtdProcessing = System.Xml.DtdProcessing.Prohibit;
+                verifySettings.CloseInput = true;
+                using (System.Xml.XmlReader reader = System.Xml.XmlReader.Create(temp, verifySettings))
+                {
+                    while (reader.Read()) { }
+                }
 
                 if (File.Exists(destination))
                     File.Replace(temp, destination, null);
@@ -379,7 +386,7 @@ $text = Replace-CSharpMethod $text '        public static void Update()' $newUpd
 $checks = @(
     @{ Name='atomic writer'; Ok=$text.Contains('private static void AtomicWriteDataSet') },
     @{ Name='write-through'; Ok=$text.Contains('FileOptions.WriteThrough') },
-    @{ Name='round-trip verification'; Ok=$text.Contains('Database write verification failed') },
+    @{ Name='streaming XML verification'; Ok=$text.Contains('System.Xml.XmlReader.Create(temp, verifySettings)') -and $text.Contains('temporary XML file is empty') },
     @{ Name='atomic replace'; Ok=$text.Contains('File.Replace(temp, destination, null)') },
     @{ Name='backup fallback chain'; Ok=$text.Contains('TryLoadFirstValidBackup') -and $text.Contains('DatabaseSiblingPath("_bak3")') },
     @{ Name='corrupt preservation'; Ok=$text.Contains('PreserveCorruptDatabase(file_name)') },
@@ -394,4 +401,4 @@ if($failed.Count -gt 0) {
 }
 
 [IO.File]::WriteAllText($databaseCs, $text.Replace("`n", "`r`n"), $utf8)
-Stage 'PASS: atomic writes, verified backup chain, non-destructive corruption recovery'
+Stage 'PASS: fast atomic writes, streaming XML verification, validated backup chain, non-destructive corruption recovery'
