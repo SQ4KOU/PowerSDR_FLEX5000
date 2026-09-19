@@ -1,0 +1,67 @@
+name: Build PowerSDR FLEX5000 KE9NS 2.8.0.336 P19 SCREEN BEFORE AUDIO MSI
+
+on:
+  push:
+    branches:
+      - feature/ke9ns-2.8.0.336-p19-screen-before-audio
+  workflow_dispatch:
+
+jobs:
+  build-msi:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Ensure build tools
+        shell: pwsh
+        run: |
+          if (!(Get-Command innoextract.exe -ErrorAction SilentlyContinue) -and !(Get-Command innoextract -ErrorAction SilentlyContinue)) {
+            choco install innoextract -y --no-progress
+          }
+          if (!(Get-Command nuget.exe -ErrorAction SilentlyContinue) -and !(Get-Command nuget -ErrorAction SilentlyContinue)) {
+            choco install nuget.commandline -y --no-progress
+          }
+          if (!(Get-Command candle.exe -ErrorAction SilentlyContinue)) {
+            choco install wixtoolset -y --no-progress
+          }
+
+      - name: Locate WiX
+        id: wix
+        shell: pwsh
+        run: |
+          $candle = Get-Command candle.exe -ErrorAction SilentlyContinue
+          if (!$candle) {
+            $candle = Get-ChildItem 'C:\Program Files (x86)' -Recurse -Filter candle.exe -ErrorAction SilentlyContinue | Select-Object -First 1
+          }
+          if (!$candle) { throw 'candle.exe not found' }
+          $path = Split-Path $candle.Source -Parent
+          "WIXBIN=$path" | Out-File -FilePath $env:GITHUB_ENV -Append
+
+      - name: Build P19 MSI
+        shell: pwsh
+        run: |
+          ./tools/powersdr/Build-PowerSDR-MSI.ps1 -WixBin "$env:WIXBIN"
+
+      - name: Verify P19 MSI
+        shell: pwsh
+        run: |
+          $msi = Get-ChildItem ./artifacts/powersdr -Filter '*P19-SCREEN-BEFORE-AUDIO*.msi' -File | Select-Object -First 1
+          if (!$msi) { throw 'P19 screen-before-audio MSI artifact missing' }
+          $sha = (Get-FileHash -Algorithm SHA256 $msi.FullName).Hash.ToLowerInvariant()
+          "MSI=$($msi.Name)" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+          "SHA256=$sha" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+          "BASE=KE9NS 2.8.0.336 / P14 stability baseline" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+          "P19=minimal splash retained until stable UI reveal; native AutoStart/audio begins after reveal" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+          "LOG=%APPDATA%\FlexRadio Systems\PowerSDR v2.8.0\SQ4KOU Diagnostics\" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+
+      - name: Upload P19 MSI artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: PowerSDR-FLEX5000-KE9NS-2.8.0.336-P19-SCREEN-BEFORE-AUDIO
+          path: |
+            artifacts/powersdr/*.msi
+            artifacts/powersdr/*.sha256
+            artifacts/powersdr/POWERSDR_BUILD_MANIFEST.txt
+            artifacts/powersdr/logs/**
+          if-no-files-found: error
