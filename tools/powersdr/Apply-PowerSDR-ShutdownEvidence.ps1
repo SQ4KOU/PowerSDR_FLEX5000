@@ -240,25 +240,23 @@ $console = Replace-InMethod $console '        public void Console_Closing(object
     if(!$m.Contains($old)){ throw 'P06 step3 end anchor missing' }
     $m=$m.Replace($old,$new)
 
-    $old=@'
-            SaveState();                // put current settings back into database     DB.SaveVars("State", ref a);		    // save the values to the DB
-
-            writer.WriteLine("4) Done");
-'@
-    $new=@'
-            SaveState();                // put current settings back into database     DB.SaveVars("State", ref a);		    // save the values to the DB
-
-            writer.WriteLine("4) Done");
-            writer.WriteLine("SQ4KOU_STEP4_SAVESTATE_TOTAL_MS=" + sq4kouStageTimer.ElapsedMilliseconds.ToString());
-            writer.WriteLine("SQ4KOU_SAVESTATE_SWR_LOGGER_MS=" + sq4kouSaveStateSWRMs.ToString());
-            writer.WriteLine("SQ4KOU_SAVESTATE_KE9NS8_MS=" + sq4kouSaveStateKe9ns8Ms.ToString());
-            writer.WriteLine("SQ4KOU_SAVESTATE_BUILD_STATE_MS=" + sq4kouSaveStateBuildMs.ToString());
-            writer.WriteLine("SQ4KOU_SAVESTATE_PURGE_NOTCHES_MS=" + sq4kouSaveStatePurgeMs.ToString());
-            writer.WriteLine("SQ4KOU_SAVESTATE_DB_SAVEVARS_MS=" + sq4kouSaveStateDbVarsMs.ToString());
-            writer.WriteLine("SQ4KOU_SAVESTATE_INTERNAL_TOTAL_MS=" + sq4kouSaveStateTotalMs.ToString());
-'@
-    if(!$m.Contains($old)){ throw 'P06 SaveState timing anchor missing' }
+    $old='            SaveState();                // put current settings back into database     DB.SaveVars("State", ref a);`t`t    // save the values to the DB'
+    if(!$m.Contains($old))
+    {
+        $old='            SaveState();'
+    }
+    $new=$old + "`n" + '            writer.WriteLine("SQ4KOU_STEP4_SAVESTATE_TOTAL_MS=" + sq4kouStageTimer.ElapsedMilliseconds.ToString());' + "`n" +
+        '            writer.WriteLine("SQ4KOU_SAVESTATE_SWR_LOGGER_MS=" + sq4kouSaveStateSWRMs.ToString());' + "`n" +
+        '            writer.WriteLine("SQ4KOU_SAVESTATE_KE9NS8_MS=" + sq4kouSaveStateKe9ns8Ms.ToString());' + "`n" +
+        '            writer.WriteLine("SQ4KOU_SAVESTATE_BUILD_STATE_MS=" + sq4kouSaveStateBuildMs.ToString());' + "`n" +
+        '            writer.WriteLine("SQ4KOU_SAVESTATE_PURGE_NOTCHES_MS=" + sq4kouSaveStatePurgeMs.ToString());' + "`n" +
+        '            writer.WriteLine("SQ4KOU_SAVESTATE_DB_SAVEVARS_MS=" + sq4kouSaveStateDbVarsMs.ToString());' + "`n" +
+        '            writer.WriteLine("SQ4KOU_SAVESTATE_INTERNAL_TOTAL_MS=" + sq4kouSaveStateTotalMs.ToString());'
+    if(!$m.Contains($old)){ throw 'P06 SaveState call anchor missing' }
     $m=$m.Replace($old,$new)
+
+    $old='            writer.WriteLine("4) Done");'
+    if(!$m.Contains($old)){ throw 'P06 step4 end anchor missing' }
 
     $old='            writer.WriteLine("5) DONE");'
     $new='            writer.WriteLine("5) DONE");'+"`n"+'            writer.WriteLine("SQ4KOU_STEP5_PABIAS_MIDI_MS=" + sq4kouStageTimer.ElapsedMilliseconds.ToString());'
