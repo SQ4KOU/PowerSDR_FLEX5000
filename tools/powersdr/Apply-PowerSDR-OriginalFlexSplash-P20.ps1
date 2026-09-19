@@ -48,20 +48,35 @@ $refResx = [IO.File]::ReadAllText($referenceResx)
 # FlexRadio PowerSDR 2.7.2-era artwork. Keep the current icon and all unrelated
 # resources from the pinned KE9NS source.
 $bgRx = [regex]::new('(?s)(<data name="\$this\.BackgroundImage"[^>]*>.*?<value>)(.*?)(</value>.*?</data>)')
+$bgNodeRx = [regex]::new('(?s)<data name="\$this\.BackgroundImage"[^>]*>.*?</data>')
 $refMatches = $bgRx.Matches($refResx)
 $srcMatches = $bgRx.Matches($sourceResx)
-if($refMatches.Count -ne 1){ throw "P20 reference BackgroundImage count=$($refMatches.Count), expected 1" }
-if($srcMatches.Count -ne 1){ throw "P20 source BackgroundImage count=$($srcMatches.Count), expected 1" }
+$refNodes = $bgNodeRx.Matches($refResx)
+if($refMatches.Count -ne 1 -or $refNodes.Count -ne 1){
+    throw "P20 reference BackgroundImage invalid: payload=$($refMatches.Count) node=$($refNodes.Count)"
+}
+if($srcMatches.Count -gt 1){ throw "P20 source BackgroundImage count=$($srcMatches.Count), expected 0 or 1" }
 
 $refPayload = $refMatches[0].Groups[2].Value
 $refPayloadCompact = ($refPayload -replace '\s','')
 if(!$refPayloadCompact.StartsWith('iVBORw0KGgo')){ throw 'P20 reference background is not a PNG payload' }
 if($refPayloadCompact.Length -lt 100000){ throw "P20 reference background unexpectedly small: $($refPayloadCompact.Length)" }
 
-$sourceResx = $bgRx.Replace(
-    $sourceResx,
-    { param($m) $m.Groups[1].Value + $refPayload + $m.Groups[3].Value },
-    1)
+if($srcMatches.Count -eq 1){
+    $sourceResx = $bgRx.Replace(
+        $sourceResx,
+        { param($m) $m.Groups[1].Value + $refPayload + $m.Groups[3].Value },
+        1)
+}
+else {
+    # KE9NS 2.8.0.323+ removed the form BackgroundImage resource entirely
+    # when it switched to random PictureBox Moon/Earth artwork. Re-introduce
+    # the archived FlexRadio data node before the RESX root closes.
+    $rootClose = $sourceResx.LastIndexOf('</root>', [StringComparison]::Ordinal)
+    if($rootClose -lt 0){ throw 'P20 source RESX closing root missing' }
+    $node = '  ' + $refNodes[0].Value + [Environment]::NewLine
+    $sourceResx = $sourceResx.Insert($rootClose,$node)
+}
 
 [IO.File]::WriteAllText($splashResx,$sourceResx,$utf8)
 
