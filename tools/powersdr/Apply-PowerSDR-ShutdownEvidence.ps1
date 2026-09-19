@@ -10,17 +10,17 @@ Set-StrictMode -Version Latest
 function Stage([string]$s) { Write-Host "[SQ4KOU-P06] $s" }
 
 $consoleCs = Join-Path $SourceRoot 'Console\console.cs'
-$setupCs = Join-Path $SourceRoot 'Console\setup.cs'
+$databaseCs = Join-Path $SourceRoot 'Console\database.cs'
 if(!(Test-Path -LiteralPath $consoleCs)) { throw "Missing $consoleCs" }
-if(!(Test-Path -LiteralPath $setupCs)) { throw "Missing $setupCs" }
+if(!(Test-Path -LiteralPath $databaseCs)) { throw "Missing $databaseCs" }
 
 $utf8 = New-Object System.Text.UTF8Encoding($false)
 $consoleRaw = [IO.File]::ReadAllText($consoleCs)
-$setupRaw = [IO.File]::ReadAllText($setupCs)
+$databaseRaw = [IO.File]::ReadAllText($databaseCs)
 $consoleEol = if($consoleRaw.Contains("`r`n")) { "`r`n" } else { "`n" }
-$setupEol = if($setupRaw.Contains("`r`n")) { "`r`n" } else { "`n" }
+$databaseEol = if($databaseRaw.Contains("`r`n")) { "`r`n" } else { "`n" }
 $console = $consoleRaw.Replace("`r`n", "`n")
-$setup = $setupRaw.Replace("`r`n", "`n")
+$database = $databaseRaw.Replace("`r`n", "`n")
 
 function Replace-InMethod([string]$Text, [string]$Signature, [scriptblock]$Transform) {
     $start = $Text.IndexOf($Signature, [StringComparison]::Ordinal)
@@ -46,16 +46,45 @@ function Replace-InMethod([string]$Text, [string]$Signature, [scriptblock]$Trans
     return $Text.Substring(0,$start) + $changed + $Text.Substring($end)
 }
 
-function Replace-Once([string]$Text,[string]$Old,[string]$New,[string]$Label) {
-    $first=$Text.IndexOf($Old,[StringComparison]::Ordinal)
-    if($first -lt 0){ throw "P06 anchor missing: $Label" }
-    if($Text.IndexOf($Old,$first+$Old.Length,[StringComparison]::Ordinal) -ge 0){ throw "P06 anchor not unique: $Label" }
-    return $Text.Substring(0,$first)+$New+$Text.Substring($first+$Old.Length)
+# DB.SaveVars timing: pure DataSet in-memory update, no file write.
+$dbSig='        public static void SaveVars(string tableName, ref ArrayList list)'
+$dbIdx=$database.IndexOf($dbSig,[StringComparison]::Ordinal)
+if($dbIdx -lt 0){ throw 'P06 DB.SaveVars insertion point missing' }
+$dbFields=@'
+        // SQ4KOU P06 shutdown evidence; diagnostic only.
+        public static long Sq4kouLastSaveVarsStateMs = -1;
+        public static long Sq4kouLastSaveVarsOptionsMs = -1;
+
+'@
+$database=$database.Substring(0,$dbIdx)+$dbFields+$database.Substring($dbIdx)
+
+$database=Replace-InMethod $database $dbSig {
+    param($m)
+    $sig="public static void SaveVars(string tableName, ref ArrayList list)`n        {"
+    if(!$m.Contains($sig)){ throw 'P06 DB.SaveVars body anchor missing' }
+    $m=$m.Replace($sig,$sig + @'
+
+            System.Diagnostics.Stopwatch sq4kouSaveVarsTimer = System.Diagnostics.Stopwatch.StartNew();
+'@)
+
+    $endMarker='            } //foreach'
+    if(!$m.Contains($endMarker)){ throw 'P06 DB.SaveVars foreach end anchor missing' }
+    $insert=@'
+            } //foreach
+
+            long sq4kouSaveVarsMs = sq4kouSaveVarsTimer.ElapsedMilliseconds;
+            if (tableName == "State") Sq4kouLastSaveVarsStateMs = sq4kouSaveVarsMs;
+            else if (tableName == "Options") Sq4kouLastSaveVarsOptionsMs = sq4kouSaveVarsMs;
+'@
+    $m=$m.Replace($endMarker,$insert)
+    return $m
 }
 
-# SaveState detailed evidence fields.
-$stateSig = '        public void SaveState()'
-$fieldBlock = @'
+# SaveState detailed timings.
+$stateSig='        public void SaveState()'
+$stateIdx=$console.IndexOf($stateSig,[StringComparison]::Ordinal)
+if($stateIdx -lt 0){ throw 'P06 SaveState insertion point missing' }
+$stateFields=@'
         // SQ4KOU P06 shutdown evidence; diagnostics only, no behavior change.
         private long sq4kouSaveStateTotalMs = -1;
         private long sq4kouSaveStateSWRMs = -1;
@@ -65,14 +94,12 @@ $fieldBlock = @'
         private long sq4kouSaveStateDbVarsMs = -1;
 
 '@
-$idx=$console.IndexOf($stateSig,[StringComparison]::Ordinal)
-if($idx -lt 0){ throw 'P06 SaveState insertion point missing' }
-$console=$console.Substring(0,$idx)+$fieldBlock+$console.Substring($idx)
+$console=$console.Substring(0,$stateIdx)+$stateFields+$console.Substring($stateIdx)
 
-$console = Replace-InMethod $console $stateSig {
+$console=Replace-InMethod $console $stateSig {
     param($m)
-    $sig = "public void SaveState()`n        {"
-    if(!$m.Contains($sig)){ throw 'P06 SaveState signature body anchor missing' }
+    $sig="public void SaveState()`n        {"
+    if(!$m.Contains($sig)){ throw 'P06 SaveState body anchor missing' }
     $m=$m.Replace($sig,$sig + @'
 
             Stopwatch sq4kouSaveStateTimer = Stopwatch.StartNew();
@@ -115,7 +142,6 @@ $console = Replace-InMethod $console $stateSig {
     $old='            DB.PurgeNotches();                      // remove old notches from DB'
     $new=@'
             sq4kouSaveStateBuildMs = sq4kouSaveStatePartTimer.ElapsedMilliseconds;
-
             sq4kouSaveStatePartTimer.Restart();
             DB.PurgeNotches();                      // remove old notches from DB
             sq4kouSaveStatePurgeMs = sq4kouSaveStatePartTimer.ElapsedMilliseconds;
@@ -135,56 +161,8 @@ $console = Replace-InMethod $console $stateSig {
     return $m
 }
 
-# Setup SaveOptions detailed evidence.
-$setupFieldOld='        private static bool saving = false;'
-$setupFieldNew=@'
-        private static bool saving = false;
-        public long Sq4kouLastSaveOptionsTotalMs = -1;
-        public long Sq4kouLastSaveOptionsBuildMs = -1;
-        public long Sq4kouLastSaveOptionsDbVarsMs = -1;
-'@
-$setup=Replace-Once $setup $setupFieldOld $setupFieldNew 'SaveOptions evidence fields'
-
-$setup = Replace-InMethod $setup '        public void SaveOptions()' {
-    param($m)
-    $sig="public void SaveOptions()`n        {"
-    if(!$m.Contains($sig)){ throw 'P06 SaveOptions body anchor missing' }
-    $m=$m.Replace($sig,$sig + @'
-
-            Stopwatch sq4kouSaveOptionsTimer = Stopwatch.StartNew();
-            Stopwatch sq4kouSaveOptionsPartTimer = new Stopwatch();
-'@)
-
-    $old='            ArrayList a = new ArrayList();'
-    $new=@'
-            sq4kouSaveOptionsPartTimer.Restart();
-            ArrayList a = new ArrayList();
-'@
-    if(!$m.Contains($old)){ throw 'P06 SaveOptions build anchor missing' }
-    $m=$m.Replace($old,$new)
-
-    $old='            DB.SaveVars("Options", ref a);      // save the values to the DB'
-    $new=@'
-            Sq4kouLastSaveOptionsBuildMs = sq4kouSaveOptionsPartTimer.ElapsedMilliseconds;
-            sq4kouSaveOptionsPartTimer.Restart();
-            DB.SaveVars("Options", ref a);      // save the values to the DB
-            Sq4kouLastSaveOptionsDbVarsMs = sq4kouSaveOptionsPartTimer.ElapsedMilliseconds;
-'@
-    if(!$m.Contains($old)){ throw 'P06 Options SaveVars anchor missing' }
-    $m=$m.Replace($old,$new)
-
-    $old='            saving = false;'
-    $new=@'
-            saving = false;
-            Sq4kouLastSaveOptionsTotalMs = sq4kouSaveOptionsTimer.ElapsedMilliseconds;
-'@
-    if(!$m.Contains($old)){ throw 'P06 SaveOptions total anchor missing' }
-    $m=$m.Replace($old,$new)
-    return $m
-}
-
 # Console_Closing phase-by-phase timing.
-$console = Replace-InMethod $console '        public void Console_Closing(object sender, FormClosingEventArgs e)' {
+$console=Replace-InMethod $console '        public void Console_Closing(object sender, FormClosingEventArgs e)' {
     param($m)
 
     $old='            writer.WriteLine("This is a PowerSDR powering downlog: 1-8");'
@@ -196,28 +174,28 @@ $console = Replace-InMethod $console '        public void Console_Closing(object
     if(!$m.Contains($old)){ throw 'P06 shutdown writer anchor missing' }
     $m=$m.Replace($old,$new)
 
-    $steps=@(
-      @('            writer.WriteLine("1) Disable Audio, CAT, CXAuto, Rotor, VFODIAL, N1MM, QuicRec, Powermate, CWX Polling, timers, VOARUN, MUF");',
-        '            writer.WriteLine("1) Disable Audio, CAT, CXAuto, Rotor, VFODIAL, N1MM, QuicRec, Powermate, CWX Polling, timers, VOARUN, MUF");'+"`n"+'            sq4kouStageTimer.Restart();'),
-      @('            writer.WriteLine("1) Done");',
-        '            writer.WriteLine("1) Done");'+"`n"+'            writer.WriteLine("SQ4KOU_STEP1_DISABLE_SERVICES_MS=" + sq4kouStageTimer.ElapsedMilliseconds.ToString());'),
-      @('            writer.WriteLine("2) Hide all forms ");',
-        '            writer.WriteLine("2) Hide all forms ");'+"`n"+'            sq4kouStageTimer.Restart();'),
-      @('            writer.WriteLine("2) Done");',
-        '            writer.WriteLine("2) Done");'+"`n"+'            writer.WriteLine("SQ4KOU_STEP2_HIDE_FORMS_MS=" + sq4kouStageTimer.ElapsedMilliseconds.ToString());'),
-      @('            writer.WriteLine("3) Save MemoryList and DXMemList");',
-        '            writer.WriteLine("3) Save MemoryList and DXMemList");'+"`n"+'            sq4kouStageTimer.Restart();'),
-      @('            writer.WriteLine("4) Save SWL_logger, ke9ns8.dat, and Database STATE variables, and Power.csv file");',
-        '            writer.WriteLine("4) Save SWL_logger, ke9ns8.dat, and Database STATE variables, and Power.csv file");'+"`n"+'            sq4kouStageTimer.Restart();'),
-      @('            writer.WriteLine("5) turn off PABias and MIDI");',
-        '            writer.WriteLine("5) turn off PABias and MIDI");'+"`n"+'            sq4kouStageTimer.Restart();'),
-      @('            writer.WriteLine("6) Save SetupForm OPTIONS variables for Database");',
-        '            writer.WriteLine("6) Save SetupForm OPTIONS variables for Database");'+"`n"+'            sq4kouStageTimer.Restart();'),
-      @('            writer.WriteLine("7) CLOSE all forms");',
-        '            writer.WriteLine("7) CLOSE all forms");'+"`n"+'            sq4kouStageTimer.Restart();')
+    $starts=@(
+      @('            writer.WriteLine("1) Disable Audio, CAT, CXAuto, Rotor, VFODIAL, N1MM, QuicRec, Powermate, CWX Polling, timers, VOARUN, MUF");','            writer.WriteLine("1) Disable Audio, CAT, CXAuto, Rotor, VFODIAL, N1MM, QuicRec, Powermate, CWX Polling, timers, VOARUN, MUF");'+"`n"+'            sq4kouStageTimer.Restart();'),
+      @('            writer.WriteLine("2) Hide all forms ");','            writer.WriteLine("2) Hide all forms ");'+"`n"+'            sq4kouStageTimer.Restart();'),
+      @('            writer.WriteLine("3) Save MemoryList and DXMemList");','            writer.WriteLine("3) Save MemoryList and DXMemList");'+"`n"+'            sq4kouStageTimer.Restart();'),
+      @('            writer.WriteLine("4) Save SWL_logger, ke9ns8.dat, and Database STATE variables, and Power.csv file");','            writer.WriteLine("4) Save SWL_logger, ke9ns8.dat, and Database STATE variables, and Power.csv file");'+"`n"+'            sq4kouStageTimer.Restart();'),
+      @('            writer.WriteLine("5) turn off PABias and MIDI");','            writer.WriteLine("5) turn off PABias and MIDI");'+"`n"+'            sq4kouStageTimer.Restart();'),
+      @('            writer.WriteLine("6) Save SetupForm OPTIONS variables for Database");','            writer.WriteLine("6) Save SetupForm OPTIONS variables for Database");'+"`n"+'            sq4kouStageTimer.Restart();'),
+      @('            writer.WriteLine("7) CLOSE all forms");','            writer.WriteLine("7) CLOSE all forms");'+"`n"+'            sq4kouStageTimer.Restart();')
     )
-    foreach($pair in $steps){
-      if(!$m.Contains($pair[0])){ throw ('P06 step start anchor missing: '+$pair[0]) }
+    foreach($pair in $starts){
+      if(!$m.Contains($pair[0])){ throw ('P06 stage anchor missing: '+$pair[0]) }
+      $m=$m.Replace($pair[0],$pair[1])
+    }
+
+    $endMap=@(
+      @('            writer.WriteLine("1) Done");','            writer.WriteLine("1) Done");'+"`n"+'            writer.WriteLine("SQ4KOU_STEP1_DISABLE_SERVICES_MS=" + sq4kouStageTimer.ElapsedMilliseconds.ToString());'),
+      @('            writer.WriteLine("2) Done");','            writer.WriteLine("2) Done");'+"`n"+'            writer.WriteLine("SQ4KOU_STEP2_HIDE_FORMS_MS=" + sq4kouStageTimer.ElapsedMilliseconds.ToString());'),
+      @('            writer.WriteLine("5) DONE");','            writer.WriteLine("5) DONE");'+"`n"+'            writer.WriteLine("SQ4KOU_STEP5_PABIAS_MIDI_MS=" + sq4kouStageTimer.ElapsedMilliseconds.ToString());'),
+      @('            writer.WriteLine("7) DONE");','            writer.WriteLine("7) DONE");'+"`n"+'            writer.WriteLine("SQ4KOU_STEP7_CLOSE_FORMS_MS=" + sq4kouStageTimer.ElapsedMilliseconds.ToString());')
+    )
+    foreach($pair in $endMap){
+      if(!$m.Contains($pair[0])){ throw ('P06 stage end anchor missing: '+$pair[0]) }
       $m=$m.Replace($pair[0],$pair[1])
     }
 
@@ -244,53 +222,31 @@ $console = Replace-InMethod $console '        public void Console_Closing(object
     if(!$m.Contains($old)){ throw 'P06 step3 end anchor missing' }
     $m=$m.Replace($old,$new)
 
-    $old='            SaveState();                // put current settings back into database     DB.SaveVars("State", ref a);`t`t    // save the values to the DB'
-    if(!$m.Contains($old))
-    {
-        $old='            SaveState();'
-    }
-    $new=$old + "`n" + '            writer.WriteLine("SQ4KOU_STEP4_SAVESTATE_TOTAL_MS=" + sq4kouStageTimer.ElapsedMilliseconds.ToString());' + "`n" +
+    $old='            SaveState();'
+    $new=$old + "`n" +
+        '            writer.WriteLine("SQ4KOU_STEP4_SAVESTATE_TOTAL_MS=" + sq4kouStageTimer.ElapsedMilliseconds.ToString());' + "`n" +
         '            writer.WriteLine("SQ4KOU_SAVESTATE_SWR_LOGGER_MS=" + sq4kouSaveStateSWRMs.ToString());' + "`n" +
         '            writer.WriteLine("SQ4KOU_SAVESTATE_KE9NS8_MS=" + sq4kouSaveStateKe9ns8Ms.ToString());' + "`n" +
         '            writer.WriteLine("SQ4KOU_SAVESTATE_BUILD_STATE_MS=" + sq4kouSaveStateBuildMs.ToString());' + "`n" +
         '            writer.WriteLine("SQ4KOU_SAVESTATE_PURGE_NOTCHES_MS=" + sq4kouSaveStatePurgeMs.ToString());' + "`n" +
         '            writer.WriteLine("SQ4KOU_SAVESTATE_DB_SAVEVARS_MS=" + sq4kouSaveStateDbVarsMs.ToString());' + "`n" +
+        '            writer.WriteLine("SQ4KOU_DB_STATIC_STATE_SAVEVARS_MS=" + DB.Sq4kouLastSaveVarsStateMs.ToString());' + "`n" +
         '            writer.WriteLine("SQ4KOU_SAVESTATE_INTERNAL_TOTAL_MS=" + sq4kouSaveStateTotalMs.ToString());'
     if(!$m.Contains($old)){ throw 'P06 SaveState call anchor missing' }
     $m=$m.Replace($old,$new)
 
-    $old='            writer.WriteLine("4) Done");'
-    if(!$m.Contains($old)){ throw 'P06 step4 end anchor missing' }
-
-    $old='            writer.WriteLine("5) DONE");'
-    $new='            writer.WriteLine("5) DONE");'+"`n"+'            writer.WriteLine("SQ4KOU_STEP5_PABIAS_MIDI_MS=" + sq4kouStageTimer.ElapsedMilliseconds.ToString());'
-    if(!$m.Contains($old)){ throw 'P06 step5 end anchor missing' }
-    $m=$m.Replace($old,$new)
-
     $old='            if (setupForm != null) setupForm.SaveOptions();'
-    $new=$old + "`n" + '            writer.WriteLine("SQ4KOU_STEP6_SAVEOPTIONS_TOTAL_MS=" + sq4kouStageTimer.ElapsedMilliseconds.ToString());' + "`n" +
-        '            if (setupForm != null)' + "`n" +
-        '            {' + "`n" +
-        '                writer.WriteLine("SQ4KOU_SAVEOPTIONS_INTERNAL_TOTAL_MS=" + setupForm.Sq4kouLastSaveOptionsTotalMs.ToString());' + "`n" +
-        '                writer.WriteLine("SQ4KOU_SAVEOPTIONS_BUILD_CONTROLS_MS=" + setupForm.Sq4kouLastSaveOptionsBuildMs.ToString());' + "`n" +
-        '                writer.WriteLine("SQ4KOU_SAVEOPTIONS_DB_SAVEVARS_MS=" + setupForm.Sq4kouLastSaveOptionsDbVarsMs.ToString());' + "`n" +
-        '            }'
+    $new=$old + "`n" +
+        '            writer.WriteLine("SQ4KOU_STEP6_SAVEOPTIONS_TOTAL_MS=" + sq4kouStageTimer.ElapsedMilliseconds.ToString());' + "`n" +
+        '            writer.WriteLine("SQ4KOU_SAVEOPTIONS_DB_SAVEVARS_MS=" + DB.Sq4kouLastSaveVarsOptionsMs.ToString());'
     if(!$m.Contains($old)){ throw 'P06 SaveOptions call anchor missing' }
-    $m=$m.Replace($old,$new)
-
-    $old='            writer.WriteLine("6) DONE");'
-    if(!$m.Contains($old)){ throw 'P06 step6 end anchor missing' }
-
-    $old='            writer.WriteLine("7) DONE");'
-    $new='            writer.WriteLine("7) DONE");'+"`n"+'            writer.WriteLine("SQ4KOU_STEP7_CLOSE_FORMS_MS=" + sq4kouStageTimer.ElapsedMilliseconds.ToString());'
-    if(!$m.Contains($old)){ throw 'P06 step7 end anchor missing' }
     $m=$m.Replace($old,$new)
 
     return $m
 }
 
-# Exact physical database write time inside ExitConsole (DB.Exit -> patched atomic Update).
-$console = Replace-InMethod $console '        public void ExitConsole()' {
+# Exact physical DB write timing inside ExitConsole.
+$console=Replace-InMethod $console '        public void ExitConsole()' {
     param($m)
     $old='            DB.Exit();                  // close and save database'
     $new=@'
@@ -304,16 +260,16 @@ $console = Replace-InMethod $console '        public void ExitConsole()' {
 }
 
 $checks=@(
- @{Name='step phase timings';Ok=$console.Contains('SQ4KOU_STEP4_SAVESTATE_TOTAL_MS=') -and $console.Contains('SQ4KOU_STEP7_CLOSE_FORMS_MS=')},
+ @{Name='phase timings';Ok=$console.Contains('SQ4KOU_STEP4_SAVESTATE_TOTAL_MS=') -and $console.Contains('SQ4KOU_STEP7_CLOSE_FORMS_MS=')},
  @{Name='SWR timing';Ok=$console.Contains('SQ4KOU_SAVESTATE_SWR_LOGGER_MS=')},
- @{Name='state DB timing';Ok=$console.Contains('SQ4KOU_SAVESTATE_DB_SAVEVARS_MS=')},
+ @{Name='state DB timing';Ok=$console.Contains('SQ4KOU_DB_STATIC_STATE_SAVEVARS_MS=')},
  @{Name='options DB timing';Ok=$console.Contains('SQ4KOU_SAVEOPTIONS_DB_SAVEVARS_MS=')},
  @{Name='physical DB timing';Ok=$console.Contains('SQ4KOU_DB_EXIT_PHYSICAL_WRITE_MS=')},
- @{Name='setup evidence fields';Ok=$setup.Contains('Sq4kouLastSaveOptionsDbVarsMs')}
+ @{Name='DB SaveVars fields';Ok=$database.Contains('Sq4kouLastSaveVarsOptionsMs')}
 )
 $failed=@($checks|Where-Object{-not $_.Ok})
 if($failed.Count -gt 0){throw ('P06 post-check failed: '+(($failed|ForEach-Object{$_.Name})-join ', '))}
 
 [IO.File]::WriteAllText($consoleCs,$console.Replace("`n",$consoleEol),$utf8)
-[IO.File]::WriteAllText($setupCs,$setup.Replace("`n",$setupEol),$utf8)
-Stage 'PASS: evidence-only timing for shutdown phases, SaveState/SWR, SaveOptions and physical DB write'
+[IO.File]::WriteAllText($databaseCs,$database.Replace("`n",$databaseEol),$utf8)
+Stage 'PASS: evidence-only timing for shutdown phases, SaveState/SWR, in-memory SaveVars and physical DB write'
