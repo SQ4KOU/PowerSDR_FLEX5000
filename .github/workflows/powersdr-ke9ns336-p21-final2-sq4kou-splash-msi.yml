@@ -1,4 +1,4 @@
-name: Build PowerSDR FLEX5000 KE9NS 2.8.0.336 P21 FINAL2 SQ4KOU SPLASH MSI
+name: Build PowerSDR FLEX5000 KE9NS 2.8.0.336 P21 SQ4KOU SPLASH MSI
 
 on:
   push:
@@ -41,26 +41,26 @@ jobs:
           $path = Split-Path $candle.Source -Parent
           "WIXBIN=$path" | Out-File -FilePath $env:GITHUB_ENV -Append
 
-      - name: Build P21 FINAL2 MSI
+      - name: Build P21 MSI
         shell: pwsh
         run: |
-          ./tools/powersdr/Build-PowerSDR-MSI-P21-FINAL2.ps1 -WixBin "$env:WIXBIN"
+          ./tools/powersdr/Build-PowerSDR-MSI.ps1 -WixBin "$env:WIXBIN"
 
-      - name: Verify P21 FINAL2 MSI
+      - name: Verify P21 MSI
         shell: pwsh
         run: |
-          $msi = Get-ChildItem ./artifacts/powersdr -Filter '*P21-FINAL2-SQ4KOU-SPLASH*.msi' -File | Select-Object -First 1
-          if (!$msi) { throw 'P21 FINAL2 SQ4KOU splash MSI artifact missing' }
+          $msi = Get-ChildItem ./artifacts/powersdr -Filter '*P21-SQ4KOU-SPLASH*.msi' -File | Select-Object -First 1
+          if (!$msi) { throw 'P21 SQ4KOU splash MSI artifact missing' }
           $sha = (Get-FileHash -Algorithm SHA256 $msi.FullName).Hash.ToLowerInvariant()
           "MSI=$($msi.Name)" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
           "SHA256=$sha" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
           "BASE=KE9NS 2.8.0.336 / P20 startup baseline" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
-          "P21 FINAL2=approved SQ4KOU splash; image bytes SHA-gated; dynamic startup status/progress preserved; AutoStart/audio remains after stable reveal" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+          "P21=approved SQ4KOU 600x384 splash; image SHA-gated; dynamic status/progress preserved; AutoStart/audio remains after stable reveal" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
 
-      - name: Upload P21 FINAL2 MSI artifact
+      - name: Upload P21 MSI artifact
         uses: actions/upload-artifact@v4
         with:
-          name: PowerSDR-FLEX5000-KE9NS-2.8.0.336-P21-FINAL2-SQ4KOU-SPLASH
+          name: PowerSDR-FLEX5000-KE9NS-2.8.0.336-P21-SQ4KOU-SPLASH
           path: |
             artifacts/powersdr/*.msi
             artifacts/powersdr/*.sha256
