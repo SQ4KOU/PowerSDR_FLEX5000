@@ -73,32 +73,25 @@ $console = Replace-ExactOnce $console '        private int display_delay = 1000 
 $console = Replace-InMethod $console '        private void RunDisplay()' {
     param($m)
 
-    $oldWhile = @'
-            //			display_running = true;
-            while ((chkPower.Checked) && (Display.CurrentDisplayMode != DisplayMode.OFF))
-'@
-    $newWhile = @'
+    $sig = "private void RunDisplay()`n        {"
+    if(!$m.Contains($sig)) { throw 'P08 RunDisplay signature anchor missing' }
+
+    $clockBlock = @'
+
             // SQ4KOU P08: deadline-based scheduler. The native loop slept a full
             // display_delay after doing its work, so work time was added to every
             // frame and the real FPS sagged below the configured value.
             Stopwatch sq4kouDisplayClock = Stopwatch.StartNew();
             long sq4kouNextFrameMs = 0;
-
-            //			display_running = true;
-            while ((chkPower.Checked) && (Display.CurrentDisplayMode != DisplayMode.OFF))
 '@
-    if(!$m.Contains($oldWhile)) { throw 'P08 RunDisplay clock anchor missing' }
-    $m = $m.Replace($oldWhile,$newWhile)
+    $m = $m.Replace($sig, $sig + $clockBlock)
 
-    $oldSleep = @'
-                if (chkPower.Checked)
-                {
+    $sleepPattern = 'if\s*\(chkPower\.Checked\)\s*\{\s*Thread\.Sleep\(display_delay\);\s*\}'
+    $sleepMatches = [regex]::Matches($m, $sleepPattern)
+    if($sleepMatches.Count -ne 1) { throw ("P08 RunDisplay sleep anchor count: " + $sleepMatches.Count) }
 
-                    Thread.Sleep(display_delay);
-                }
-'@
     $newSleep = @'
-                if (chkPower.Checked)
+if (chkPower.Checked)
                 {
                     int sq4kouFramePeriodMs = Math.Max(1, display_delay);
                     sq4kouNextFrameMs += sq4kouFramePeriodMs;
@@ -121,8 +114,7 @@ $console = Replace-InMethod $console '        private void RunDisplay()' {
                     }
                 }
 '@
-    if(!$m.Contains($oldSleep)) { throw 'P08 RunDisplay sleep anchor missing' }
-    $m = $m.Replace($oldSleep,$newSleep)
+    $m = [regex]::Replace($m, $sleepPattern, $newSleep, 1)
 
     return $m
 }
