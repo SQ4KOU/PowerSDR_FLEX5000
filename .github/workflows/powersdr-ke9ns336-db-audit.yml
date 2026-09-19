@@ -39,8 +39,8 @@ jobs:
         run: |
           Push-Location _audit_source
           $changed = @(git diff --name-only | Sort-Object)
-          $expected = @('Console/audio.cs','Console/console.cs','Console/database.cs','Console/setup.cs')
-          if ($changed.Count -ne 4 -or (Compare-Object $expected $changed)) {
+          $expected = @('Console/audio.cs','Console/console.cs','Console/database.cs')
+          if ($changed.Count -ne 3 -or (Compare-Object $expected $changed)) {
             throw ('P02 patch escaped boundary. Changed files: ' + ($changed -join ', '))
           }
           git diff --check
