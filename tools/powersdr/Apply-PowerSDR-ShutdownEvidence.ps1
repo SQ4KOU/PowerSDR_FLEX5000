@@ -217,22 +217,27 @@ $console = Replace-InMethod $console '        public void Console_Closing(object
       $m=$m.Replace($pair[0],$pair[1])
     }
 
-    $old=@'
-            MemoryList.Save();
-            DXMemList.Save1(); // ke9ns add
-            writer.WriteLine("3) Done");
-'@
+    $old='            MemoryList.Save();'
     $new=@'
             sq4kouSubTimer.Restart();
             MemoryList.Save();
             writer.WriteLine("SQ4KOU_MEMORYLIST_SAVE_MS=" + sq4kouSubTimer.ElapsedMilliseconds.ToString());
+'@
+    if(!$m.Contains($old)){ throw 'P06 MemoryList anchor missing' }
+    $m=$m.Replace($old,$new)
+
+    $old='            DXMemList.Save1(); // ke9ns add'
+    $new=@'
             sq4kouSubTimer.Restart();
             DXMemList.Save1(); // ke9ns add
             writer.WriteLine("SQ4KOU_DXMEMLIST_SAVE_MS=" + sq4kouSubTimer.ElapsedMilliseconds.ToString());
-            writer.WriteLine("3) Done");
-            writer.WriteLine("SQ4KOU_STEP3_MEMORY_TOTAL_MS=" + sq4kouStageTimer.ElapsedMilliseconds.ToString());
 '@
-    if(!$m.Contains($old)){ throw 'P06 memory timing anchor missing' }
+    if(!$m.Contains($old)){ throw 'P06 DXMemList anchor missing' }
+    $m=$m.Replace($old,$new)
+
+    $old='            writer.WriteLine("3) Done");'
+    $new=$old + "`n" + '            writer.WriteLine("SQ4KOU_STEP3_MEMORY_TOTAL_MS=" + sq4kouStageTimer.ElapsedMilliseconds.ToString());'
+    if(!$m.Contains($old)){ throw 'P06 step3 end anchor missing' }
     $m=$m.Replace($old,$new)
 
     $old=@'
