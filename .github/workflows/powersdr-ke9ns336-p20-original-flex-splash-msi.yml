@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - feature/ke9ns-2.8.0.336-p20-original-flex-splash
+  pull_request:
+    branches:
+      - feature/ke9ns-2.8.0.336-p19-screen-before-audio
   workflow_dispatch:
 
 jobs:
