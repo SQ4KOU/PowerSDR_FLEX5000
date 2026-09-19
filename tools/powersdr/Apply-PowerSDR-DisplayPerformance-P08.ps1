@@ -62,10 +62,10 @@ function Replace-InMethod([string]$Text, [string]$Signature, [scriptblock]$Trans
 # Console scheduler
 $console = [IO.File]::ReadAllText($consoleCs).Replace("`r`n", "`n")
 
-$oldPriority = '                    draw_display_thread.Priority = ThreadPriority.BelowNormal;'
-$priorityCount = ([regex]::Matches($console, [regex]::Escape($oldPriority))).Count
-if($priorityCount -ne 2) { throw "P08 unexpected display-thread priority anchor count: $priorityCount" }
-$console = $console.Replace($oldPriority, '                    draw_display_thread.Priority = ThreadPriority.Normal;')
+$priorityPattern = 'draw_display_thread\.Priority\s*=\s*ThreadPriority\.BelowNormal;'
+$priorityCount = ([regex]::Matches($console, $priorityPattern)).Count
+if($priorityCount -lt 1) { throw "P08 display-thread priority anchor missing" }
+$console = [regex]::Replace($console, $priorityPattern, 'draw_display_thread.Priority = ThreadPriority.Normal;')
 
 $console = Replace-ExactOnce $console '        private int display_fps = 15;' '        private int display_fps = 30;' 'display fps default'
 $console = Replace-ExactOnce $console '        private int display_delay = 1000 / 15;' '        private int display_delay = 1000 / 30;' 'display delay default'
