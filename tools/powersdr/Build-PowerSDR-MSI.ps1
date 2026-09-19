@@ -66,9 +66,10 @@ try{
     $cs=$rx.Replace($cs,$pmRef,1)
     [IO.File]::WriteAllText($csproj,$cs,(New-Object Text.UTF8Encoding($false)))
 
-    # DB-only hardening on the clean KE9NS 2.8.0.336 source. No display/UI,
-    # PAL/FWC/FireWire/ASIO or DSP source is modified by this patcher.
+    # Reliability P02 on clean KE9NS 2.8.0.336: DB I/O hardening + main-window
+    # state persistence only. PAL/FWC/FireWire/ASIO/DSP/display remain native.
     & (Join-Path $PSScriptRoot 'Apply-PowerSDR-DatabaseReliability.ps1') -SourceRoot $WorkRoot
+    & (Join-Path $PSScriptRoot 'Apply-PowerSDR-WindowState.ps1') -SourceRoot $WorkRoot
 
     $buildLog=Join-Path $LogRoot 'MSBUILD_POWERSDR.log'
     $binlog=Join-Path $LogRoot 'MSBUILD_POWERSDR.binlog'
@@ -89,7 +90,7 @@ try{
     }
 
     # The executable identity is intentionally kept at the user's selected
-    # immutable base: KE9NS 2.8.0.334.  MSI ProductVersion is independent and
+    # immutable base: KE9NS 2.8.0.336.  MSI ProductVersion is independent and
     # monotonic so Windows Installer can replace earlier test packages without
     # falsifying the actual PowerSDR file version.
     $fv=[Diagnostics.FileVersionInfo]::GetVersionInfo($exe).FileVersion
@@ -134,7 +135,7 @@ try{
     try{
         & $candle '-arch' 'x86' "-dSourceDir=$outDir" '-ext' 'WixUIExtension' 'Product.wxs' 'Harvest.wxs'
         if($LASTEXITCODE -ne 0){throw "WiX candle failed rc=$LASTEXITCODE"}
-        $name='PowerSDR-SQ4KOU-FLEX5000-KE9NS-v2.8.0.336-DB-RELIABILITY-P01.x86.msi'
+        $name='PowerSDR-SQ4KOU-FLEX5000-KE9NS-v2.8.0.336-DB-RELIABILITY-P02.x86.msi'
         $final=Join-Path $ArtifactRoot $name
         & $light '-ext' 'WixUIExtension' '-sice:ICE61' '-out' $final 'Product.wixobj' 'Harvest.wixobj'
         if($LASTEXITCODE -ne 0){throw "WiX light failed rc=$LASTEXITCODE"}
@@ -149,8 +150,8 @@ try{
       'ARCH=x86','BASE=KE9NS_2.8.0.336','FLEX5000_BACKEND=POWERSDR_NATIVE_PAL_FWC_FIREWIRE_ASIO',
       'ATU=POWERSDR_NATIVE','MIXER=POWERSDR_NATIVE','DSP=POWERSDR_NATIVE_DTTSP',
       'CONSOLE_LAYOUT=KE9NS_NATIVE','SKIN=KE9NS_NATIVE','DISPLAY_PATCH=NONE',
-      'DATABASE_PATCH=SQ4KOU_ATOMIC_IO_VALIDATED_BACKUP_RECOVERY_P01','DATABASE_SCHEMA=KE9NS_NATIVE',
-      'DTTSP_RUNTIME=KE9NS_2.8.0.329_RELEASE_BINARY','DTTSP_SOURCE_336_NOT_BUILT=TRUE',
+      'DATABASE_PATCH=SQ4KOU_ATOMIC_IO_FAST_XML_VERIFY_BACKUP_RECOVERY_P02','DATABASE_SCHEMA=KE9NS_NATIVE',
+      'WINDOW_STATE_PATCH=SQ4KOU_MAXIMIZED_RESTOREBOUNDS_P02','DTTSP_RUNTIME=KE9NS_2.8.0.329_RELEASE_BINARY','DTTSP_SOURCE_336_NOT_BUILT=TRUE',
       'THETIS_BACKEND=ABSENT','THETIS_NETWORKIO=ABSENT','THETIS_CHANNELMASTER=ABSENT','THETIS_WDSP=ABSENT',
       "MSI=$name","MSI_SHA256=$sha"
     )|Set-Content (Join-Path $ArtifactRoot 'POWERSDR_BUILD_MANIFEST.txt') -Encoding UTF8
