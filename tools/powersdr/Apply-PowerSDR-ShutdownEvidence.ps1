@@ -13,9 +13,7 @@ $consoleCs = Join-Path $SourceRoot 'Console\console.cs'
 if(!(Test-Path -LiteralPath $consoleCs)) { throw "Missing $consoleCs" }
 
 $utf8 = New-Object System.Text.UTF8Encoding($false)
-$consoleRaw = [IO.File]::ReadAllText($consoleCs)
-$consoleEol = if($consoleRaw.Contains("`r`n")) { "`r`n" } else { "`n" }
-$console = $consoleRaw.Replace("`r`n", "`n")
+$console = [IO.File]::ReadAllText($consoleCs).Replace("`r`n", "`n")
 
 function Replace-InMethod([string]$Text, [string]$Signature, [scriptblock]$Transform) {
     $start = $Text.IndexOf($Signature, [StringComparison]::Ordinal)
@@ -220,5 +218,5 @@ $checks=@(
 $failed=@($checks|Where-Object{-not $_.Ok})
 if($failed.Count -gt 0){throw ('P06 post-check failed: '+(($failed|ForEach-Object{$_.Name})-join ', '))}
 
-[IO.File]::WriteAllText($consoleCs,$console.Replace("`n",$consoleEol),$utf8)
+[IO.File]::WriteAllText($consoleCs, $console.Replace("`n", "`r`n"), $utf8)
 Stage 'PASS: evidence-only timing for shutdown phases, SaveState/SWR, State SaveVars, SaveOptions total and physical DB write'
