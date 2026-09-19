@@ -149,6 +149,8 @@ $text = Replace-InMethod $text '        protected override void Dispose(bool dis
             // Preserve the legacy delay for other models only.
             if (current_model != Model.FLEX5000) Thread.Sleep(300);
 '@
+    $old = $old.Replace("`r`n", "`n")
+    $new = $new.Replace("`r`n", "`n")
     if(($m.Split($old).Count-1) -ne 1) { throw 'Dispose USB delay anchor mismatch' }
     $m = $m.Replace($old,$new)
 
