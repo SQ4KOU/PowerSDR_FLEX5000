@@ -29,12 +29,12 @@ function Replace-ExactOnce([string]$Text,[string]$Old,[string]$New,[string]$Labe
 
 $payload=''
 foreach($p in $assetParts){ $payload += ([IO.File]::ReadAllText($p) -replace '\s','') }
-if($payload.Length -ne 17620){ throw "P21 FINAL2 base64 length mismatch: $($payload.Length)" }
+if($payload.Length -ne 17624){ throw "P21 FINAL2 base64 length mismatch: $($payload.Length)" }
 if(!$payload.StartsWith('/9j/')){ throw 'P21 FINAL2 artwork is not JPEG base64' }
 
 $bytes=[Convert]::FromBase64String($payload)
 $sha=[BitConverter]::ToString(([Security.Cryptography.SHA256]::Create()).ComputeHash($bytes)).Replace('-','').ToLowerInvariant()
-$expectedSha='15cf71be0bf24e2b533ea0ca73807490296c156f3ee3e571ca18bf458b2a2a77'
+$expectedSha='e825c4d36cc80bb20b64217d3a0a94a07980a2d41f24241fb129b0d74eb28326'
 if($sha -ne $expectedSha){ throw "P21 FINAL2 artwork SHA256 mismatch: $sha" }
 
 Add-Type -AssemblyName System.Drawing
