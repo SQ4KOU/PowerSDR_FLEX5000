@@ -122,6 +122,26 @@ namespace PowerSDR
     // Native PowerSDR wave/recording integration will be adapted after the original renderer compiles.
     public sealed class clsAudioRecordPlayback
     {
+        public sealed class RecordingJsonModel
+        {
+            public string utc_time { get; set; }
+            public string frequency { get; set; }
+            public string mode { get; set; }
+            public string band { get; set; }
+            public string ddcfrequency { get; set; }
+            public string wav_file { get; set; }
+            public long wav_file_size_bytes { get; set; }
+            public string wav_file_last_write_utc { get; set; }
+            public double play_duration_seconds { get; set; }
+            public int sample_rate { get; set; }
+            public short bit_depth { get; set; }
+            public short channels { get; set; }
+            public short format_tag { get; set; }
+            public string tag_description { get; set; }
+            public string mp3_file { get; set; }
+            public long mp3_file_size_bytes { get; set; }
+        }
+
         public sealed class RecordingDetails
         {
             public DateTime UtcTime { get; set; }
