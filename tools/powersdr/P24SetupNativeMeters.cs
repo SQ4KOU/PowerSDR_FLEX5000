@@ -10830,6 +10830,24 @@ namespace PowerSDR
             return best;
         }
 
+
+        private void P24SelectNativeMetersTab()
+        {
+            try
+            {
+                TabPage appearance = P24FindTabPage(this, "Appearance");
+                if (appearance != null)
+                {
+                    TabControl top = appearance.Parent as TabControl;
+                    if (top != null) top.SelectedTab = appearance;
+                }
+                TabControl inner = P24FindAppearanceInnerTabs();
+                if (inner != null && p24_tpAppearanceMeter2 != null)
+                    inner.SelectedTab = p24_tpAppearanceMeter2;
+            }
+            catch { }
+        }
+
         private void P24ConfigureSetupGeometry()
         {
             try
