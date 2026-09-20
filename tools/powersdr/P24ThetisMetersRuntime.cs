@@ -56,13 +56,13 @@ namespace PowerSDR
                 console.FormClosing += delegate
                 {
                     try { MeterManager.Shutdown(); }
-                    catch (Exception ex) { Log("Shutdown ERROR: " + ex); }
+                    catch (Exception ex) { Log("Shutdown ERROR: " + SafeException(ex)); }
                 };
             }
             catch (Exception ex)
             {
-                Log("Init ERROR: " + ex);
-                Debug.WriteLine("P24 meter runtime init: " + ex);
+                Log("Init ERROR: " + SafeException(ex));
+                Debug.WriteLine("P24 meter runtime init: " + SafeException(ex));
             }
         }
 
@@ -121,8 +121,8 @@ namespace PowerSDR
             }
             catch (Exception ex)
             {
-                Log("Restore Options ERROR: " + ex);
-                Debug.WriteLine("P24 meter runtime DB restore: " + ex);
+                Log("Restore Options ERROR: " + SafeException(ex));
+                Debug.WriteLine("P24 meter runtime DB restore: " + SafeException(ex));
             }
             finally
             {
@@ -158,8 +158,8 @@ namespace PowerSDR
             }
             catch (Exception ex)
             {
-                Log("Store Options ERROR: " + ex);
-                Debug.WriteLine("P24 meter runtime DB store: " + ex);
+                Log("Store Options ERROR: " + SafeException(ex));
+                Debug.WriteLine("P24 meter runtime DB store: " + SafeException(ex));
             }
         }
 
@@ -176,8 +176,8 @@ namespace PowerSDR
             }
             catch (Exception ex)
             {
-                Log("FinishSetup ERROR: " + ex);
-                Debug.WriteLine("P24 meter runtime finish: " + ex);
+                Log("FinishSetup ERROR: " + SafeException(ex));
+                Debug.WriteLine("P24 meter runtime finish: " + SafeException(ex));
             }
         }
 
@@ -232,7 +232,7 @@ namespace PowerSDR
             }
             catch (Exception ex)
             {
-                Log("Legacy migration ERROR: " + ex);
+                Log("Legacy migration ERROR: " + SafeException(ex));
             }
 
             return false;
@@ -298,6 +298,38 @@ namespace PowerSDR
                    key.StartsWith("meterData_", StringComparison.OrdinalIgnoreCase) ||
                    key.StartsWith("meterIGData_", StringComparison.OrdinalIgnoreCase) ||
                    key.StartsWith("meterIGSettings_", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static string SafeException(Exception ex)
+        {
+            if (ex == null) return "<null>";
+            try
+            {
+                string typeName = ex.GetType().FullName ?? ex.GetType().Name;
+                string message;
+                try { message = ex.Message; }
+                catch { message = "<message unavailable>"; }
+
+                string inner = String.Empty;
+                try
+                {
+                    if (ex.InnerException != null)
+                    {
+                        string innerType = ex.InnerException.GetType().FullName ?? ex.InnerException.GetType().Name;
+                        string innerMessage;
+                        try { innerMessage = ex.InnerException.Message; }
+                        catch { innerMessage = "<message unavailable>"; }
+                        inner = " | inner=" + innerType + ": " + innerMessage;
+                    }
+                }
+                catch { }
+
+                return typeName + ": " + message + inner;
+            }
+            catch
+            {
+                return "<exception details unavailable>";
+            }
         }
 
         private static void Log(string message)
