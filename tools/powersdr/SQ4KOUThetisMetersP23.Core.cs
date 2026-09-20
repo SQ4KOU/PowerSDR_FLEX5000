@@ -673,7 +673,7 @@ namespace PowerSDR
         private static bool _restoring;
 
         internal static event EventHandler ContainersChanged;
-        internal static event EventHandler<string> SelectContainerRequested;
+        internal static event Action<string> SelectContainerRequested;
 
         internal static PowerSDR.Console Console { get { return _console; } }
         internal static Setup SetupForm { get { return _setup; } }
@@ -851,8 +851,8 @@ namespace PowerSDR
 
         internal static void RequestSelect(string id)
         {
-            EventHandler<string> h = SelectContainerRequested;
-            if (h != null) h(null, id);
+            Action<string> h = SelectContainerRequested;
+            if (h != null) h(id);
         }
 
         private static P23ContainerConfig NewDefaultConfig()
