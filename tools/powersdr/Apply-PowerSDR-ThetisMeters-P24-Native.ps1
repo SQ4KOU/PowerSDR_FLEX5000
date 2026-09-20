@@ -81,8 +81,8 @@ foreach($name in $srcFiles){
     $text=$text.Replace('P24Statics.Common.ColourFromString','P24ThetisMeterCompat.ColourFromString')
     $text=$text.Replace('P24Statics.Common.FiveDigitHash','P24ThetisMeterCompat.FiveDigitHash')
     $text=$text.Replace('P24Statics.Common.ForceFormOnScreen','P24ThetisMeterCompat.ForceFormOnScreen')
-    $text=$text.Replace('_console.GetXPAStatus()','P24ThetisMeterCompat.GetXPAStatus(_console)')
-    $text=$text.Replace('_console.specRX.GetSpecRX(_id)','P24ThetisMeterCompat.GetSpectrumSpec(_console, _id)')
+    $text=$text.Replace('_console.GetXPAStatus()','P24ThetisMeterCompat.GetXPAStatus((object)_console)')
+    $text=$text.Replace('_console.specRX.GetSpecRX(_id)','P24ThetisMeterCompat.GetSpectrumSpec((object)_console, _id)')
     $text=$text.Replace('P24Statics.SpecHPSDRDLL.','P24SpecHPSDRDLL.')
     $text=$text.Replace('cmaster.','P24CMaster.')
     $text=$text.Replace('.Selectable = true;','.TabStop = true;')
@@ -99,8 +99,8 @@ foreach($name in $srcFiles){
     $text=[regex]::Replace($text,'(?m)^\s*_console\.[A-Za-z0-9_]*(?:Handlers|Handers)\s*[+-]=.*?;\s*$','')
     $text=[regex]::Replace($text,'(?m)^\s*_console\.ARP\.[A-Za-z0-9_]+\s*[+-]=.*?;\s*$','')
     $text=[regex]::Replace($text,'(?m)^\s*P24Statics\.ThetisBotDiscord\.[A-Za-z0-9_]*Handlers\s*[+-]=.*?;\s*$','')
-    $text=$text.Replace('_console.ARP.StopPlayback(out _);','P24ThetisMeterCompat.StopPlayback(_console);')
-    $text=$text.Replace('_console.ARP.StopRecord(out _);','P24ThetisMeterCompat.StopRecord(_console);')
+    $text=$text.Replace('_console.ARP.StopPlayback(out _);','P24ThetisMeterCompat.StopPlayback((object)_console);')
+    $text=$text.Replace('_console.ARP.StopRecord(out _);','P24ThetisMeterCompat.StopRecord((object)_console);')
 
     # Thetis main-window presentation deltas do not exist in KE9NS.
     $text=$text.Replace('_console.HDelta','0')
