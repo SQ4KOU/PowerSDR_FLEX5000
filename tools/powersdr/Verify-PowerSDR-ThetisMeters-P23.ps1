@@ -28,7 +28,8 @@ foreach($required in @(
  'P23MultiMeterIO','VFO_DISPLAY','TEXT_OVERLAY','ROTATOR','WEB_IMAGE','BAND_BUTTONS',
  'MODE_BUTTONS','FILTER_BUTTONS','HISTORY','CUSTOM_METER_BAR','VOICE_RECORD_PLAY_BUTTONS',
  'HideWhenRxNotUsed','ContainerMinimises','AutoHeight','PinOnTop','NoControls',
- 'SaveContainer','LoadContainer','StartUdp','StartSerial'
+ 'SaveContainer','LoadContainer','StartUdp','StartSerial',
+ 'FormBorderStyle.Sizable','AutoScrollMinSize','PerformResponsiveLayout','MaximumSize = Size.Empty'
 )){
     if(!$all.Contains($required)){throw "P23 feature gate missing: $required"}
 }
@@ -40,3 +41,4 @@ Write-Host 'P23_UI=THETIS_METERS_GADGETS_CONTAINER_MODEL'
 Write-Host 'P23_DATA=POWERSDR_DTTSP_FWC_NATIVE'
 Write-Host 'P23_MMIO=UDP_SERIAL_VARIABLES'
 Write-Host 'P23_BACKEND_REPLACEMENT=NONE'
+Write-Host 'P23_SETUP_LAYOUT=SIZABLE_RESPONSIVE_AUTOSCROLL'
