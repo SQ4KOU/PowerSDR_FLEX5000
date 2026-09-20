@@ -109,6 +109,8 @@ namespace PowerSDR
         public string Description { get; set; }
         public string DeviceName { get; set; }
         public long DedicatedVideoMemory { get; set; }
+        public int VendorId { get; set; }
+        public int DeviceId { get; set; }
         public override string ToString() { return String.IsNullOrEmpty(Description) ? (DeviceName ?? "") : Description; }
     }
 
@@ -116,7 +118,130 @@ namespace PowerSDR
     // meter item classes compile; FLEX readings are supplied through the FLEX adapter.
     public class SpecHPSDR
     {
-        public SpecHPSDR(int d) { }
+        private int _lowFreq;
+        private int _highFreq;
+
+        public SpecHPSDR(int d)
+        {
+            FrameRate = 15;
+            PixelOut = 1;
+            Pixels = 2048;
+            FFTSize = 4096;
+            BlockSize = 2048;
+            SampleRate = 48000;
+            WindowType = 4;
+            PanSlider = 0.5;
+            Update = false;
+        }
+
+        public bool Update { get; set; }
+        public int FrameRate { get; set; }
+        public int PixelOut { get; set; }
+        public bool IgnoreFrequencyOffset { get; set; }
+        public int Pixels { get; set; }
+        public bool AverageOn { get; set; }
+        public int DetTypePan { get; set; }
+        public double AvTau { get; set; }
+        public int FFTSize { get; set; }
+        public int BlockSize { get; set; }
+        public int SampleRate { get; set; }
+        public int WindowType { get; set; }
+        public int AverageMode { get; set; }
+        public bool NormOneHzPan { get; set; }
+        public double PanSlider { get; set; }
+        public int LowFreq { get { return _lowFreq; } }
+        public int HighFreq { get { return _highFreq; } }
+
+        public void initAnalyzer()
+        {
+            Tuple<int,int> ext = FrequencyExtents(0.0, PanSlider);
+            _lowFreq = ext.Item1;
+            _highFreq = ext.Item2;
+        }
+
+        public void resetPixelBuffers() { }
+
+        public void ZoomToBandwidth(double targetBandwidthHz)
+        {
+            if (SampleRate <= 0) return;
+            double width = Math.Max(1.0, Math.Min((double)SampleRate, targetBandwidthHz));
+            double ratio = width / SampleRate;
+            _lowFreq = -(int)Math.Round(width / 2.0);
+            _highFreq = (int)Math.Round(width / 2.0);
+        }
+
+        public (int, int) GetFrequencyExtents(double zoomSlider, double panSlider)
+        {
+            Tuple<int,int> ext = FrequencyExtents(zoomSlider, panSlider);
+            return (ext.Item1, ext.Item2);
+        }
+
+        private Tuple<int,int> FrequencyExtents(double zoomSlider, double panSlider)
+        {
+            int sr = SampleRate > 0 ? SampleRate : 48000;
+            double zoom = Math.Max(0.0, Math.Min(1.0, zoomSlider));
+            double width = sr * (1.0 - 0.99 * zoom);
+            double centreShift = (Math.Max(0.0, Math.Min(1.0, panSlider)) - 0.5) * (sr - width);
+            int lo = (int)Math.Round(-width / 2.0 + centreShift);
+            int hi = (int)Math.Round(width / 2.0 + centreShift);
+            return Tuple.Create(lo, hi);
+        }
+    }
+
+    public class MNotch : IComparable
+    {
+        public double FCenter { get; set; }
+        public double FWidth { get; set; }
+        public bool Active { get; set; }
+
+        public MNotch(double freq, double width, bool active)
+        {
+            FCenter = freq;
+            FWidth = width;
+            Active = active;
+        }
+
+        public int CompareTo(object obj)
+        {
+            if (obj == null) return 1;
+            MNotch other = obj as MNotch;
+            return other == null ? 1 : FCenter.CompareTo(other.FCenter);
+        }
+    }
+
+    public sealed class RecordingDetails
+    {
+        public DateTime UtcTime { get; set; }
+        public string Frequency { get; set; }
+        public string Mode { get; set; }
+        public string Band { get; set; }
+        public string WavFile { get; set; }
+        public long? WavFileSizeBytes { get; set; }
+        public DateTime? WavFileLastWriteUtc { get; set; }
+        public double? PlayDurationSeconds { get; set; }
+        public int SampleRate { get; set; }
+        public short BitDepth { get; set; }
+        public short Channels { get; set; }
+        public short FormatTag { get; set; }
+        public string Mp3File { get; set; }
+        public long? Mp3FileSizeBytes { get; set; }
+    }
+
+    internal static class P24CMaster
+    {
+        private static int _next = 16;
+        internal static int AllocAnalyzer(int type, int id, int size) { return System.Threading.Interlocked.Increment(ref _next); }
+        internal static void RunAnalyzer(int display, int run) { }
+        internal static void FreeAnalyzer(int display) { }
+        internal static int inid(int rx, int subrx) { return rx * 2 + subrx; }
+    }
+
+    internal static unsafe class P24SpecHPSDRDLL
+    {
+        internal static void GetPixels(int disp, int pixout, float* pix, ref int flag)
+        {
+            flag = 0;
+        }
     }
 
     // Native PowerSDR wave/recording integration will be adapted after the original renderer compiles.
