@@ -94,8 +94,6 @@ foreach($name in $srcFiles){
     # PowerSDR has no Thetis touch switch. Mouse behaviour remains original.
     $text=$text.Replace('_console.TouchSupport','P24ThetisMeterCompat.TouchSupport(_console)')
     $text=$text.Replace('Display.AdaptorInfo','P24AdaptorInfo')
-    $text=$text.Replace('HardwareSpecific.Model','HPSDRModel.HPSDR')
-    $text=$text.Replace('_console.ARP','P24AudioRecordAdapter.Instance')
 
     # Event buses are Thetis.Console implementation details. P24 mirrors native
     # PowerSDR state through typed adapters/polling; do not bind dynamic events.
@@ -276,7 +274,22 @@ $setupText=[IO.File]::ReadAllText($setupCs)
 $runtimeHook='P24ThetisMetersRuntime.Init(console);'
 $uiHook='P24InitNativeMetersGadgets();'
 if(!$setupText.Contains($runtimeHook)){
-    $hookRx=[regex]'(?m)^(\\s*)parser\\s*=\\s*new\\s+CATParser\\s*\\(\\s*console\\s*\\)\\s*;[^\\r\\n]*$'
+    $hookRx=[regex]'(?m)^(\s*)parser\s*=\s*new\s+CATParser\s*\(\s*console\s*\)\s*;[^\r\n]*
+    $matches=$hookRx.Matches($setupText)
+    if($matches.Count -ne 1){throw "P24 Setup CATParser anchor count=$($matches.Count); expected 1"}
+    $indent=$matches[0].Groups[1].Value
+    $insert=$matches[0].Value+$nl+
+        $indent+$runtimeHook+' // P24 native Thetis MeterManager'+$nl+
+        $indent+'this.Shown += delegate { '+$uiHook+' }; // P24 exact Thetis Meters/Gadgets UI'
+    $setupText=$hookRx.Replace($setupText,[System.Text.RegularExpressions.MatchEvaluator]{param($m)$insert},1)
+    [IO.File]::WriteAllText($setupCs,$setupText,$utf8Bom)
+}
+if(([regex]::Matches($setupText,[regex]::Escape($runtimeHook))).Count -ne 1){throw 'P24 runtime hook count invalid'}
+if(([regex]::Matches($setupText,[regex]::Escape($uiHook))).Count -ne 1){throw 'P24 setup UI hook count invalid'}
+
+
+Stage "Original Thetis MeterManager + exact Setup Meters/Gadgets staged; resources=$($icons.Count); runtime/setup hooks active"
+
     $matches=$hookRx.Matches($setupText)
     if($matches.Count -ne 1){throw "P24 Setup CATParser anchor count=$($matches.Count); expected 1"}
     $indent=$matches[0].Groups[1].Value
