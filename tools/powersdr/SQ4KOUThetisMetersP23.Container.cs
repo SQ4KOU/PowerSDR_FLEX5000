@@ -332,6 +332,7 @@ namespace PowerSDR
             }
 
             if (Parent != null) Parent.Controls.Remove(this);
+            Dock = DockStyle.None;
             c.Controls.Add(this);
             Location = new Point(Math.Max(0, Config.DockedX), Math.Max(0, Config.DockedY));
             Size = new Size(Math.Max(MinimumSize.Width, Config.Width),
