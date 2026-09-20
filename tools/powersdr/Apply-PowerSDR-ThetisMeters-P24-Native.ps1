@@ -98,6 +98,39 @@ foreach($name in $srcFiles){
     $text=$text.Replace('case DisplayMode.SPECTRASCOPE:', 'case (DisplayMode)(-1003):')
     $text=$text.Replace('HiPerfTimer','P24HiPerfTimer')
 
+    # Runtime checkpoint instrumentation for the native Thetis MeterManager port.
+    # These traces are intentionally limited to construction/bootstrap boundaries
+    # so one test run identifies the exact pre-container failure point.
+    if($name -eq 'MeterManager.cs'){
+        $text=$text.Replace(
+            'public static void Init(Console c, Display.AdaptorInfo adaptor = null)'+[Environment]::NewLine+'        {'+[Environment]::NewLine+'            _console = c;',
+            'public static void Init(Console c, Display.AdaptorInfo adaptor = null)'+[Environment]::NewLine+'        {'+[Environment]::NewLine+'            P24ThetisMetersRuntime.Trace("INIT-01 enter");'+[Environment]::NewLine+'            _console = c;'+[Environment]::NewLine+'            P24ThetisMetersRuntime.Trace("INIT-02 console");')
+        $text=$text.Replace(
+            '            initAntennaArrays();'+[Environment]::NewLine+'            addDelegates();',
+            '            P24ThetisMetersRuntime.Trace("INIT-03 pre-antenna");'+[Environment]::NewLine+'            initAntennaArrays();'+[Environment]::NewLine+'            P24ThetisMetersRuntime.Trace("INIT-04 post-antenna");'+[Environment]::NewLine+'            addDelegates();'+[Environment]::NewLine+'            P24ThetisMetersRuntime.Trace("INIT-05 delegates");')
+        $text=$text.Replace(
+            '            _meterThread.Start();'+[Environment]::NewLine+'        }',
+            '            _meterThread.Start();'+[Environment]::NewLine+'            P24ThetisMetersRuntime.Trace("INIT-06 thread-started");'+[Environment]::NewLine+'        }')
+        $text=$text.Replace(
+            'public static void AddMeterContainer(ucMeter ucM, bool bFromRestore = false)'+[Environment]::NewLine+'        {'+[Environment]::NewLine+'            if (_console == null) return;',
+            'public static void AddMeterContainer(ucMeter ucM, bool bFromRestore = false)'+[Environment]::NewLine+'        {'+[Environment]::NewLine+'            P24ThetisMetersRuntime.Trace("BOOT-01 AddMeterContainer enter");'+[Environment]::NewLine+'            if (_console == null) { P24ThetisMetersRuntime.Trace("BOOT-FAIL console-null"); return; }')
+        $text=$text.Replace(
+            '                ucM.Console = _console;',
+            '                P24ThetisMetersRuntime.Trace("BOOT-02 pre-uc-console");'+[Environment]::NewLine+'                ucM.Console = _console;'+[Environment]::NewLine+'                P24ThetisMetersRuntime.Trace("BOOT-03 post-uc-console");')
+        $text=$text.Replace(
+            '                frmMeterDisplay f = new frmMeterDisplay(_console, ucM.RX);'+[Environment]::NewLine+'                f.ID = ucM.ID;',
+            '                P24ThetisMetersRuntime.Trace("FORM-01 pre-ctor");'+[Environment]::NewLine+'                frmMeterDisplay f = new frmMeterDisplay(_console, ucM.RX);'+[Environment]::NewLine+'                P24ThetisMetersRuntime.Trace("FORM-02 post-ctor");'+[Environment]::NewLine+'                f.ID = ucM.ID;'+[Environment]::NewLine+'                P24ThetisMetersRuntime.Trace("FORM-03 id-set");')
+        $text=$text.Replace(
+            '                addRenderer(ucM.ID, ucM.RX, ucM.DisplayContainer, meter, ucM.BackColor);',
+            '                P24ThetisMetersRuntime.Trace("RENDER-01 pre-addRenderer");'+[Environment]::NewLine+'                addRenderer(ucM.ID, ucM.RX, ucM.DisplayContainer, meter, ucM.BackColor);'+[Environment]::NewLine+'                P24ThetisMetersRuntime.Trace("RENDER-02 post-addRenderer");')
+        $text=$text.Replace(
+            '                    _lstMeterDisplayForms.Add(f.ID, f);'+[Environment]::NewLine+'                    _lstUCMeters.Add(ucM.ID, ucM);'+[Environment]::NewLine+'                    _meters.Add(meter.ID, meter);',
+            '                    P24ThetisMetersRuntime.Trace("LIST-01 pre-add");'+[Environment]::NewLine+'                    _lstMeterDisplayForms.Add(f.ID, f);'+[Environment]::NewLine+'                    _lstUCMeters.Add(ucM.ID, ucM);'+[Environment]::NewLine+'                    _meters.Add(meter.ID, meter);'+[Environment]::NewLine+'                    P24ThetisMetersRuntime.Trace("LIST-02 added count=" + _lstUCMeters.Count.ToString());')
+        $text=$text.Replace(
+            '                initConsoleData(ucM.RX);',
+            '                P24ThetisMetersRuntime.Trace("DATA-01 pre-initConsoleData");'+[Environment]::NewLine+'                initConsoleData(ucM.RX);'+[Environment]::NewLine+'                P24ThetisMetersRuntime.Trace("DATA-02 post-initConsoleData");')
+    }
+
     # PowerSDR has no Thetis touch switch. Mouse behaviour remains original.
     $text=$text.Replace('_console.TouchSupport','P24ThetisMeterCompat.TouchSupport(_console)')
     $text=$text.Replace('Display.AdaptorInfo','P24AdaptorInfo')
