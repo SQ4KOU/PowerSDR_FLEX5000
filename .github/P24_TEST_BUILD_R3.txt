@@ -1,0 +1,1 @@
+P24 isolated Roslyn diagnostic + MSI build trigger
