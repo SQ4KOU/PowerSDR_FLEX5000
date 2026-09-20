@@ -34,7 +34,7 @@ if(!$payload.StartsWith('/9j/')){ throw 'P21 FINAL2 artwork is not JPEG base64' 
 
 $bytes=[Convert]::FromBase64String($payload)
 $sha=[BitConverter]::ToString(([Security.Cryptography.SHA256]::Create()).ComputeHash($bytes)).Replace('-','').ToLowerInvariant()
-$expectedSha='e825c4d36cc80bb20b64217d3a0a94a07980a2d41f24241fb129b0d74eb28326'
+$expectedSha='15cf71be0bf24e2b533ea0ca73807490296c156f3ee3e571ca18bf458b2a2a77'
 if($sha -ne $expectedSha){ throw "P21 FINAL2 artwork SHA256 mismatch: $sha" }
 
 Add-Type -AssemblyName System.Drawing
