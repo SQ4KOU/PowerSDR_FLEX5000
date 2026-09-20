@@ -187,8 +187,6 @@ namespace PowerSDR
         public event Action<bool> MoxChangeHandlers;
 
         public bool TouchSupport { get { return false; } }
-        public int HDelta { get { return 0; } }
-        public int VDelta { get { return 0; } }
 
         internal void P24RaiseWindowStateChanged(FormWindowState state)
         {
