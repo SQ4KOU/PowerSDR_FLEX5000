@@ -93,6 +93,9 @@ foreach($name in $srcFiles){
 
     # PowerSDR has no Thetis touch switch. Mouse behaviour remains original.
     $text=$text.Replace('_console.TouchSupport','P24ThetisMeterCompat.TouchSupport(_console)')
+    $text=$text.Replace('Display.AdaptorInfo','P24AdaptorInfo')
+    $text=$text.Replace('HardwareSpecific.Model','HPSDRModel.HPSDR')
+    $text=$text.Replace('_console.ARP','P24AudioRecordAdapter.Instance')
 
     # Event buses are Thetis.Console implementation details. P24 mirrors native
     # PowerSDR state through typed adapters/polling; do not bind dynamic events.
