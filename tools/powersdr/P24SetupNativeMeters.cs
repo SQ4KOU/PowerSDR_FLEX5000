@@ -779,7 +779,6 @@ namespace PowerSDR
         private void P24EnsureMetersGadgetsTab()
         {
             if (p24_tpAppearanceMeter2 == null)
-                if (p24_tpAppearanceMeter2 == null)
                 p24_tpAppearanceMeter2 = new System.Windows.Forms.TabPage();
 
             p24_tpAppearanceMeter2.Text = "Meters/Gadgets";
@@ -1399,7 +1398,8 @@ namespace PowerSDR
             p24_scrollableControl1 = new System.Windows.Forms.ScrollableControl();
             p24_scrollableControl2 = new System.Windows.Forms.ScrollableControl();
             p24_tbMeterItemHistoryAlpha = new System.Windows.Forms.TrackBarTS();
-            p24_tpAppearanceMeter2 = new System.Windows.Forms.TabPage();
+            if (p24_tpAppearanceMeter2 == null)
+                p24_tpAppearanceMeter2 = new System.Windows.Forms.TabPage();
             p24_txtContainerNotes = new System.Windows.Forms.TextBoxTS();
             p24_txtDataOutNode_4charID = new System.Windows.Forms.TextBoxTS();
             p24_txtLedIndicator_4char = new System.Windows.Forms.TextBoxTS();
@@ -10937,11 +10937,45 @@ namespace PowerSDR
                 TabControl rootTabs = P24FindBestTabControl(this);
                 if (rootTabs != null)
                 {
+                    // PowerSDR's Setup bottom command bar uses fixed coordinates.
+                    // When P24 enlarges the form, move those direct-child controls
+                    // to the new bottom edge first, then grow the tab area only to
+                    // the space above them. This matches the effective Thetis layout
+                    // and prevents Factory Defaults/OK/Apply from covering Meters/Gadgets.
+                    List<Control> bottom = new List<Control>();
+                    int barTop = int.MaxValue;
+                    foreach (Control c in Controls)
+                    {
+                        if (c == rootTabs || !c.Visible) continue;
+                        if (c.Top <= rootTabs.Top + 120) continue;
+                        barTop = Math.Min(barTop, c.Top);
+                    }
+
+                    if (barTop != int.MaxValue)
+                    {
+                        int currentBottom = 0;
+                        foreach (Control c in Controls)
+                        {
+                            if (c == rootTabs || !c.Visible || c.Top < barTop) continue;
+                            bottom.Add(c);
+                            currentBottom = Math.Max(currentBottom, c.Bottom);
+                        }
+
+                        int delta = Math.Max(0, ClientSize.Height - 8 - currentBottom);
+                        foreach (Control c in bottom)
+                        {
+                            c.Top += delta;
+                            c.Anchor = (c.Anchor | AnchorStyles.Bottom) & ~AnchorStyles.Top;
+                        }
+                        barTop += delta;
+                    }
+
                     rootTabs.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
                     int right = Math.Max(8, rootTabs.Left);
+                    int usableBottom = (barTop == int.MaxValue) ? ClientSize.Height - 78 : barTop - 8;
                     rootTabs.Size = new Size(
                         Math.Max(600, ClientSize.Width - rootTabs.Left - right),
-                        Math.Max(390, ClientSize.Height - rootTabs.Top - 78));
+                        Math.Max(390, usableBottom - rootTabs.Top));
                 }
 
                 TabControl appearanceTabs = P24FindAppearanceInnerTabs();
