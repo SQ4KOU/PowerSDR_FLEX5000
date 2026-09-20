@@ -1,0 +1,78 @@
+name: Build PowerSDR FLEX5000 KE9NS 2.8.0.336 P24 Native Thetis Meters Diagnostic MSI
+
+on:
+  push:
+    branches:
+      - feature/flex5000-thetis-meters-native-1to1
+  workflow_dispatch:
+
+jobs:
+  build-msi:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Ensure build tools
+        shell: pwsh
+        run: |
+          if (!(Get-Command innoextract.exe -ErrorAction SilentlyContinue) -and !(Get-Command innoextract -ErrorAction SilentlyContinue)) {
+            choco install innoextract -y --no-progress
+          }
+          if (!(Get-Command nuget.exe -ErrorAction SilentlyContinue) -and !(Get-Command nuget -ErrorAction SilentlyContinue)) {
+            choco install nuget.commandline -y --no-progress
+          }
+          if (!(Get-Command candle.exe -ErrorAction SilentlyContinue)) {
+            choco install wixtoolset -y --no-progress
+          }
+
+      - name: Locate WiX
+        shell: pwsh
+        run: |
+          $candle = Get-Command candle.exe -ErrorAction SilentlyContinue
+          if (!$candle) {
+            $candle = Get-ChildItem 'C:\Program Files (x86)' -Recurse -Filter candle.exe -ErrorAction SilentlyContinue | Select-Object -First 1
+          }
+          if (!$candle) { throw 'candle.exe not found' }
+          $path = Split-Path $candle.Source -Parent
+          "WIXBIN=$path" | Out-File -FilePath $env:GITHUB_ENV -Append
+
+      - name: Build P24 diagnostic
+        shell: pwsh
+        run: |
+          ./tools/powersdr/Build-PowerSDR-MSI-P24-NATIVE-THETIS-METERS.ps1 -WixBin "$env:WIXBIN"
+
+      - name: Verify P24 diagnostic
+        shell: pwsh
+        run: |
+          $msi = Get-ChildItem ./artifacts/powersdr -Filter '*P24-NATIVE-THETIS-METERS-DIAG*.msi' -File | Select-Object -First 1
+          if (!$msi) { throw 'P24 native Thetis diagnostic MSI artifact missing' }
+          $sha = (Get-FileHash -Algorithm SHA256 $msi.FullName).Hash.ToLowerInvariant()
+          $manifest = Join-Path $msi.Directory.FullName 'POWERSDR_BUILD_MANIFEST.txt'
+          if (!(Test-Path $manifest)) { throw 'P24 build manifest missing' }
+          $m = Get-Content $manifest -Raw
+          foreach($required in @(
+            'FLEX5000_BACKEND=POWERSDR_NATIVE_PAL_FWC_FIREWIRE_ASIO',
+            'METERS_GADGETS=SQ4KOU_P24_NATIVE_THETIS_CORE',
+            'THETIS_BACKEND=ABSENT',
+            'THETIS_NETWORKIO=ABSENT',
+            'THETIS_CHANNELMASTER=ABSENT',
+            'THETIS_WDSP=ABSENT'
+          )) {
+            if(!$m.Contains($required)) { throw "Manifest gate missing: $required" }
+          }
+          "MSI=$($msi.Name)" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+          "SHA256=$sha" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+          "BASE=SAFE fad6179 / KE9NS 2.8.0.336 / P21 presentation retained" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+          "P24=original Thetis MeterManager/ucMeter/frmMeterDisplay + SharpDX renderer compile gate" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+
+      - name: Upload P24 diagnostic artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: PowerSDR-FLEX5000-KE9NS-2.8.0.336-P24-NATIVE-THETIS-METERS-DIAG
+          path: |
+            artifacts/powersdr/*.msi
+            artifacts/powersdr/*.sha256
+            artifacts/powersdr/POWERSDR_BUILD_MANIFEST.txt
+            artifacts/powersdr/logs/**
+          if-no-files-found: error
