@@ -1,0 +1,52 @@
+name: Build PowerSDR FLEX5000 P24 Native Thetis Meters
+
+on:
+  push:
+    branches:
+      - feature/flex5000-thetis-meters-gadgets-1to1
+  workflow_dispatch:
+
+jobs:
+  build-native-p24:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Ensure build tools
+        shell: pwsh
+        run: |
+          if (!(Get-Command innoextract.exe -ErrorAction SilentlyContinue) -and !(Get-Command innoextract -ErrorAction SilentlyContinue)) {
+            choco install innoextract -y --no-progress
+          }
+          if (!(Get-Command nuget.exe -ErrorAction SilentlyContinue) -and !(Get-Command nuget -ErrorAction SilentlyContinue)) {
+            choco install nuget.commandline -y --no-progress
+          }
+          if (!(Get-Command candle.exe -ErrorAction SilentlyContinue)) {
+            choco install wixtoolset -y --no-progress
+          }
+
+      - name: Locate WiX
+        shell: pwsh
+        run: |
+          $candle = Get-Command candle.exe -ErrorAction SilentlyContinue
+          if (!$candle) {
+            $candle = Get-ChildItem 'C:\Program Files (x86)' -Recurse -Filter candle.exe -ErrorAction SilentlyContinue | Select-Object -First 1
+          }
+          if (!$candle) { throw 'candle.exe not found' }
+          $path = Split-Path $candle.Source -Parent
+          "WIXBIN=$path" | Out-File -FilePath $env:GITHUB_ENV -Append
+
+      - name: Build P24 native Thetis meters
+        shell: pwsh
+        run: |
+          ./tools/powersdr/Build-PowerSDR-MSI-P24-NATIVE-THETIS-METERS.ps1 -WixBin "$env:WIXBIN"
+
+      - name: Upload diagnostics or MSI
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: PowerSDR-P24-NATIVE-THETIS-METERS
+          path: |
+            artifacts/powersdr/**
+          if-no-files-found: warn
