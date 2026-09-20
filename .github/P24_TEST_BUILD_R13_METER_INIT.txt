@@ -1,0 +1,1 @@
+P24 MeterManager init compatibility fix
