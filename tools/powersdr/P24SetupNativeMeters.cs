@@ -15957,7 +15957,6 @@ private bool variableInUse(int variable)
 
             return igs.GetMMIOVariable(variable) == "--DEFAULT--" ? false : true;
         }
-    }
 
         private bool preventIfContainerContainsLockedRecordings()
         {
