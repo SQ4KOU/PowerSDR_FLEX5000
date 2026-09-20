@@ -94,11 +94,13 @@ foreach($name in $srcFiles){
     # PowerSDR has no Thetis touch switch. Mouse behaviour remains original.
     $text=$text.Replace('_console.TouchSupport','P24ThetisMeterCompat.TouchSupport(_console)')
 
-    # Event buses are Thetis.Console implementation details. P24 polls/mirrors native
-    # PowerSDR state through the facade; event subscriptions are added back only where
-    # a native equivalent is explicitly mapped.
-    $text=[regex]::Replace($text,'(?m)^\s*_console\.[A-Za-z0-9_]*(?:Handlers|Handers)\s*[+-]=.*?;\s*
+    # Event buses are Thetis.Console implementation details. P24 mirrors native
+    # PowerSDR state through typed adapters/polling; do not bind dynamic events.
+    $text=[regex]::Replace($text,'(?m)^\s*_console\.[A-Za-z0-9_]*(?:Handlers|Handers)\s*[+-]=.*?;\s*$','')
+    $text=[regex]::Replace($text,'(?m)^\s*_console\.ARP\.[A-Za-z0-9_]+\s*[+-]=.*?;\s*$','')
     $text=[regex]::Replace($text,'(?m)^\s*P24Statics\.ThetisBotDiscord\.[A-Za-z0-9_]*Handlers\s*[+-]=.*?;\s*$','')
+    $text=$text.Replace('_console.ARP.StopPlayback(out _);','P24ThetisMeterCompat.StopPlayback(_console);')
+    $text=$text.Replace('_console.ARP.StopRecord(out _);','P24ThetisMeterCompat.StopRecord(_console);')
 
     # Thetis main-window presentation deltas do not exist in KE9NS.
     $text=$text.Replace('_console.HDelta','0')
