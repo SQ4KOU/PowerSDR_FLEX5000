@@ -9,18 +9,6 @@ namespace PowerSDR
 {
     internal static class P24ThetisMeterCompat
     {
-        private static readonly object Sync = new object();
-        private static P24AudioRecordPlaybackAdapter _arp;
-
-        internal static P24AudioRecordPlaybackAdapter ARP(PowerSDR.Console console)
-        {
-            lock (Sync)
-            {
-                if (_arp == null) _arp = new P24AudioRecordPlaybackAdapter(console);
-                return _arp;
-            }
-        }
-
         internal static bool ReadBool(object target, string name, bool fallback)
         {
             object o = ReadMember(target, name);
