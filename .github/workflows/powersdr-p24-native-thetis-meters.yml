@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - feature/flex5000-thetis-meters-gadgets-1to1
+  pull_request:
+    branches:
+      - feature/flex5000-thetis-meters-gadgets-1to1
   workflow_dispatch:
 
 concurrency:
