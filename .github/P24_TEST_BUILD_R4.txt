@@ -1,0 +1,1 @@
+P24 fixed typed DeleteRecording output + MSI build trigger
