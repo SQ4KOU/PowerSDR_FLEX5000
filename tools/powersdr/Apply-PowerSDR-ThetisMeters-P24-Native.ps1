@@ -273,7 +273,8 @@ $setupText=[IO.File]::ReadAllText($setupCs)
 $runtimeHook='P24ThetisMetersRuntime.Init(console);'
 $uiHook='P24InitNativeMetersGadgets();'
 if(!$setupText.Contains($runtimeHook)){
-    $assignRx=[regex]'(?m)^(\\s*)console\\s*=\\s*c;\\s*(?://[^\\r\\n]*)?
+    $assignRx=[regex]'(?m)^(\\s*)console\\s*=\\s*c;\\s*(?://[^\\r\\n]*)?$'
+    $matches=$assignRx.Matches($setupText)
     if($matches.Count -ne 1){throw "P24 Setup console assignment anchor count=$($matches.Count); expected 1"}
     $indent=$matches[0].Groups[1].Value
     $insert=$matches[0].Value+$nl+
