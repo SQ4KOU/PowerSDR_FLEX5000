@@ -46,6 +46,7 @@ foreach($name in $copy){
 
 Copy-Item (Join-Path $PSScriptRoot 'P24ThetisMetersCompat.cs') (Join-Path $consoleDir 'P24ThetisMetersCompat.cs') -Force
 Copy-Item (Join-Path $PSScriptRoot 'P24ThetisMetersCommonCompat.cs') (Join-Path $consoleDir 'P24ThetisMetersCommonCompat.cs') -Force
+Copy-Item (Join-Path $PSScriptRoot 'P24ThetisMeterTypeCompat.cs') (Join-Path $consoleDir 'P24ThetisMeterTypeCompat.cs') -Force
 
 # Make Common extensible only in the isolated worktree.
 $common=[IO.File]::ReadAllText($commonPath)
@@ -59,6 +60,7 @@ $compileFiles=@()
 foreach($name in $copy){$compileFiles += ('P24_'+$name)}
 $compileFiles += 'P24ThetisMetersCompat.cs'
 $compileFiles += 'P24ThetisMetersCommonCompat.cs'
+$compileFiles += 'P24ThetisMeterTypeCompat.cs'
 
 $anchor='<Compile Include="Skin.cs" />'
 if(!$proj.Contains($anchor)){throw 'P24 csproj compile anchor missing'}
