@@ -43,7 +43,24 @@ namespace PowerSDR
                 _statePath = Path.Combine(root, "P24_Thetis_Meters_Gadgets.json");
 
                 MeterManager.Init(console, null);
+
+                // Thetis normally restores its MultiMeter model from the Options
+                // database during Setup.getOptions(). P24 uses an isolated state
+                // file instead, so on a first run there is no container model at
+                // all and the native Setup page appears empty. Bootstrap exactly
+                // one RX1 container only when there is no prior P24 state file.
+                bool hadState = File.Exists(_statePath);
                 Restore();
+
+                if (!hadState && MeterManager.TotalMeterContainers == 0)
+                {
+                    string id = MeterManager.AddMeterContainer(1, false);
+                    if (!String.IsNullOrWhiteSpace(id))
+                    {
+                        MeterManager.FinishSetupAndDisplay(id);
+                        Save();
+                    }
+                }
 
                 console.FormClosing += delegate
                 {
