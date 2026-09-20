@@ -14012,7 +14012,7 @@ private void btnRecording_load_wav_to_slot_Click(object sender, EventArgs e)
 
             string fullPath = System.IO.Path.Combine(P24ConsoleDynamic.WrapObject(console).ARP.AudioFolder, vrp.UniqueID, "Slot_" + (_selected_voice_slot + 1).ToString() + ".wav");
 
-            P24ConsoleDynamic.WrapObject(console).ARP.DeleteRecording(fullPath, out _);
+            string delete_error;\n            P24ConsoleDynamic.WrapObject(console).ARP.DeleteRecording(fullPath, out delete_error);
 
             if (File.Exists(fullPath))
             {
