@@ -271,10 +271,12 @@ if($project -notmatch '<Reference Include="Microsoft\.CSharp"'){
 # first open the Setup window.
 $setupCs=Join-Path $consoleDir 'setup.cs'
 $setupText=[IO.File]::ReadAllText($setupCs)
-$runtimeHook='P24ThetisMetersRuntime.Init(console);'
+$runtimeHook='P24ThetisMetersRuntime.Init(c);'
 $uiHook='P24InitNativeMetersGadgets();'
 if(!$setupText.Contains($runtimeHook)){
-    $hookRx=[regex]'(?m)^(\s*)console\s*=\s*c\s*;[^\r\n]*
+    $hookRx=[regex]'(?m)^(\\s*)InitializeComponent\\s*\\(\\s*\\)\\s*;[^\\r\\n]*$'
+    $matches=$hookRx.Matches($setupText)
+    if($matches.Count -ne 1){throw "P24 Setup InitializeComponent anchor count=$($matches.Count); expected 1"}
     $indent=$matches[0].Groups[1].Value
     $insert=$matches[0].Value+$nl+
         $indent+$runtimeHook+' // P24 native Thetis MeterManager'+$nl+
