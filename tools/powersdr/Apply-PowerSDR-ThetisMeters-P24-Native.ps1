@@ -61,12 +61,14 @@ foreach($name in $srcFiles){
     # Main-window delta members are Thetis-only presentation offsets.
     $text=$text.Replace('_console.HDelta','0')
     $text=$text.Replace('_console.VDelta','0')
+    $text=$text.Replace('Display.AdaptorInfo','P24DisplayAdaptorInfo')
 
     [IO.File]::WriteAllText($dst,$text,$utf8Bom)
 }
 
 Copy-Item (Join-Path $PSScriptRoot 'P24MeterResources.cs') (Join-Path $consoleDir 'P24MeterResources.cs') -Force
 Copy-Item (Join-Path $PSScriptRoot 'P24ThetisMeterCompat.cs') (Join-Path $consoleDir 'P24ThetisMeterCompat.cs') -Force
+Copy-Item (Join-Path $PSScriptRoot 'P24ThetisTypeCompat.cs') (Join-Path $consoleDir 'P24ThetisTypeCompat.cs') -Force
 
 # Exact Thetis container chrome icons from the audited commit.
 $resSrc=Join-Path $ThetisRoot 'Project Files\Source\Console\Resources'
@@ -96,7 +98,10 @@ $packages=@(
  @('Microsoft.CodeAnalysis.Common','5.3.0'),
  @('Microsoft.CodeAnalysis.CSharp','5.3.0'),
  @('Microsoft.CodeAnalysis.Scripting.Common','5.3.0'),
- @('Microsoft.CodeAnalysis.CSharp.Scripting','5.3.0')
+ @('Microsoft.CodeAnalysis.CSharp.Scripting','5.3.0'),
+ @('HtmlAgilityPack','1.12.4'),
+ @('SkiaSharp','3.119.2'),
+ @('Svg','3.4.7')
 )
 foreach($pkg in $packages){
     $id=$pkg[0];$ver=$pkg[1]
@@ -112,7 +117,7 @@ $project=[IO.File]::ReadAllText($projectCs)
 # Compile the original subsystem files.
 $compileAnchor=[regex]'(<Compile Include="Skin\.cs"\s*/>)'
 if($compileAnchor.Matches($project).Count -ne 1){throw 'P24 csproj Skin.cs anchor invalid'}
-$compileFiles=@('P24MeterResources.cs','P24ThetisMeterCompat.cs')
+$compileFiles=@('P24MeterResources.cs','P24ThetisMeterCompat.cs','P24ThetisTypeCompat.cs')
 foreach($name in $srcFiles){$compileFiles += ('P24_'+$name)}
 foreach($name in $compileFiles){
     if($project -notmatch ('Compile Include="'+[regex]::Escape($name)+'"')){
@@ -146,7 +151,10 @@ $refs=@(
  @('Microsoft.CodeAnalysis','Microsoft.CodeAnalysis.Common.5.3.0\lib\netstandard2.0\Microsoft.CodeAnalysis.dll'),
  @('Microsoft.CodeAnalysis.CSharp','Microsoft.CodeAnalysis.CSharp.5.3.0\lib\netstandard2.0\Microsoft.CodeAnalysis.CSharp.dll'),
  @('Microsoft.CodeAnalysis.Scripting','Microsoft.CodeAnalysis.Scripting.Common.5.3.0\lib\netstandard2.0\Microsoft.CodeAnalysis.Scripting.dll'),
- @('Microsoft.CodeAnalysis.CSharp.Scripting','Microsoft.CodeAnalysis.CSharp.Scripting.5.3.0\lib\netstandard2.0\Microsoft.CodeAnalysis.CSharp.Scripting.dll')
+ @('Microsoft.CodeAnalysis.CSharp.Scripting','Microsoft.CodeAnalysis.CSharp.Scripting.5.3.0\lib\netstandard2.0\Microsoft.CodeAnalysis.CSharp.Scripting.dll'),
+ @('HtmlAgilityPack','HtmlAgilityPack.1.12.4\lib\Net45\HtmlAgilityPack.dll'),
+ @('SkiaSharp','SkiaSharp.3.119.2\lib\net462\SkiaSharp.dll'),
+ @('Svg','Svg.3.4.7\lib\net472\Svg.dll')
 )
 foreach($ref in $refs){
     $name=$ref[0];$hint='..\packages\'+$ref[1]
