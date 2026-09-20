@@ -22,16 +22,118 @@ namespace PowerSDR
             if (console == null || setup == null) return;
             _console = console;
             _setup = setup;
+            ConfigureSetupWindow();
             P23MeterManager.Initialize(console, setup);
 
             setup.Shown += delegate
             {
                 try
                 {
-                    setup.BeginInvoke((MethodInvoker)delegate { InstallPage(); });
+                    setup.BeginInvoke((MethodInvoker)delegate
+                    {
+                        ConfigureSetupWindow();
+                        InstallPage();
+                    });
                 }
                 catch { }
             };
+        }
+
+        private static void ConfigureSetupWindow()
+        {
+            if (_setup == null || _setup.IsDisposed) return;
+
+            try
+            {
+                // Native KE9NS Setup is effectively fixed-size. The Thetis Meters/Gadgets
+                // page needs a wider working area, so make Setup genuinely resizable.
+                _setup.FormBorderStyle = FormBorderStyle.Sizable;
+                _setup.MaximizeBox = true;
+                _setup.AutoSize = false;
+                _setup.MaximumSize = Size.Empty;
+
+                Screen screen = Screen.FromControl(_setup);
+                Rectangle wa = screen == null ? Screen.PrimaryScreen.WorkingArea : screen.WorkingArea;
+
+                int minW = Math.Min(820, Math.Max(660, wa.Width - 40));
+                int minH = Math.Min(570, Math.Max(500, wa.Height - 40));
+                _setup.MinimumSize = new Size(minW, minH);
+
+                int targetW = Math.Min(900, Math.Max(minW, wa.Width - 80));
+                int targetH = Math.Min(640, Math.Max(minH, wa.Height - 80));
+
+                int newW = Math.Max(_setup.Width, targetW);
+                int newH = Math.Max(_setup.Height, targetH);
+                newW = Math.Min(newW, wa.Width);
+                newH = Math.Min(newH, wa.Height);
+
+                Rectangle b = new Rectangle(_setup.Left, _setup.Top, newW, newH);
+                if (b.Right > wa.Right) b.X = wa.Right - b.Width;
+                if (b.Bottom > wa.Bottom) b.Y = wa.Bottom - b.Height;
+                if (b.Left < wa.Left) b.X = wa.Left;
+                if (b.Top < wa.Top) b.Y = wa.Top;
+                _setup.Bounds = b;
+
+                TabControl rootTabs = FindLargestTabControl(_setup);
+                if (rootTabs != null)
+                    rootTabs.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
+
+                _setup.Resize -= SetupResize;
+                _setup.Resize += SetupResize;
+                SetupResize(_setup, EventArgs.Empty);
+            }
+            catch { }
+        }
+
+        private static void SetupResize(object sender, EventArgs e)
+        {
+            if (_setup == null || _setup.IsDisposed) return;
+            try
+            {
+                TabControl rootTabs = FindLargestTabControl(_setup);
+                if (rootTabs != null)
+                {
+                    rootTabs.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
+
+                    // Preserve the original top/left margins and bottom command-button area,
+                    // but allow the main Setup tab region to grow with the form.
+                    int rightMargin = Math.Max(8, rootTabs.Left);
+                    int bottomReserve = 74;
+                    int w = Math.Max(rootTabs.MinimumSize.Width, _setup.ClientSize.Width - rootTabs.Left - rightMargin);
+                    int h = Math.Max(rootTabs.MinimumSize.Height, _setup.ClientSize.Height - rootTabs.Top - bottomReserve);
+                    rootTabs.Size = new Size(w, h);
+                }
+
+                if (_panel != null && !_panel.IsDisposed)
+                    _panel.PerformResponsiveLayout();
+            }
+            catch { }
+        }
+
+        private static TabControl FindLargestTabControl(Control root)
+        {
+            TabControl best = null;
+            long bestArea = -1;
+            FindLargestTabControlRecursive(root, ref best, ref bestArea);
+            return best;
+        }
+
+        private static void FindLargestTabControlRecursive(Control root, ref TabControl best, ref long bestArea)
+        {
+            foreach (Control child in root.Controls)
+            {
+                TabControl tc = child as TabControl;
+                if (tc != null)
+                {
+                    long area = (long)Math.Max(0, tc.Width) * Math.Max(0, tc.Height);
+                    if (area > bestArea)
+                    {
+                        best = tc;
+                        bestArea = area;
+                    }
+                }
+                FindLargestTabControlRecursive(child, ref best, ref bestArea);
+            }
         }
 
         private static void InstallPage()
@@ -56,6 +158,8 @@ namespace PowerSDR
             }
 
             TabControl nested = FindBestTabControl(appearance);
+            if (nested != null)
+                nested.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
             if (nested == null)
             {
                 ShowStandaloneSetup();
@@ -71,6 +175,7 @@ namespace PowerSDR
             _panel.Dock = DockStyle.Fill;
             page.Controls.Add(_panel);
             nested.TabPages.Add(page);
+            _panel.PerformResponsiveLayout();
         }
 
         private static void ShowStandaloneSetup()
@@ -78,7 +183,9 @@ namespace PowerSDR
             Form f = new Form();
             f.Text = "PowerSDR - Meters/Gadgets";
             f.StartPosition = FormStartPosition.CenterParent;
-            f.ClientSize = new Size(724, 410);
+            f.FormBorderStyle = FormBorderStyle.Sizable;
+            f.MinimumSize = new Size(760, 500);
+            f.ClientSize = new Size(820, 520);
             P23MetersSetupPanel p = new P23MetersSetupPanel();
             p.Dock = DockStyle.Fill;
             f.Controls.Add(p);
@@ -161,14 +268,18 @@ namespace PowerSDR
         {
             AutoScaleMode = AutoScaleMode.Font;
             BackColor = SystemColors.Control;
-            MinimumSize = new Size(710, 395);
+            AutoScroll = true;
+            AutoScrollMinSize = new Size(730, 411);
+            MinimumSize = Size.Empty;
 
             grpMultiMeterHolder = new GroupBox();
             grpMultiMeterHolder.Name = "grpMultiMeterHolder";
             grpMultiMeterHolder.Location = new Point(8, 8);
             grpMultiMeterHolder.Size = new Size(710, 395);
+            grpMultiMeterHolder.MinimumSize = new Size(710, 395);
             grpMultiMeterHolder.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
             Controls.Add(grpMultiMeterHolder);
+            Resize += delegate { PerformResponsiveLayout(); };
 
             comboContainerSelect = new ComboBox();
             comboContainerSelect.Name = "comboContainerSelect";
@@ -404,6 +515,40 @@ namespace PowerSDR
             P23MeterManager.ContainersChanged += ManagerContainersChanged;
             P23MeterManager.SelectContainerRequested += ManagerSelectRequested;
             ReloadContainers(null);
+        }
+
+        internal void PerformResponsiveLayout()
+        {
+            if (grpMultiMeterHolder == null) return;
+            try
+            {
+                int viewportW = Math.Max(0, ClientSize.Width - 16);
+                int viewportH = Math.Max(0, ClientSize.Height - 16);
+                int groupW = Math.Max(710, viewportW);
+                int groupH = Math.Max(395, viewportH);
+
+                grpMultiMeterHolder.Location = new Point(8, 8);
+                grpMultiMeterHolder.Size = new Size(groupW, groupH);
+                AutoScrollMinSize = new Size(730, 411);
+
+                // Right-side item editor consumes all additional width/height.
+                Control editor = grpMultiMeterHolder.Controls["grpMeterItemSettings"];
+                if (editor != null)
+                {
+                    editor.Width = Math.Max(283, groupW - editor.Left - 8);
+                    editor.Height = Math.Max(318, groupH - editor.Top - 67);
+                }
+
+                // Bottom utility buttons stay aligned to the bottom of the group.
+                int bottomY = groupH - 58;
+                btnMMIO.Top = bottomY;
+                btnSkins.Top = bottomY;
+                Control save = grpMultiMeterHolder.Controls["btnP23SaveAll"];
+                if (save != null) save.Top = bottomY;
+
+                Invalidate();
+            }
+            catch { }
         }
 
         protected override void Dispose(bool disposing)
