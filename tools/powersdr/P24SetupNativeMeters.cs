@@ -762,7 +762,68 @@ namespace PowerSDR
         internal void P24InitNativeMetersGadgets()
         {
             if (p24_native_meters_ui_ready) return;
-            p24_native_meters_ui_ready = true;
+
+            try
+            {
+                P24EnsureMetersGadgetsTab();
+                P24InitNativeMetersGadgetsCore();
+                p24_native_meters_ui_ready = true;
+            }
+            catch (Exception ex)
+            {
+                p24_native_meters_ui_ready = false;
+                P24ReportMetersGadgetsInitError(ex);
+            }
+        }
+
+        private void P24EnsureMetersGadgetsTab()
+        {
+            if (p24_tpAppearanceMeter2 == null)
+                if (p24_tpAppearanceMeter2 == null)
+                p24_tpAppearanceMeter2 = new System.Windows.Forms.TabPage();
+
+            p24_tpAppearanceMeter2.Text = "Meters/Gadgets";
+            p24_tpAppearanceMeter2.BackColor = SystemColors.Control;
+            p24_tpAppearanceMeter2.UseVisualStyleBackColor = false;
+
+            TabControl appearanceTabs = P24FindAppearanceInnerTabs();
+            if (appearanceTabs == null)
+                throw new InvalidOperationException("Appearance inner TabControl not found.");
+
+            if (!appearanceTabs.TabPages.Contains(p24_tpAppearanceMeter2))
+                appearanceTabs.TabPages.Add(p24_tpAppearanceMeter2);
+        }
+
+        private void P24ReportMetersGadgetsInitError(Exception ex)
+        {
+            try
+            {
+                string root = Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                    "FlexRadio Systems", "PowerSDR");
+                Directory.CreateDirectory(root);
+                string log = Path.Combine(root, "P24_MetersGadgets_Init.log");
+                File.AppendAllText(
+                    log,
+                    DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff", CultureInfo.InvariantCulture) +
+                    " | " + ex.ToString() + Environment.NewLine + Environment.NewLine);
+            }
+            catch { }
+
+            try
+            {
+                MessageBox.Show(
+                    "Meters/Gadgets initialization failed.\r\n\r\n" + ex.Message +
+                    "\r\n\r\nDiagnostic log: %APPDATA%\\FlexRadio Systems\\PowerSDR\\P24_MetersGadgets_Init.log",
+                    "PowerSDR P24 Meters/Gadgets",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
+            }
+            catch { }
+        }
+
+        private void P24InitNativeMetersGadgetsCore()
+        {
             tmrLedValid.Interval = 250;
             tmrLedValid.Tick += tmrLedValid_Tick;
 
