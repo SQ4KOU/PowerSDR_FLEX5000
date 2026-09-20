@@ -149,4 +149,114 @@ namespace PowerSDR
         public string Mode { get; set; }
         public DateTime UtcTime { get; set; }
     }
+
+
+    // Compile/runtime adapter for Thetis voice-record meter items.
+    // The final P24 mapping will bridge these calls to PowerSDR's native wave subsystem.
+    public sealed class clsAudioRecordPlayback
+    {
+        public sealed class RecordingJsonModel
+        {
+            public string utc_time { get; set; } = "";
+            public string frequency { get; set; } = "";
+            public string mode { get; set; } = "";
+            public string band { get; set; } = "";
+            public string wav_file { get; set; } = "";
+            public long wav_file_size_bytes { get; set; }
+            public string wav_file_last_write_utc { get; set; } = "";
+            public double play_duration_seconds { get; set; }
+            public int sample_rate { get; set; }
+            public short bit_depth { get; set; }
+            public short channels { get; set; }
+            public short format_tag { get; set; }
+            public string tag_description { get; set; } = "";
+            public string mp3_file { get; set; } = "";
+            public long mp3_file_size_bytes { get; set; }
+        }
+
+        public event Action<bool,string,string> RecordingChanged;
+        public event Action<bool,string,string,bool> PlayingChanged;
+        public event Action<string,RecordingJsonModel> RecordingJsonWritten;
+
+        public string AudioFolder { get; set; } =
+            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyMusic), "PowerSDR");
+        public int InputPCDeviceID { get; set; } = -1;
+        public int OutputPCDeviceID { get; set; } = -1;
+        public bool IsPlaying { get; private set; }
+        public bool IsRecording { get; private set; }
+
+        public bool CanBePlayed(string filepath) { return !String.IsNullOrWhiteSpace(filepath) && File.Exists(filepath); }
+        public bool DeleteRecording(string full_path, out string error, bool delete_containing_folder_if_empty=false)
+        {
+            error=null;
+            try { if(!String.IsNullOrWhiteSpace(full_path) && File.Exists(full_path)) File.Delete(full_path); return true; }
+            catch(Exception ex){ error=ex.Message; return false; }
+        }
+        public bool GetJSONDetailsFromFile(string full_path_file, out RecordingJsonModel json_data)
+        {
+            json_data=null; return !String.IsNullOrWhiteSpace(full_path_file) && File.Exists(full_path_file);
+        }
+        public bool PlayFileViaWDSP(string play_id,string full_path,int wfw_id,out string error,double adjustGain_dB=0,bool ignore_temp_changes=false)
+        { error="WDSP playback is not mapped on FLEX-5000"; return false; }
+        public bool PlayFileViaPCAudio(string play_id,string full_path,int pcAudioDeviceOutputId,out string error)
+        { error="PC playback adapter pending"; return false; }
+        public string RecordToFileFromWDSP(string record_id,string full_path,int wfw_id,out string error,bool remove_if_file_exists=false,RecordingDetails details=null,bool ignore_temp_changes=false)
+        { error="WDSP recording is not mapped on FLEX-5000"; return null; }
+        public string RecordToFileFromPCAudio(string record_id,string full_path,int pcAudioDeviceInputId,out string error,bool remove_if_file_exists=false,RecordingDetails details=null)
+        { error="PC recording adapter pending"; return null; }
+        public bool StopPlayback(out string error) { error=null; IsPlaying=false; var h=PlayingChanged; if(h!=null) h(false,"","",false); return true; }
+        public bool StopRecord(out string error) { error=null; IsRecording=false; var h=RecordingChanged; if(h!=null) h(false,"",""); return true; }
+    }
+
+    // HPSDR spectrum object compatibility surface. It deliberately does not
+    // import ChannelMaster/WDSP. Mini-spectrum will be bound to PowerSDR display data later.
+    public sealed class SpecHPSDR
+    {
+        public SpecHPSDR(int id) { }
+        public bool Update { get; set; }
+        public int FrameRate { get; set; }
+        public int PixelOut { get; set; }
+        public bool IgnoreFrequencyOffset { get; set; }
+        public int Pixels { get; set; }
+        public bool AverageOn { get; set; }
+        public int DetTypePan { get; set; }
+        public double AvTau { get; set; }
+        public int FFTSize { get; set; }
+        public int BlockSize { get; set; }
+        public int SampleRate { get; set; }
+        public int WindowType { get; set; }
+        public int AverageMode { get; set; }
+        public bool NormOneHzPan { get; set; }
+        public int LowFreq { get; private set; }
+        public int HighFreq { get; private set; }
+        public double PanSlider { get; set; }
+        public void initAnalyzer() { }
+        public void resetPixelBuffers() { }
+        public void ZoomToBandwidth(double hz) { }
+        public (int,int) GetFrequencyExtents(double zoom,double pan) { return (LowFreq,HighFreq); }
+    }
+
+    public static unsafe class SpecHPSDRDLL
+    {
+        public static void GetPixels(int disp,int channel,float* ptr,ref int flag) { flag=0; }
+    }
+
+    public sealed class P24SpecRegistry
+    {
+        public SpecHPSDR GetSpecRX(int id) { return new SpecHPSDR(id); }
+    }
+
+    sealed unsafe partial class Console
+    {
+        private clsAudioRecordPlayback _p24Arp;
+        private P24SpecRegistry _p24SpecRx;
+        public clsAudioRecordPlayback ARP
+        {
+            get { if(_p24Arp==null) _p24Arp=new clsAudioRecordPlayback(); return _p24Arp; }
+        }
+        public P24SpecRegistry specRX
+        {
+            get { if(_p24SpecRx==null) _p24SpecRx=new P24SpecRegistry(); return _p24SpecRx; }
+        }
+    }
 }
