@@ -198,6 +198,7 @@ $packages=@(
  @('Microsoft.CodeAnalysis.Scripting.Common','5.3.0'),
  @('Microsoft.CodeAnalysis.CSharp.Scripting','5.3.0'),
  @('System.Collections.Immutable','9.0.0'),
+ @('System.Reflection.Metadata','9.0.0'),
  @('HtmlAgilityPack','1.12.4'),
  @('SkiaSharp','3.119.2'),
  @('Svg','3.4.7')
@@ -282,6 +283,7 @@ $refs=@(
  @('Microsoft.CodeAnalysis.Scripting','Microsoft.CodeAnalysis.Scripting.Common.5.3.0\lib\netstandard2.0\Microsoft.CodeAnalysis.Scripting.dll'),
  @('Microsoft.CodeAnalysis.CSharp.Scripting','Microsoft.CodeAnalysis.CSharp.Scripting.5.3.0\lib\netstandard2.0\Microsoft.CodeAnalysis.CSharp.Scripting.dll'),
  @('System.Collections.Immutable','System.Collections.Immutable.9.0.0\lib\net462\System.Collections.Immutable.dll'),
+ @('System.Reflection.Metadata','System.Reflection.Metadata.9.0.0\lib\net462\System.Reflection.Metadata.dll'),
  @('HtmlAgilityPack','HtmlAgilityPack.1.12.4\lib\Net45\HtmlAgilityPack.dll'),
  @('SkiaSharp','SkiaSharp.3.119.2\lib\net462\SkiaSharp.dll'),
  @('Svg','Svg.3.4.7\lib\net472\Svg.dll')
