@@ -131,6 +131,26 @@ foreach($helper in @(
     Copy-Item $src (Join-Path $consoleDir $helper) -Force
 }
 
+# Preserve the original WinForms .resx payloads for every imported Thetis
+# control/form. ComponentResourceManager(typeof(T)) resolves the neutral resource
+# by the runtime type name (PowerSDR.T), so the manifest names must match exactly.
+$thetisConsoleDir=Join-Path $ThetisRoot 'Project Files\Source\Console'
+$p24Resx=@(
+    @('ucSignalSelect.resx','PowerSDR.ucSignalSelect.resources'),
+    @('ucOtherButtonsOptionsGrid.resx','PowerSDR.ucOtherButtonsOptionsGrid.resources'),
+    @('ucTunestepOptionsGrid.resx','PowerSDR.ucTunestepOptionsGrid.resources'),
+    @('ucMeter.resx','PowerSDR.ucMeter.resources'),
+    @('frmMeterDisplay.resx','PowerSDR.frmMeterDisplay.resources'),
+    @('frmVariablePicker.resx','PowerSDR.frmVariablePicker.resources')
+)
+foreach($res in $p24Resx){
+    $name=$res[0]
+    $source=Join-Path $thetisConsoleDir $name
+    $dest=Join-Path $consoleDir $name
+    if(!(Test-Path $source)){throw "P24 Thetis WinForms resource missing: $source"}
+    Copy-Item $source $dest -Force
+}
+
 # Copy every exact Thetis PNG used by the compiled subsystem.
 $resSrc=Join-Path $ThetisRoot 'Project Files\Source\Console\Resources'
 $resDst=Join-Path $consoleDir 'P24ThetisMeterResources'
@@ -192,6 +212,22 @@ foreach($pkg in $packages){
 }
 
 $project=[IO.File]::ReadAllText($projectCs)
+
+# Embed the copied WinForms resources under the exact runtime names expected by
+# ComponentResourceManager after the namespace move Thetis -> PowerSDR.
+$resourceAnchor=[regex]'(<EmbeddedResource Include="helpbox1\.resx">)'
+if($resourceAnchor.Matches($project).Count -ne 1){throw 'P24 EmbeddedResource anchor invalid'}
+foreach($res in $p24Resx){
+    $name=$res[0]
+    $logical=$res[1]
+    if($project -notmatch ('<EmbeddedResource Include="'+[regex]::Escape($name)+'"')){
+        $entry='    <EmbeddedResource Include="'+$name+'">'+$nl+
+               '      <LogicalName>'+$logical+'</LogicalName>'+$nl+
+               '      <SubType>Designer</SubType>'+$nl+
+               '    </EmbeddedResource>'
+        $project=$resourceAnchor.Replace($project,$entry+$nl+'$1',1)
+    }
+}
 
 # Compile original transformed subsystem plus compatibility layer.
 $compileAnchor=[regex]'(<Compile Include="Skin\.cs"\s*/>)'
