@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -11,7 +12,7 @@ namespace PowerSDR
 {
     internal static class P24ThetisMetersRuntime
     {
-        private sealed class PersistedState
+        private sealed class LegacyPersistedState
         {
             public int Version { get; set; }
             public List<string> Containers { get; set; }
@@ -21,12 +22,15 @@ namespace PowerSDR
         private static readonly object Sync = new object();
         private static bool _initialised;
         private static bool _restoring;
+        private static bool _finished;
         private static Console _console;
-        private static string _statePath;
+        private static string _legacyStatePath;
+        private static string _diagPath;
 
         internal static void Init(Console console)
         {
             if (console == null) return;
+
             lock (Sync)
             {
                 if (_initialised) return;
@@ -38,124 +42,174 @@ namespace PowerSDR
             {
                 string root = console.AppDataPath;
                 if (String.IsNullOrWhiteSpace(root))
-                    root = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "FlexRadio Systems", "PowerSDR");
+                    root = Path.Combine(
+                        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                        "FlexRadio Systems", "PowerSDR");
+
                 Directory.CreateDirectory(root);
-                _statePath = Path.Combine(root, "P24_Thetis_Meters_Gadgets.json");
+                _legacyStatePath = Path.Combine(root, "P24_Thetis_Meters_Gadgets.json");
+                _diagPath = Path.Combine(root, "P24_MetersGadgets_DB.log");
 
                 MeterManager.Init(console, null);
-
-                // Thetis normally restores its MultiMeter model from the Options
-                // database during Setup.getOptions(). P24 uses an isolated state
-                // file instead, so on a first run there is no container model at
-                // all and the native Setup page appears empty. Bootstrap exactly
-                // one RX1 container only when there is no prior P24 state file.
-                bool bootstrap = !File.Exists(_statePath);
-                if (!bootstrap)
-                {
-                    try
-                    {
-                        PersistedState prior = JsonConvert.DeserializeObject<PersistedState>(
-                            File.ReadAllText(_statePath, Encoding.UTF8));
-                        // P24 versions before state v2 could persist an empty model because
-                        // the Thetis Options database was never restored. Migrate that broken
-                        // state once. A v2 empty state is treated as an intentional user choice.
-                        bootstrap = prior == null ||
-                                    (prior.Version < 2 &&
-                                     (prior.Containers == null || prior.Containers.Count == 0));
-                    }
-                    catch
-                    {
-                        bootstrap = true;
-                    }
-                }
-
-                Restore();
-
-                if (bootstrap && MeterManager.TotalMeterContainers == 0)
-                {
-                    string id = MeterManager.AddMeterContainer(1, false);
-                    if (!String.IsNullOrWhiteSpace(id))
-                    {
-                        MeterManager.FinishSetupAndDisplay(id);
-                        Save();
-                    }
-                }
+                Log("Init OK; containers=" + MeterManager.TotalMeterContainers.ToString());
 
                 console.FormClosing += delegate
                 {
-                    try { Save(); } catch { }
-                    try { MeterManager.Shutdown(); } catch { }
+                    try { MeterManager.Shutdown(); }
+                    catch (Exception ex) { Log("Shutdown ERROR: " + ex); }
                 };
             }
             catch (Exception ex)
             {
+                Log("Init ERROR: " + ex);
                 Debug.WriteLine("P24 meter runtime init: " + ex);
             }
         }
 
-        internal static void Save()
+        internal static void RestoreFromPowerSdrOptions(ArrayList rows)
         {
-            if (!_initialised || _restoring || String.IsNullOrWhiteSpace(_statePath)) return;
+            if (!_initialised || rows == null) return;
+
+            lock (Sync)
+            {
+                if (_restoring) return;
+                _restoring = true;
+            }
+
             try
             {
-                PersistedState state = new PersistedState();
-                state.Version = 2;
-                state.Containers = new List<string>();
+                Dictionary<string, string> all = RowsToDictionary(rows);
+                Dictionary<string, string> meter = all
+                    .Where(kvp => IsMeterKey(kvp.Key))
+                    .ToDictionary(kvp => kvp.Key, kvp => kvp.Value, StringComparer.OrdinalIgnoreCase);
 
-                foreach (KeyValuePair<string, ucMeter> kvp in MeterManager.MeterContainers.OrderBy(k => k.Value.Sequence))
+                RemoveAllContainers();
+
+                bool restored = true;
+                if (meter.Count > 0)
+                    restored = MeterManager.RestoreSettings(ref meter);
+
+                bool mmioOk = true;
+                string mmio;
+                if (all.TryGetValue("multimeter_io2", out mmio) && !String.IsNullOrWhiteSpace(mmio))
                 {
-                    string encoded = MeterManager.ContainerToString(kvp.Value.ID);
-                    if (!String.IsNullOrWhiteSpace(encoded))
-                        state.Containers.Add(encoded);
+                    try { mmioOk = MultiMeterIO.RestoreSaveData2(mmio); }
+                    catch { mmioOk = false; }
                 }
 
-                try { state.MultiMeterIO = MultiMeterIO.GetSaveData(); }
-                catch { state.MultiMeterIO = ""; }
+                bool migrated = false;
+                if (MeterManager.TotalMeterContainers == 0)
+                    migrated = TryMigrateLegacyJson();
 
-                string json = JsonConvert.SerializeObject(state, Formatting.Indented);
-                string tmp = _statePath + ".tmp";
-                File.WriteAllText(tmp, json, new UTF8Encoding(false));
-                if (File.Exists(_statePath))
+                bool bootstrapped = false;
+                if (MeterManager.TotalMeterContainers == 0)
                 {
-                    string bak = _statePath + ".bak";
-                    try { File.Replace(tmp, _statePath, bak, true); }
-                    catch { File.Copy(tmp, _statePath, true); File.Delete(tmp); }
+                    ucMeter uc = new ucMeter();
+                    uc.RX = 1;
+                    uc.Floating = false;
+                    MeterManager.AddMeterContainer(uc, true);
+                    bootstrapped = MeterManager.TotalMeterContainers > 0;
                 }
-                else File.Move(tmp, _statePath);
+
+                Log(
+                    "Restore Options: meterRows=" + meter.Count.ToString() +
+                    " restoreOk=" + restored.ToString() +
+                    " mmioOk=" + mmioOk.ToString() +
+                    " migrated=" + migrated.ToString() +
+                    " bootstrapped=" + bootstrapped.ToString() +
+                    " containers=" + MeterManager.TotalMeterContainers.ToString());
             }
             catch (Exception ex)
             {
-                Debug.WriteLine("P24 meter runtime save: " + ex);
+                Log("Restore Options ERROR: " + ex);
+                Debug.WriteLine("P24 meter runtime DB restore: " + ex);
+            }
+            finally
+            {
+                lock (Sync) { _restoring = false; }
             }
         }
 
-        internal static void Restore()
+        internal static void StoreIntoPowerSdrOptions(ArrayList rows)
         {
-            if (!_initialised || String.IsNullOrWhiteSpace(_statePath) || !File.Exists(_statePath)) return;
-            _restoring = true;
+            if (!_initialised || _restoring || rows == null) return;
+
             try
             {
-                PersistedState state = JsonConvert.DeserializeObject<PersistedState>(File.ReadAllText(_statePath, Encoding.UTF8));
-                if (state == null) return;
+                RemoveMeterRows(rows);
 
-                MeterScriptEngine.BeginBatch();
-                try
+                Dictionary<string, string> meter = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+                bool ok = MeterManager.StoreSettings2(ref meter);
+
+                foreach (KeyValuePair<string, string> kvp in meter)
+                    rows.Add(kvp.Key + "/" + (kvp.Value ?? String.Empty));
+
+                string mmio = String.Empty;
+                try { mmio = MultiMeterIO.GetSaveData(); }
+                catch { }
+
+                if (!String.IsNullOrWhiteSpace(mmio))
+                    rows.Add("multimeter_io2/" + mmio);
+
+                Log(
+                    "Store Options: ok=" + ok.ToString() +
+                    " meterRows=" + meter.Count.ToString() +
+                    " containers=" + MeterManager.TotalMeterContainers.ToString());
+            }
+            catch (Exception ex)
+            {
+                Log("Store Options ERROR: " + ex);
+                Debug.WriteLine("P24 meter runtime DB store: " + ex);
+            }
+        }
+
+        internal static void FinishSetup()
+        {
+            if (!_initialised || _finished) return;
+
+            try
+            {
+                MeterManager.RunAllRendererDisplays();
+                MeterManager.FinishSetupAndDisplay();
+                _finished = true;
+                Log("FinishSetup OK; containers=" + MeterManager.TotalMeterContainers.ToString());
+            }
+            catch (Exception ex)
+            {
+                Log("FinishSetup ERROR: " + ex);
+                Debug.WriteLine("P24 meter runtime finish: " + ex);
+            }
+        }
+
+        internal static int ContainerCount
+        {
+            get
+            {
+                try { return MeterManager.TotalMeterContainers; }
+                catch { return -1; }
+            }
+        }
+
+        private static bool TryMigrateLegacyJson()
+        {
+            if (String.IsNullOrWhiteSpace(_legacyStatePath) || !File.Exists(_legacyStatePath))
+                return false;
+
+            try
+            {
+                LegacyPersistedState state = JsonConvert.DeserializeObject<LegacyPersistedState>(
+                    File.ReadAllText(_legacyStatePath, Encoding.UTF8));
+
+                if (state == null) return false;
+
+                if (state.Containers != null)
                 {
-                    if (state.Containers != null)
+                    foreach (string encoded in state.Containers)
                     {
-                        foreach (string encoded in state.Containers)
-                        {
-                            if (String.IsNullOrWhiteSpace(encoded)) continue;
-                            ucMeter ucm = MeterManager.ContainerFromString(encoded);
-                            if (ucm == null) continue;
-                            MeterManager.RunRendererDisplay(ucm.ID);
-                            MeterManager.FinishSetupAndDisplay(ucm.ID);
-                        }
+                        if (String.IsNullOrWhiteSpace(encoded)) continue;
+                        try { MeterManager.ContainerFromString(encoded); }
+                        catch { }
                     }
-                }
-                finally
-                {
-                    MeterScriptEngine.EndBatch();
                 }
 
                 if (!String.IsNullOrWhiteSpace(state.MultiMeterIO))
@@ -163,12 +217,101 @@ namespace PowerSDR
                     try { MultiMeterIO.RestoreSaveData2(state.MultiMeterIO); }
                     catch { }
                 }
+
+                if (MeterManager.TotalMeterContainers > 0)
+                {
+                    string migrated = _legacyStatePath + ".migrated";
+                    try
+                    {
+                        if (File.Exists(migrated)) File.Delete(migrated);
+                        File.Move(_legacyStatePath, migrated);
+                    }
+                    catch { }
+                    return true;
+                }
             }
             catch (Exception ex)
             {
-                Debug.WriteLine("P24 meter runtime restore: " + ex);
+                Log("Legacy migration ERROR: " + ex);
             }
-            finally { _restoring = false; }
+
+            return false;
+        }
+
+        private static void RemoveAllContainers()
+        {
+            try
+            {
+                List<string> ids = MeterManager.MeterContainers.Keys.ToList();
+                foreach (string id in ids)
+                {
+                    try { MeterManager.RemoveMeterContainer(id); }
+                    catch { }
+                }
+            }
+            catch { }
+        }
+
+        private static Dictionary<string, string> RowsToDictionary(ArrayList rows)
+        {
+            Dictionary<string, string> data =
+                new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+            foreach (object obj in rows)
+            {
+                string row = obj as string;
+                if (String.IsNullOrEmpty(row)) continue;
+
+                int slash = row.IndexOf('/');
+                if (slash <= 0) continue;
+
+                string key = row.Substring(0, slash);
+                string value = slash + 1 < row.Length ? row.Substring(slash + 1) : String.Empty;
+                data[key] = value;
+            }
+
+            return data;
+        }
+
+        private static void RemoveMeterRows(ArrayList rows)
+        {
+            for (int i = rows.Count - 1; i >= 0; i--)
+            {
+                string row = rows[i] as string;
+                if (String.IsNullOrEmpty(row)) continue;
+
+                int slash = row.IndexOf('/');
+                string key = slash > 0 ? row.Substring(0, slash) : row;
+
+                if (IsMeterKey(key) ||
+                    String.Equals(key, "multimeter_io2", StringComparison.OrdinalIgnoreCase) ||
+                    String.Equals(key, "multimeter_io", StringComparison.OrdinalIgnoreCase))
+                    rows.RemoveAt(i);
+            }
+        }
+
+        private static bool IsMeterKey(string key)
+        {
+            if (String.IsNullOrEmpty(key)) return false;
+
+            return key.StartsWith("meterContData_", StringComparison.OrdinalIgnoreCase) ||
+                   key.StartsWith("meterData_", StringComparison.OrdinalIgnoreCase) ||
+                   key.StartsWith("meterIGData_", StringComparison.OrdinalIgnoreCase) ||
+                   key.StartsWith("meterIGSettings_", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static void Log(string message)
+        {
+            try
+            {
+                if (String.IsNullOrWhiteSpace(_diagPath)) return;
+                File.AppendAllText(
+                    _diagPath,
+                    DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff") +
+                    " | " + message + Environment.NewLine,
+                    Encoding.UTF8);
+            }
+            catch { }
         }
     }
 }
