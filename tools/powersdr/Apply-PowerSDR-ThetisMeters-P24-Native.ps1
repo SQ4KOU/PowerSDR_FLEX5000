@@ -53,6 +53,13 @@ foreach($name in $srcFiles){
     # Type-only incompatibility must be handled before the generic Display facade.
     $text=$text.Replace('Display.AdaptorInfo','P24DisplayAdaptorInfo')
 
+    # Thetis Console exposes ProductVersion as an instance member. Native
+    # PowerSDR Console does not. Use the running assembly's real product version
+    # instead of invoking the dynamic binder on a member that cannot exist.
+    if($name -eq 'MeterManager.cs'){
+        $text=$text.Replace('c.ProductVersion','System.Windows.Forms.Application.ProductVersion')
+    }
+
     # Route all Thetis.Console access through one facade. Do not mutate the real
     # PowerSDR Console class with hundreds of Thetis-only members.
     if($name -in @('MeterManager.cs','clsLegacyItemController.cs','frmMeterDisplay.cs','ucMeter.cs')){
