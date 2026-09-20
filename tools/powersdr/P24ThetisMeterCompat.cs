@@ -1,0 +1,73 @@
+using System;
+using System.Drawing;
+using System.Globalization;
+using System.Reflection;
+using System.Windows.Forms;
+
+namespace PowerSDR
+{
+    internal static class P24ThetisMeterCompat
+    {
+        internal static bool CtrlKeyDown
+        {
+            get { return (Control.ModifierKeys & Keys.Control) == Keys.Control; }
+        }
+
+        internal static bool ShiftKeyDown
+        {
+            get { return (Control.ModifierKeys & Keys.Shift) == Keys.Shift; }
+        }
+
+        internal static void DoubleBufferAll(Control root, bool enabled)
+        {
+            if (root == null) return;
+            try
+            {
+                PropertyInfo p = typeof(Control).GetProperty(
+                    "DoubleBuffered", BindingFlags.Instance | BindingFlags.NonPublic);
+                if (p != null) p.SetValue(root, enabled, null);
+            }
+            catch { }
+
+            foreach (Control child in root.Controls)
+                DoubleBufferAll(child, enabled);
+        }
+
+        internal static string ColourToString(Color c)
+        {
+            return c.ToArgb().ToString(CultureInfo.InvariantCulture);
+        }
+
+        internal static Color ColourFromString(string s)
+        {
+            if (String.IsNullOrWhiteSpace(s)) return Color.Black;
+            int argb;
+            if (Int32.TryParse(s, NumberStyles.Integer, CultureInfo.InvariantCulture, out argb))
+                return Color.FromArgb(argb);
+            try { return ColorTranslator.FromHtml(s); }
+            catch { return Color.Black; }
+        }
+
+        internal static int FiveDigitHash(string text)
+        {
+            unchecked
+            {
+                uint hash = 2166136261;
+                string s = text ?? "";
+                for (int i = 0; i < s.Length; i++)
+                {
+                    hash ^= s[i];
+                    hash *= 16777619;
+                }
+                return (int)(hash % 100000);
+            }
+        }
+
+        internal static bool TouchSupport(PowerSDR.Console console)
+        {
+            // FLEX-5000 PowerSDR has no native Thetis touch API.
+            // Keep the exact mouse container behaviour; touch is simply unavailable.
+            return false;
+        }
+    }
+}
