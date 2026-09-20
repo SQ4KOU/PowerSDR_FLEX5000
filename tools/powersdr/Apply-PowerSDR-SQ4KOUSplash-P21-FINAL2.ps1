@@ -29,7 +29,7 @@ function Replace-ExactOnce([string]$Text,[string]$Old,[string]$New,[string]$Labe
 
 $payload=''
 foreach($p in $assetParts){ $payload += ([IO.File]::ReadAllText($p) -replace '\s','') }
-if($payload.Length -ne 17624){ throw "P21 FINAL2 base64 length mismatch: $($payload.Length)" }
+if($payload.Length -ne 17620){ throw "P21 FINAL2 base64 length mismatch: $($payload.Length)" }
 if(!$payload.StartsWith('/9j/')){ throw 'P21 FINAL2 artwork is not JPEG base64' }
 
 $bytes=[Convert]::FromBase64String($payload)
