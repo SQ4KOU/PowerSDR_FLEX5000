@@ -69,5 +69,46 @@ namespace PowerSDR
             // Keep the exact mouse container behaviour; touch is simply unavailable.
             return false;
         }
+
+        internal static (bool resized, bool relocated) ForceFormOnScreen(Form form, bool shrinkToFit)
+        {
+            if (form == null) return (false, false);
+            Rectangle before = form.Bounds;
+            bool resized = false;
+
+            if (shrinkToFit)
+            {
+                Screen s = Screen.FromControl(form);
+                Rectangle wa = s == null ? Screen.PrimaryScreen.WorkingArea : s.WorkingArea;
+                int w = Math.Min(form.Width, wa.Width);
+                int h = Math.Min(form.Height, wa.Height);
+                if (w != form.Width || h != form.Height)
+                {
+                    form.Size = new Size(w, h);
+                    resized = true;
+                }
+            }
+
+            try { Common.ForceFormOnScreen(form); } catch { }
+            bool relocated = before.Location != form.Location;
+            return (resized, relocated);
+        }
+
+        internal static (bool in_use, bool enabled) GetXPAStatus(object console)
+        {
+            // FLEX-5000 has no Thetis XPA state. Keep the UI item valid but explicitly inactive.
+            return (false, false);
+        }
+
+        internal static SpecHPSDR GetSpectrumSpec(object console, int id)
+        {
+            SpecHPSDR spec = new SpecHPSDR(id);
+            spec.Update = false;
+            spec.initAnalyzer();
+            return spec;
+        }
+
+        internal static void StopPlayback(object console) { }
+        internal static void StopRecord(object console) { }
     }
 }
