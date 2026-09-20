@@ -114,7 +114,15 @@ foreach($helper in @(
     'P24ThetisMeterCompat.cs',
     'P24ThetisTypeCompat.cs',
     'P24DynamicBridge.cs',
-    'P24OtherButtonHelpers.cs'
+    'P24OtherButtonHelpers.cs',
+    'P24SetupNativeMeters.cs',
+    'P24ThetisMetersRuntime.cs',
+    'P24_ucSignalSelect.cs',
+    'P24_ucSignalSelect.Designer.cs',
+    'P24_ucOtherButtonsOptionsGrid.cs',
+    'P24_ucOtherButtonsOptionsGrid.Designer.cs',
+    'P24_ucTunestepOptionsGrid.cs',
+    'P24_ucTunestepOptionsGrid.Designer.cs'
 )){
     $src=Join-Path $PSScriptRoot $helper
     if(!(Test-Path $src)){throw "P24 helper missing: $src"}
@@ -141,7 +149,10 @@ foreach($candidate in @(
  'gear.png','pin_not_on_top.png','pin_on_top.png','dot.png',
  'dockIcon_dock.png','dockIcon_float.png','resizegrab.png',
  'arrow_left.png','arrow_topleft.png','arrow_up.png','arrow_topright.png',
- 'arrow_right.png','arrow_bottomright.png','down.png','arrow_bottomleft.png'
+ 'arrow_right.png','arrow_bottomright.png','down.png','arrow_bottomleft.png',
+ 'arrow_left_black.png','arrow_right_black.png','arrow_up_black.png','down_black.png',
+ 'brush32border.png','pipette32border.png','cont_copy.png','cont_load.png','cont_save.png',
+ 'copy.png','grid.png'
 )){
     if(!$icons.Contains($candidate)){
         $p=Join-Path $resSrc $candidate
@@ -188,7 +199,15 @@ $compileFiles=@(
  'P24ThetisMeterCompat.cs',
  'P24ThetisTypeCompat.cs',
  'P24DynamicBridge.cs',
- 'P24OtherButtonHelpers.cs'
+ 'P24OtherButtonHelpers.cs',
+ 'P24SetupNativeMeters.cs',
+ 'P24ThetisMetersRuntime.cs',
+ 'P24_ucSignalSelect.cs',
+ 'P24_ucSignalSelect.Designer.cs',
+ 'P24_ucOtherButtonsOptionsGrid.cs',
+ 'P24_ucOtherButtonsOptionsGrid.Designer.cs',
+ 'P24_ucTunestepOptionsGrid.cs',
+ 'P24_ucTunestepOptionsGrid.Designer.cs'
 )
 foreach($name in $srcFiles){$compileFiles += ('P24_'+$name)}
 foreach($name in $compileFiles){
@@ -244,5 +263,31 @@ if($project -notmatch '<Reference Include="Microsoft\.CSharp"'){
 }
 
 [IO.File]::WriteAllText($projectCs,$project,$utf8Bom)
+
+# Bootstrap the original Thetis meter runtime and exact Meters/Gadgets setup page
+# from the native PowerSDR Setup constructor. Setup is created during normal
+# application startup, so meter containers restore without requiring the user to
+# first open the Setup window.
+$setupCs=Join-Path $consoleDir 'setup.cs'
+$setupText=[IO.File]::ReadAllText($setupCs)
+$runtimeHook='P24ThetisMetersRuntime.Init(console);'
+$uiHook='P24InitNativeMetersGadgets();'
+if(!$setupText.Contains($runtimeHook)){
+    $assignRx=[regex]'(?m)^(\s*)console\s*=\s*c;\s*(?://[^\r\n]*)?
+
+Stage "Original Thetis MeterManager + exact Setup Meters/Gadgets staged; resources=$($icons.Count); runtime/setup hooks active"
+
+    $matches=$assignRx.Matches($setupText)
+    if($matches.Count -ne 1){throw "P24 Setup console assignment anchor count=$($matches.Count); expected 1"}
+    $indent=$matches[0].Groups[1].Value
+    $insert=$matches[0].Value+$nl+
+        $indent+$runtimeHook+' // P24 native Thetis MeterManager'+$nl+
+        $indent+'this.Shown += delegate { '+$uiHook+' }; // P24 exact Thetis Meters/Gadgets UI'
+    $setupText=$assignRx.Replace($setupText,[System.Text.RegularExpressions.MatchEvaluator]{param($m)$insert},1)
+    [IO.File]::WriteAllText($setupCs,$setupText,$utf8Bom)
+}
+if(([regex]::Matches($setupText,[regex]::Escape($runtimeHook))).Count -ne 1){throw 'P24 runtime hook count invalid'}
+if(([regex]::Matches($setupText,[regex]::Escape($uiHook))).Count -ne 1){throw 'P24 setup UI hook count invalid'}
+
 
 Stage "Original Thetis meter sources staged; resources=$($icons.Count); dynamic Console/static bridge active"
