@@ -36,5 +36,16 @@ namespace PowerSDR
         internal static Bitmap arrow_bottomright { get { return Get("arrow_bottomright"); } }
         internal static Bitmap down { get { return Get("down"); } }
         internal static Bitmap arrow_bottomleft { get { return Get("arrow_bottomleft"); } }
+        internal static Image cont_copy { get { return Load("cont_copy"); } }
+        internal static Image cont_load { get { return Load("cont_load"); } }
+        internal static Image cont_save { get { return Load("cont_save"); } }
+        internal static Image pipette32border { get { return Load("pipette32border"); } }
+        internal static Image brush32border { get { return Load("brush32border"); } }
+        internal static Image arrow_up_black { get { return Load("arrow_up_black"); } }
+        internal static Image down_black { get { return Load("down_black"); } }
+        internal static Image arrow_left_black { get { return Load("arrow_left_black"); } }
+        internal static Image arrow_right_black { get { return Load("arrow_right_black"); } }
+        internal static Image copy { get { return Load("copy"); } }
+        internal static Image grid { get { return Load("grid"); } }
     }
 }
