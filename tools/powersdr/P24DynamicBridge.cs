@@ -246,6 +246,15 @@ namespace PowerSDR
             _console = console;
         }
 
+        internal static dynamic WrapObject(object value)
+        {
+            if (value == null) return null;
+            P24ConsoleDynamic existing = value as P24ConsoleDynamic;
+            if (existing != null) return existing;
+            PowerSDR.Console c = value as PowerSDR.Console;
+            return c == null ? value : Wrap(c);
+        }
+
         internal static dynamic Wrap(PowerSDR.Console console)
         {
             if (console == null) return null;
