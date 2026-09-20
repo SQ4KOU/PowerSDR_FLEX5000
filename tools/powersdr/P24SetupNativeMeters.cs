@@ -15823,34 +15823,11 @@ private void ucOtherButtonsOptionsGrid_buttons_CheckboxChanged(object sender, Ev
 
 private void ucOtherButtonsOptionsGrid_buttons_MacroSetupClicked(object sender, ucOtherButtonsOptionsGrid.MacroButtonEventArgs e)
         {
-            // get container names
-            Dictionary<string, string> containers = new Dictionary<string, string>();
-            foreach (KeyValuePair<string, ucMeter> kvp in MeterManager.MeterContainers.OrderBy((KeyValuePair<string, ucMeter> kvp2) => kvp2.Value.Sequence))
-            {
-                containers.Add(kvp.Value.ID, containerNameFromId(kvp.Value.ID));
-            }
-
-            //get settings from grid buttons control
-            int macro = e.BitNumber;
-            OtherButtonMacroSettings original_settings = p24_ucOtherButtonsOptionsGrid_buttons.GetMacroSettings(macro);
-            OtherButtonMacroSettings changed_settings = new OtherButtonMacroSettings(original_settings);
-
-            CATScriptInterpreter si = new CATScriptInterpreter();
-
-            frmMacroButtonConfig frmConfig = new frmMacroButtonConfig(si);
-            DialogResult dr = frmConfig.InitAndShow(original_settings, containers, ref changed_settings, console);
-            if (dr == DialogResult.OK)
-            {
-                // something changed, update uc
-                p24_ucOtherButtonsOptionsGrid_buttons.SetMacroSettings(macro, changed_settings);
-                updateMeterType();
-
-                clsContainerComboboxItem cci = (clsContainerComboboxItem)p24_comboContainerSelect.SelectedItem;
-                if (cci != null)
-                {
-                    MeterManager.RefreshContainerVisible(cci.ID);  //causes delegates to be called for any visible container
-                }
-            }
+            MessageBox.Show(this,
+                "Macro editor is disabled in this P24 test build. The native Thetis meter/container renderer remains active.",
+                "P24 Meters/Gadgets",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Information);
         }
 
 private void ucTunestepOptionsGrid_buttons_checkbox_changed(object sender, EventArgs e)
