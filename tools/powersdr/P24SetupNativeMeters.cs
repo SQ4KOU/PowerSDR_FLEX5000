@@ -13625,8 +13625,7 @@ namespace PowerSDR
             Show();
             Focus();
             WindowState = FormWindowState.Normal;
-            TabSetup.SelectedIndex = 6; // appearance
-            TabAppearance.SelectedIndex = 5; // multimeter
+            P24SelectMetersGadgetsTab();
         }
         #endregion
 
@@ -15959,4 +15958,170 @@ private bool variableInUse(int variable)
             return igs.GetMMIOVariable(variable) == "--DEFAULT--" ? false : true;
         }
     }
+
+        private bool preventIfContainerContainsLockedRecordings()
+        {
+            MeterManager.clsMeter m = meterFromSelectedContainer();
+            if (m == null) return false;
+
+            bool prevent = m.MeterHasLockedVoiceRecords();
+            if (prevent)
+            {
+                DialogResult dr = MessageBox.Show("This container contains Voice Record/Playback item(s) that\n" +
+                    "have locked recordings. These and all other recordings made with these will be deleted.\n\n" +
+                    "Do you want to do this and remove this container?",
+                    "Locked recording slots",
+                    MessageBoxButtons.YesNo,
+                    MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2, P24ThetisMeterCompat.MB_TOPMOST);
+
+                if (dr == DialogResult.Yes)
+                {
+                    prevent = false;
+                }
+            }
+
+            return prevent;
+        }
+
+        private bool preventIfItemContainsLockedRecordings()
+        {
+            clsMeterTypeComboboxItem mti = p24_lstMetersInUse.SelectedItem as clsMeterTypeComboboxItem;
+            if (mti == null) return false;
+            MeterManager.clsMeter m = meterFromSelectedContainer();
+            if (m == null) return false;
+            MeterManager.clsMeterItem mi = m.GetMeterItem(mti.MeterType, mti.Order, MeterManager.clsMeterItem.MeterItemType.VOICE_RECORD_PLAY_BUTTONS);
+            if (m == null) return false;
+            MeterManager.clsVoiceRecordPlay vrp = mi as MeterManager.clsVoiceRecordPlay;
+            if (vrp == null) return false;
+
+            bool prevent = vrp.HasLockedSlots;
+            if (prevent)
+            {
+                DialogResult dr = MessageBox.Show("This Voice Record/Playback item has locked recordings.\n" +
+                    "If you remove this item those recordings will be lost and deleted.\n\n" +
+                    "Do you want to do this and remove this item?",
+                    "Locked recording slots",
+                    MessageBoxButtons.YesNo,
+                    MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2, P24ThetisMeterCompat.MB_TOPMOST);
+
+                if (dr == DialogResult.Yes)
+                {
+                    prevent = false;
+                }
+            }
+
+            return prevent;
+        }
+
+        private int getTotalColumnsNeededForAntennaButtons()
+        {
+            int enable_count = 0;
+            if (p24_chkButtonBox_antenna_rx1.Checked) enable_count++;
+            if (p24_chkButtonBox_antenna_rx2.Checked) enable_count++;
+            if (p24_chkButtonBox_antenna_rx3.Checked) enable_count++;
+            if (p24_chkButtonBox_antenna_tx1.Checked) enable_count++;
+            if (p24_chkButtonBox_antenna_tx2.Checked) enable_count++;
+            if (p24_chkButtonBox_antenna_tx3.Checked) enable_count++;
+            if (p24_chkButtonBox_antenna_byp.Checked) enable_count++;
+            if (p24_chkButtonBox_antenna_ext1.Checked) enable_count++;
+            if (p24_chkButtonBox_antenna_xvtr.Checked) enable_count++;
+            if (p24_chkButtonBox_antenna_rxtxant.Checked) enable_count++;
+
+            return enable_count;
+        }
+
+        private void updateLedValidControls()
+        {
+            MeterManager.clsMeter m = meterFromSelectedContainer();
+            if (m == null) return;
+
+            clsMeterTypeComboboxItem mtci = p24_lstMetersInUse.SelectedItem as clsMeterTypeComboboxItem;
+            if (mtci == null) return;
+
+            MeterType mt = meterItemGroupTypefromSelected();
+            if (mt == MeterType.NONE) return;
+
+            if (mt == MeterType.LED)
+            {
+                MeterManager.clsIGSettings igs = m.GetSettingsForMeterGroup(mt, mtci.Order);
+                if (igs == null) return;
+
+                p24_lblLed_Valid.Text = "Syntax " + (igs.ShowType ? "Valid" : "Invalid");
+                p24_lblLed_Valid.ForeColor = igs.ShowType ? Color.LimeGreen : Color.Red;
+
+                tmrLedValid.Enabled = true;
+            }
+        }
+
+        private void updateWebImageState(ImageFetcher.State state, bool checkSelected = false, string id = "")
+        {
+            if (checkSelected)
+            {
+                string mgID = meterItemGroupIDfromSelected();
+                if (mgID == "") return;
+                if (mgID != id) return;
+
+                MeterType mt = meterItemGroupTypefromSelected();
+                if (mt == MeterType.NONE) return;
+                if (mt != MeterType.WEB_IMAGE) return;
+            }
+
+            string txt;
+
+            switch (state)
+            {
+                case ImageFetcher.State.IDLE:
+                    txt = "idle";
+                    break;
+                case ImageFetcher.State.OK:
+                    txt = "ok";
+                    break;
+                case ImageFetcher.State.ERROR_URL_ISSUE:
+                    txt = "url issue";
+                    break;
+                case ImageFetcher.State.ERROR_IMAGE_CONVERSION_PROBLEM:
+                    txt = "bad image";
+                    break;
+                case ImageFetcher.State.ERROR_NO_SUITABLE_IMAGE:
+                    txt = "no image";
+                    break;
+                case ImageFetcher.State.WAITING:
+                    txt = "waiting";
+                    break;
+                case ImageFetcher.State.GATHERING_IMAGES:
+                    txt = "gathering";
+                    break;
+                default:
+                    txt = "";
+                    break;
+            }
+            p24_lblWebImage_state.Text = txt;
+        }
+
+private Font _bandButtons_font = null;
+
+        private void P24SelectMetersGadgetsTab()
+        {
+            try
+            {
+                if (p24_tpAppearanceMeter2 == null) return;
+                TabControl inner = p24_tpAppearanceMeter2.Parent as TabControl;
+                if (inner != null) inner.SelectedTab = p24_tpAppearanceMeter2;
+
+                Control node = inner;
+                while (node != null)
+                {
+                    TabPage page = node.Parent as TabPage;
+                    if (page != null && page.Text.IndexOf("Appearance", StringComparison.OrdinalIgnoreCase) >= 0)
+                    {
+                        TabControl outer = page.Parent as TabControl;
+                        if (outer != null) outer.SelectedTab = page;
+                        break;
+                    }
+                    node = node.Parent;
+                }
+            }
+            catch { }
+        }
+
 }
