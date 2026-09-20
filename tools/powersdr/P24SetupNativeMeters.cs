@@ -23,6 +23,7 @@ namespace PowerSDR
 {
     public partial class Setup
     {
+        private readonly System.Windows.Forms.Timer tmrLedValid = new System.Windows.Forms.Timer();
         // P24 compatibility members copied verbatim from audited Thetis setup.cs.
         private Font _textOverlayFont1 = null;
 
@@ -762,6 +763,8 @@ namespace PowerSDR
         {
             if (p24_native_meters_ui_ready) return;
             p24_native_meters_ui_ready = true;
+            tmrLedValid.Interval = 250;
+            tmrLedValid.Tick += tmrLedValid_Tick;
 
             p24_bntMultiMeterItemRotator_default_pstRotator = new System.Windows.Forms.ButtonTS();
             p24_btnAddMeterItem = new System.Windows.Forms.ButtonTS();
@@ -16121,6 +16124,13 @@ private Font _bandButtons_font = null;
                 }
             }
             catch { }
+        }
+
+        private void tmrLedValid_Tick(object sender, EventArgs e)
+        {
+            if (p24_txtLedIndicator_condition != null && !p24_txtLedIndicator_condition.Visible)
+                tmrLedValid.Enabled = false;
+            updateLedValidControls();
         }
 
 }
