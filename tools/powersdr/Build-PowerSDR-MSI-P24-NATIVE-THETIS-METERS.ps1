@@ -123,6 +123,25 @@ try{
     if(!(Test-Path $exe)){throw 'PowerSDR.exe missing after build'}
     if(Test-Path (Join-Path $outDir 'Thetis.exe')){throw 'Thetis.exe leaked into PowerSDR output'}
 
+    # P24 Roslyn runtime closure. These assemblies are required by the native
+    # Thetis MeterScriptEngine on .NET Framework and must physically ship next
+    # to PowerSDR.exe. A successful compile is not sufficient.
+    $p24RuntimeDlls=@(
+        'Microsoft.CodeAnalysis.dll',
+        'Microsoft.CodeAnalysis.CSharp.dll',
+        'Microsoft.CodeAnalysis.Scripting.dll',
+        'Microsoft.CodeAnalysis.CSharp.Scripting.dll',
+        'System.Collections.Immutable.dll',
+        'System.Reflection.Metadata.dll',
+        'System.Memory.dll',
+        'System.Runtime.CompilerServices.Unsafe.dll',
+        'System.Buffers.dll'
+    )
+    foreach($dll in $p24RuntimeDlls){
+        $p=Join-Path $outDir $dll
+        if(!(Test-Path $p)){throw "P24 runtime dependency missing from output: $dll"}
+    }
+
     # Hard gates for functions that must remain PowerSDR-native.
     foreach($rel in @('Console\FWC\fwc.cs','Console\FWC\fwcatuform.cs','Console\console.Designer.cs')){
         if(!(Test-Path (Join-Path $WorkRoot $rel))){throw "Native PowerSDR source missing: $rel"}
