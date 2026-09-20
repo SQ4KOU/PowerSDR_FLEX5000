@@ -117,6 +117,7 @@ foreach($helper in @(
     'P24DynamicBridge.cs',
     'P24OtherButtonHelpers.cs',
     'P24SetupNativeMeters.cs',
+ 'P24SetupCompat.cs',
     'P24ThetisMetersRuntime.cs',
     'P24_ucSignalSelect.cs',
     'P24_ucSignalSelect.Designer.cs',
