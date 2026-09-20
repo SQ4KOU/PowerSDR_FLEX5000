@@ -47,23 +47,32 @@ jobs:
       - name: Roslyn syntax diagnostics
         shell: pwsh
         run: |
-          $roslynDir = Get-ChildItem 'C:\Program Files\Microsoft Visual Studio' -Recurse -Filter Microsoft.CodeAnalysis.CSharp.dll -ErrorAction SilentlyContinue |
-            Where-Object { Test-Path (Join-Path $_.DirectoryName 'Microsoft.CodeAnalysis.dll') } |
-            Select-Object -First 1 -ExpandProperty DirectoryName
-          if (!$roslynDir) { throw 'Roslyn assemblies not found' }
-          [void][Reflection.Assembly]::LoadFrom((Join-Path $roslynDir 'Microsoft.CodeAnalysis.dll'))
-          [void][Reflection.Assembly]::LoadFrom((Join-Path $roslynDir 'Microsoft.CodeAnalysis.CSharp.dll'))
-          $src = [IO.File]::ReadAllText('tools/powersdr/P24SetupNativeMeters.cs')
-          $tree = [Microsoft.CodeAnalysis.CSharp.CSharpSyntaxTree]::ParseText($src)
-          Write-Host '--- ROSLYN DIAGNOSTICS ---'
-          foreach($d in $tree.GetDiagnostics()) { Write-Host $d.ToString() }
-          Write-Host '--- MISSING TOKENS ---'
-          foreach($t in $tree.GetRoot().DescendantTokens()) {
-            if($t.IsMissing) {
-              $lp=$t.GetLocation().GetLineSpan()
-              Write-Host ("MISSING kind={0} line={1} col={2} span={3}" -f $t.Kind(),($lp.StartLinePosition.Line+1),($lp.StartLinePosition.Character+1),$t.SpanStart)
-            }
+          $diag = Join-Path $env:RUNNER_TEMP 'p24syntax'
+          if(Test-Path $diag){Remove-Item $diag -Recurse -Force}
+          dotnet new console --framework net8.0 --output $diag --force | Out-Null
+          Push-Location $diag
+          try {
+            dotnet add package Microsoft.CodeAnalysis.CSharp --version 5.0.0 | Out-Null
+            @'
+          using System;
+          using System.IO;
+          using System.Linq;
+          using Microsoft.CodeAnalysis.CSharp;
+
+          var src = File.ReadAllText(args[0]);
+          var tree = CSharpSyntaxTree.ParseText(src);
+          Console.WriteLine("--- ROSLYN DIAGNOSTICS ---");
+          foreach (var d in tree.GetDiagnostics()) Console.WriteLine(d.ToString());
+          Console.WriteLine("--- MISSING TOKENS ---");
+          foreach (var t in tree.GetRoot().DescendantTokens().Where(t => t.IsMissing))
+          {
+              var p = t.GetLocation().GetLineSpan().StartLinePosition;
+              Console.WriteLine($"MISSING kind={t.Kind()} line={p.Line + 1} col={p.Character + 1} span={t.SpanStart}");
           }
+          '@ | Set-Content -LiteralPath (Join-Path $diag 'Program.cs') -Encoding UTF8
+            dotnet run --no-restore -- (Join-Path $env:GITHUB_WORKSPACE 'tools\powersdr\P24SetupNativeMeters.cs')
+          }
+          finally { Pop-Location }
 
       - name: Build P24 native Thetis meters
         shell: pwsh
