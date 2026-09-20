@@ -44,6 +44,24 @@ jobs:
           $path = Split-Path $candle.Source -Parent
           "WIXBIN=$path" | Out-File -FilePath $env:GITHUB_ENV -Append
 
+      - name: PowerShell syntax diagnostics
+        shell: pwsh
+        run: |
+          $tokens=$null
+          $errors=$null
+          [System.Management.Automation.Language.Parser]::ParseFile(
+            (Join-Path $env:GITHUB_WORKSPACE 'tools\powersdr\Apply-PowerSDR-ThetisMeters-P24-Native.ps1'),
+            [ref]$tokens,
+            [ref]$errors
+          ) | Out-Null
+          if($errors.Count -gt 0) {
+            foreach($e in $errors) {
+              Write-Host ("PS_PARSE_ERROR line={0} col={1}: {2}" -f $e.Extent.StartLineNumber,$e.Extent.StartColumnNumber,$e.Message)
+            }
+            throw 'PowerShell syntax gate failed'
+          }
+          Write-Host 'POWERSHELL_SYNTAX=PASS'
+
       - name: Roslyn syntax diagnostics
         shell: pwsh
         run: |
