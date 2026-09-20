@@ -64,7 +64,7 @@ if($project -notmatch 'Compile Include="SQ4KOUMetersGadgets\.cs"') {
 # Zip extraction uses only framework assemblies. Do not introduce a new NuGet
 # dependency or modify the native radio stack.
 if($project -notmatch '<Reference Include="System\.IO\.Compression"') {
-    $referenceAnchor = [regex]'(<Reference Include="System\.Drawing"\s*/>)'
+    $referenceAnchor = [regex]'(?s)(<Reference Include="System\.Drawing">.*?</Reference>)'
     $matches = $referenceAnchor.Matches($project)
     if($matches.Count -ne 1) {
         throw "P22 System.Drawing reference anchor count=$($matches.Count); expected 1"
