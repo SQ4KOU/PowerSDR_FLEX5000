@@ -161,6 +161,12 @@ namespace PowerSDR
             return spec;
         }
 
+        internal static void TryDatabaseBackup()
+        {
+            // The PowerSDR database is protected by the SAFE P02 atomic/backup layer.
+            // The Thetis DBMan class is intentionally not imported into FLEX-5000.
+        }
+
         internal static void StopPlayback(object console) { }
         internal static void StopRecord(object console) { }
     }
