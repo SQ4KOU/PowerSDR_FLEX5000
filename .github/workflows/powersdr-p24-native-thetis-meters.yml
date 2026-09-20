@@ -49,4 +49,7 @@ jobs:
           name: PowerSDR-P24-NATIVE-THETIS-METERS
           path: |
             artifacts/powersdr/**
+            .work/powersdr-ke9ns/Console/P24_*.cs
+            .work/powersdr-ke9ns/Console/P24Thetis*.cs
+            .work/powersdr-ke9ns/Console/PowerSDR.csproj
           if-no-files-found: warn
