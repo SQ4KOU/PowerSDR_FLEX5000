@@ -49,10 +49,29 @@ namespace PowerSDR
                 // file instead, so on a first run there is no container model at
                 // all and the native Setup page appears empty. Bootstrap exactly
                 // one RX1 container only when there is no prior P24 state file.
-                bool hadState = File.Exists(_statePath);
+                bool bootstrap = !File.Exists(_statePath);
+                if (!bootstrap)
+                {
+                    try
+                    {
+                        PersistedState prior = JsonConvert.DeserializeObject<PersistedState>(
+                            File.ReadAllText(_statePath, Encoding.UTF8));
+                        // P24 versions before state v2 could persist an empty model because
+                        // the Thetis Options database was never restored. Migrate that broken
+                        // state once. A v2 empty state is treated as an intentional user choice.
+                        bootstrap = prior == null ||
+                                    (prior.Version < 2 &&
+                                     (prior.Containers == null || prior.Containers.Count == 0));
+                    }
+                    catch
+                    {
+                        bootstrap = true;
+                    }
+                }
+
                 Restore();
 
-                if (!hadState && MeterManager.TotalMeterContainers == 0)
+                if (bootstrap && MeterManager.TotalMeterContainers == 0)
                 {
                     string id = MeterManager.AddMeterContainer(1, false);
                     if (!String.IsNullOrWhiteSpace(id))
@@ -80,7 +99,7 @@ namespace PowerSDR
             try
             {
                 PersistedState state = new PersistedState();
-                state.Version = 1;
+                state.Version = 2;
                 state.Containers = new List<string>();
 
                 foreach (KeyValuePair<string, ucMeter> kvp in MeterManager.MeterContainers.OrderBy(k => k.Value.Sequence))
