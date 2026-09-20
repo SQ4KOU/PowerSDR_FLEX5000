@@ -24,10 +24,10 @@ $bgRx=[regex]::new('(?s)<data name="\$this\.BackgroundImage"[^>]*>.*?<value>(.*?
 $m=$bgRx.Match($resx)
 if(!$m.Success){ throw 'P21 FINAL2 BackgroundImage resource missing' }
 $payload=($m.Groups[1].Value -replace '\s','')
-if($payload.Length -ne 17624){ throw "P21 FINAL2 embedded base64 length mismatch: $($payload.Length)" }
+if($payload.Length -ne 17620){ throw "P21 FINAL2 embedded base64 length mismatch: $($payload.Length)" }
 $bytes=[Convert]::FromBase64String($payload)
 $sha=[BitConverter]::ToString(([Security.Cryptography.SHA256]::Create()).ComputeHash($bytes)).Replace('-','').ToLowerInvariant()
-$expectedSha='e825c4d36cc80bb20b64217d3a0a94a07980a2d41f24241fb129b0d74eb28326'
+$expectedSha='15cf71be0bf24e2b533ea0ca73807490296c156f3ee3e571ca18bf458b2a2a77'
 if($sha -ne $expectedSha){ throw "P21 FINAL2 embedded artwork SHA256 mismatch: $sha" }
 
 Add-Type -AssemblyName System.Drawing
