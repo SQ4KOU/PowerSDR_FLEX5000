@@ -44,6 +44,27 @@ jobs:
           $path = Split-Path $candle.Source -Parent
           "WIXBIN=$path" | Out-File -FilePath $env:GITHUB_ENV -Append
 
+      - name: Roslyn syntax diagnostics
+        shell: pwsh
+        run: |
+          $roslynDir = Get-ChildItem 'C:\Program Files\Microsoft Visual Studio' -Recurse -Filter Microsoft.CodeAnalysis.CSharp.dll -ErrorAction SilentlyContinue |
+            Where-Object { Test-Path (Join-Path $_.DirectoryName 'Microsoft.CodeAnalysis.dll') } |
+            Select-Object -First 1 -ExpandProperty DirectoryName
+          if (!$roslynDir) { throw 'Roslyn assemblies not found' }
+          [void][Reflection.Assembly]::LoadFrom((Join-Path $roslynDir 'Microsoft.CodeAnalysis.dll'))
+          [void][Reflection.Assembly]::LoadFrom((Join-Path $roslynDir 'Microsoft.CodeAnalysis.CSharp.dll'))
+          $src = [IO.File]::ReadAllText('tools/powersdr/P24SetupNativeMeters.cs')
+          $tree = [Microsoft.CodeAnalysis.CSharp.CSharpSyntaxTree]::ParseText($src)
+          Write-Host '--- ROSLYN DIAGNOSTICS ---'
+          foreach($d in $tree.GetDiagnostics()) { Write-Host $d.ToString() }
+          Write-Host '--- MISSING TOKENS ---'
+          foreach($t in $tree.GetRoot().DescendantTokens()) {
+            if($t.IsMissing) {
+              $lp=$t.GetLocation().GetLineSpan()
+              Write-Host ("MISSING kind={0} line={1} col={2} span={3}" -f $t.Kind(),($lp.StartLinePosition.Line+1),($lp.StartLinePosition.Character+1),$t.SpanStart)
+            }
+          }
+
       - name: Build P24 native Thetis meters
         shell: pwsh
         run: |
@@ -58,5 +79,6 @@ jobs:
             artifacts/powersdr/**
             .work/powersdr-ke9ns/Console/P24_*.cs
             .work/powersdr-ke9ns/Console/P24Thetis*.cs
+            .work/powersdr-ke9ns/Console/P24SetupNativeMeters.cs
             .work/powersdr-ke9ns/Console/PowerSDR.csproj
           if-no-files-found: warn
