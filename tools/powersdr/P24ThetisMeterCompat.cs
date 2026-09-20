@@ -2,12 +2,56 @@ using System;
 using System.Drawing;
 using System.Globalization;
 using System.Reflection;
+using System.Collections.Generic;
 using System.Windows.Forms;
 
 namespace PowerSDR
 {
     internal static class P24ThetisMeterCompat
     {
+        private static readonly object Sync = new object();
+        private static P24AudioRecordPlaybackAdapter _arp;
+
+        internal static P24AudioRecordPlaybackAdapter ARP(PowerSDR.Console console)
+        {
+            lock (Sync)
+            {
+                if (_arp == null) _arp = new P24AudioRecordPlaybackAdapter(console);
+                return _arp;
+            }
+        }
+
+        internal static bool ReadBool(object target, string name, bool fallback)
+        {
+            object o = ReadMember(target, name);
+            if (o == null) return fallback;
+            try { return Convert.ToBoolean(o, CultureInfo.InvariantCulture); }
+            catch { return fallback; }
+        }
+
+        internal static int ReadInt(object target, string name, int fallback)
+        {
+            object o = ReadMember(target, name);
+            if (o == null) return fallback;
+            try { return Convert.ToInt32(o, CultureInfo.InvariantCulture); }
+            catch { return fallback; }
+        }
+
+        internal static object ReadMember(object target, string name)
+        {
+            if (target == null || String.IsNullOrEmpty(name)) return null;
+            try
+            {
+                Type t = target.GetType();
+                BindingFlags f = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
+                PropertyInfo p = t.GetProperty(name, f);
+                if (p != null && p.CanRead) return p.GetValue(target, null);
+                FieldInfo fi = t.GetField(name, f);
+                if (fi != null) return fi.GetValue(target);
+            }
+            catch { }
+            return null;
+        }
         internal static bool CtrlKeyDown
         {
             get { return (Control.ModifierKeys & Keys.Control) == Keys.Control; }
