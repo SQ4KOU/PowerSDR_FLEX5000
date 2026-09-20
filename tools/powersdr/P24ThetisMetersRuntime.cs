@@ -190,6 +190,11 @@ namespace PowerSDR
             }
         }
 
+        internal static void Trace(string message)
+        {
+            Log("TRACE " + (message ?? String.Empty));
+        }
+
         internal static int ContainerCount
         {
             get
