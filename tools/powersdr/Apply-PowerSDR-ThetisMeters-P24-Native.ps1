@@ -276,7 +276,7 @@ $uiHook='P24InitNativeMetersGadgets();'
 # Runtime adapter is initialized only after the native static Setup.console
 # reference is assigned.
 if(!$setupText.Contains($runtimeHook)){
-    $runtimeRx=[regex]'(?m)^(\s*)console\s*=\s*c\s*;.*
+    $runtimeRx=[regex]'(?m)^(\s*)console\s*=\s*c\s*;.*$'
     $runtimeMatches=$runtimeRx.Matches($setupText)
     if($runtimeMatches.Count -ne 1){
         throw "P24 runtime hook anchor invalid: count=$($runtimeMatches.Count)"
@@ -293,7 +293,7 @@ if(!$setupText.Contains($runtimeHook)){
 # integration point. Initialize the Meters/Gadgets page once, at the very end
 # of the native Setup constructor, after all original controls/options exist.
 if(!$setupText.Contains($uiHook)){
-    $uiRx=[regex]'(?m)^(\s*)\}\s*//\s*setup\s*
+    $uiRx=[regex]'(?m)^(\s*)\}\s*//\s*setup\s*$'
     $uiMatches=$uiRx.Matches($setupText)
     if($uiMatches.Count -ne 1){
         throw "P24 UI hook anchor invalid: count=$($uiMatches.Count)"
