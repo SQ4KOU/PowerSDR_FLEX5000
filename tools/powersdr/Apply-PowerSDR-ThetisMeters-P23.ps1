@@ -78,7 +78,7 @@ foreach($required in @(
  'class P23MetersSetupPanel',
  'class P23MultiMeterIO',
  'class P23RadioAdapter',
- 'SQ4KOUThetisMetersP23.Install',
+ 'class SQ4KOUThetisMetersP23',
  'CalculateRXMeter',
  'CalculateTXMeter',
  'FWCPAPower',
