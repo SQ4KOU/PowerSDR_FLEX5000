@@ -591,6 +591,8 @@ namespace PowerSDR
         private Dictionary<string, object> _snapshot =
             new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase);
         private int _requiredHeight;
+        private Image _backgroundImage;
+        private string _backgroundPath = "";
 
         internal int RequiredHeight { get { return Math.Max(32, _requiredHeight); } }
 
@@ -647,6 +649,9 @@ namespace PowerSDR
             g.SmoothingMode = SmoothingMode.AntiAlias;
             g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.ClearTypeGridFit;
             g.Clear(Color.FromArgb(_owner.Config.BackColorArgb));
+            EnsureBackgroundImage();
+            if (_backgroundImage != null)
+                g.DrawImage(_backgroundImage, ClientRectangle);
 
             int y = 0;
             List<P23MeterItemConfig> items = _owner.Config.Items;
@@ -661,6 +666,26 @@ namespace PowerSDR
                 y += h;
             }
             _requiredHeight = y;
+        }
+
+        private void EnsureBackgroundImage()
+        {
+            string path = _owner.Config.BackgroundImagePath ?? "";
+            if (String.Equals(path, _backgroundPath, StringComparison.OrdinalIgnoreCase)) return;
+            _backgroundPath = path;
+            if (_backgroundImage != null)
+            {
+                try { _backgroundImage.Dispose(); } catch { }
+                _backgroundImage = null;
+            }
+            if (String.IsNullOrWhiteSpace(path) || !File.Exists(path)) return;
+            try
+            {
+                using (FileStream fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                using (Image src = Image.FromStream(fs))
+                    _backgroundImage = new Bitmap(src);
+            }
+            catch { _backgroundImage = null; }
         }
 
         private void DrawItem(Graphics g, P23MeterItemConfig item, Rectangle r)
