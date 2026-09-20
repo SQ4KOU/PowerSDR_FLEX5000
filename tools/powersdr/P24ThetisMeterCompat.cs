@@ -3,6 +3,7 @@ using System.Drawing;
 using System.Globalization;
 using System.Reflection;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Windows.Forms;
 
 namespace PowerSDR
@@ -40,6 +41,26 @@ namespace PowerSDR
             catch { }
             return null;
         }
+        internal const MessageBoxOptions MB_TOPMOST = (MessageBoxOptions)0x00040000;
+
+        internal static bool AltlKeyDown
+        {
+            get { return (Control.ModifierKeys & Keys.Alt) == Keys.Alt; }
+        }
+
+        internal static void OpenUri(string uri)
+        {
+            if (String.IsNullOrWhiteSpace(uri)) return;
+            try
+            {
+                Process.Start(new ProcessStartInfo(uri) { UseShellExecute = true });
+            }
+            catch
+            {
+                try { Process.Start(uri); } catch { }
+            }
+        }
+
         internal static bool CtrlKeyDown
         {
             get { return (Control.ModifierKeys & Keys.Control) == Keys.Control; }
