@@ -306,6 +306,9 @@ if($project -notmatch '<Reference Include="Microsoft\.CSharp"'){
 $setupCs=Join-Path $consoleDir 'setup.cs'
 $setupText=[IO.File]::ReadAllText($setupCs)
 $runtimeHook='P24ThetisMetersRuntime.Init(c);'
+$restoreHook='P24ThetisMetersRuntime.RestoreFromPowerSdrOptions(a);'
+$storeHook='P24ThetisMetersRuntime.StoreIntoPowerSdrOptions(a);'
+$finishHook='P24ThetisMetersRuntime.FinishSetup();'
 $uiHook='P24InitNativeMetersGadgets();'
 
 # Runtime adapter: insert immediately after the native Setup.console assignment.
@@ -317,20 +320,46 @@ if(!$setupText.Contains($runtimeHook)){
     $setupText=$setupText.Replace($runtimeAnchor,$runtimeReplacement)
 }
 
-# UI integration: initialize once at the end of the native Setup constructor.
-# This is deterministic and does not depend on Form.Shown.
+# Restore native Thetis MultiMeter state from the normal PowerSDR Options table.
+# This runs inside the existing GetOptions() path, before PowerSDR processes the
+# remaining UI controls.
+if(!$setupText.Contains($restoreHook)){
+    $restoreAnchor='            ArrayList a = DB.GetVars("Options");'
+    $restoreIndex=$setupText.IndexOf($restoreAnchor,[StringComparison]::Ordinal)
+    if($restoreIndex -lt 0){throw 'P24 Options restore anchor missing'}
+    $restoreReplacement=$restoreAnchor+$nl+'            '+$restoreHook
+    $setupText=$setupText.Replace($restoreAnchor,$restoreReplacement)
+}
+
+# Store native Thetis MultiMeter state in the same Options table as the rest of
+# PowerSDR. MeterManager emits meterContData_*, meterData_*, meterIGData_* and
+# meterIGSettings_2_* records; the runtime converts them to PowerSDR key/value rows.
+if(!$setupText.Contains($storeHook)){
+    $storeAnchor='            DB.SaveVars("Options", ref a);'
+    $storeIndex=$setupText.IndexOf($storeAnchor,[StringComparison]::Ordinal)
+    if($storeIndex -lt 0){throw 'P24 Options store anchor missing'}
+    $storeReplacement='            '+$storeHook+$nl+$storeAnchor
+    $setupText=$setupText.Replace($storeAnchor,$storeReplacement)
+}
+
+# UI integration: finalise the restored model and initialize the page once at
+# the end of the native Setup constructor. This is deterministic and does not
+# depend on Form.Shown.
 if(!$setupText.Contains($uiHook)){
     $uiAnchor='        } // setup'
     $uiIndex=$setupText.IndexOf($uiAnchor,[StringComparison]::Ordinal)
     if($uiIndex -lt 0){throw 'P24 UI hook anchor missing'}
-    $uiReplacement='            '+$uiHook+$nl+$uiAnchor
+    $uiReplacement='            '+$finishHook+$nl+'            '+$uiHook+$nl+$uiAnchor
     $setupText=$setupText.Replace($uiAnchor,$uiReplacement)
 }
 
 [IO.File]::WriteAllText($setupCs,$setupText,$utf8Bom)
 
 if(([regex]::Matches($setupText,[regex]::Escape($runtimeHook))).Count -ne 1){throw 'P24 runtime hook count invalid'}
+if(([regex]::Matches($setupText,[regex]::Escape($restoreHook))).Count -ne 1){throw 'P24 Options restore hook count invalid'}
+if(([regex]::Matches($setupText,[regex]::Escape($storeHook))).Count -ne 1){throw 'P24 Options store hook count invalid'}
+if(([regex]::Matches($setupText,[regex]::Escape($finishHook))).Count -ne 1){throw 'P24 finish hook count invalid'}
 if(([regex]::Matches($setupText,[regex]::Escape($uiHook))).Count -ne 1){throw 'P24 setup UI hook count invalid'}
 if($setupText.Contains('this.Shown += delegate')){throw 'P24 obsolete Shown hook still present'}
 
-Stage "Original Thetis MeterManager + exact Setup Meters/Gadgets staged; resources=$($icons.Count); deterministic constructor hooks active"
+Stage "Original Thetis MeterManager + Setup Meters/Gadgets staged; PowerSDR Options DB restore/store hooks active; resources=$($icons.Count)"
