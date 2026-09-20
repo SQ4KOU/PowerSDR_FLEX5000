@@ -23,6 +23,141 @@ namespace PowerSDR
 {
     public partial class Setup
     {
+        // P24 compatibility members copied verbatim from audited Thetis setup.cs.
+        private Font _textOverlayFont1 = null;
+
+        private Font _textOverlayFont2 = null;
+
+        private bool _reset_button_map_layout = false;
+
+        private bool _reset_waverecord_order_map = false;
+
+        private readonly System.Windows.Forms.Timer _recording_keybind_timer = new System.Windows.Forms.Timer();
+
+        private bool _listening_for_recording_keycodes = false;
+
+        private bool _setting_globalkeybind = false;
+
+        private Keys _globalPlayRecordInterrupKeybind = Keys.None;
+
+        private bool _alt_pressed = P24ThetisMeterCompat.AltlKeyDown;
+
+        private bool _shift_pressed = P24ThetisMeterCompat.ShiftKeyDown;
+
+        private bool _ctrl_pressed = P24ThetisMeterCompat.CtrlKeyDown;
+
+        private bool _suppressEvents = false;
+
+        private int _selected_voice_slot = 0;
+
+        private bool _ignore_slot_count = false; // prevent updateItemSettingsControlsForSelected from updating slot count
+
+        KeyValuePair<string, string>[] _hamqsl_urls =
+        {
+        new KeyValuePair<string, string>("select one", ""),
+        new KeyValuePair<string, string>("Layout 1 - sun", "https://www.hamqsl.com/solarn0nbh.php"),
+        new KeyValuePair<string, string>("Layout 2 - sun", "https://www.hamqsl.com/solarpic.php"),
+        new KeyValuePair<string, string>("Layout 3", "https://www.hamqsl.com/solarvhf.php"),
+        new KeyValuePair<string, string>("Layout 4", "https://www.hamqsl.com/solar.php"),
+        new KeyValuePair<string, string>("Layout 5", "https://www.hamqsl.com/solarsmall.php"),
+        new KeyValuePair<string, string>("Layout 6", "https://www.hamqsl.com/solarbrief.php"),
+        new KeyValuePair<string, string>("Layout 7", "https://www.hamqsl.com/solarbc.php"),
+        new KeyValuePair<string, string>("Layout 8", "https://www.hamqsl.com/solar100sc.php"),
+        new KeyValuePair<string, string>("Layout 9", "https://www.hamqsl.com/solar2.php"),
+        new KeyValuePair<string, string>("Layout 10 - sun", "https://www.hamqsl.com/solarpich.php"),
+        new KeyValuePair<string, string>("Layout 11 - sun", "https://www.hamqsl.com/solar101pic.php"),
+        new KeyValuePair<string, string>("Layout 12", "https://www.hamqsl.com/solar101vhf.php"),
+        new KeyValuePair<string, string>("Layout 13", "https://www.hamqsl.com/solar101vhfper.php"),
+        new KeyValuePair<string, string>("Layout 14 - sun", "https://www.hamqsl.com/solar101vhfpic.php"),
+        new KeyValuePair<string, string>("Layout 15", "https://www.hamqsl.com/solar101sc.php"),
+        new KeyValuePair<string, string>("Layout 16 - sun", "https://www.hamqsl.com/solarsun.php"),
+        new KeyValuePair<string, string>("Layout 17 - graphs", "https://www.hamqsl.com/solargraph.php"),
+        new KeyValuePair<string, string>("Layout 18 - graphs", "https://www.hamqsl.com/marston.php"),
+        new KeyValuePair<string, string>("Greyline 1", "https://www.hamqsl.com/solarmuf.php"),
+        new KeyValuePair<string, string>("Greyline 2", "https://www.hamqsl.com/solarmap.php"),
+        new KeyValuePair<string, string>("Earth 1", "https://www.hamqsl.com/solarglobe.php"),
+        new KeyValuePair<string, string>("Earth 2", "https://www.hamqsl.com/moonglobe.php"),
+        new KeyValuePair<string, string>("Planets", "https://www.hamqsl.com/solarsystem.php"),
+        };
+
+        private KeyValuePair<string, string>[] _bsdworld_urls =
+        {
+        new KeyValuePair<string, string>("select one", ""),
+        new KeyValuePair<string, string>("NA Propagation All", "https://bsdworld.org/DXCC/continent/NA/latest<light_mode>.webp"),
+        new KeyValuePair<string, string>("NA Propagation Zone 3", "https://bsdworld.org/DXCC/cqzone/3/latest<light_mode>.webp"),
+        new KeyValuePair<string, string>("NA Propagation Zone 4", "https://bsdworld.org/DXCC/cqzone/4/latest<light_mode>.webp"),
+        new KeyValuePair<string, string>("NA Propagation Zone 5", "https://bsdworld.org/DXCC/cqzone/5/latest<light_mode>.webp"),
+        new KeyValuePair<string, string>("EU Propagation All", "https://bsdworld.org/DXCC/continent/EU/tn_latest<light_mode>.webp"),
+        new KeyValuePair<string, string>("EU Propagation Zone 14", "https://bsdworld.org/DXCC/cqzone/14/latest<light_mode>.webp"),
+        new KeyValuePair<string, string>("EU Propagation Zone 15", "https://bsdworld.org/DXCC/cqzone/15/latest<light_mode>.webp"),
+        new KeyValuePair<string, string>("EU Propagation Zone 16", "https://bsdworld.org/DXCC/cqzone/16/latest<light_mode>.webp"),
+        new KeyValuePair<string, string>("EU Propagation Zone 20", "https://bsdworld.org/DXCC/cqzone/20/latest<light_mode>.webp"),
+        new KeyValuePair<string, string>("OC Propagation All", "https://bsdworld.org/DXCC/continent/OC/tn_latest<light_mode>.webp"),
+        new KeyValuePair<string, string>("AS Propagation All", "https://bsdworld.org/DXCC/continent/AS/tn_latest<light_mode>.webp"),
+        new KeyValuePair<string, string>("SA Propagation All", "https://bsdworld.org/DXCC/continent/SA/tn_latest<light_mode>.webp"),
+        new KeyValuePair<string, string>("AF Propagation All", "https://bsdworld.org/DXCC/continent/AF/tn_latest<light_mode>.webp"),
+        new KeyValuePair<string, string>("A-Index", "https://bsdworld.org/aindex<light_mode>.svgz"),
+        new KeyValuePair<string, string>("PK Index", "https://bsdworld.org/pkindex<light_mode>.svgz"),
+        new KeyValuePair<string, string>("PK Predictions", "https://bsdworld.org/pki-forecast<light_mode>.svgz"),
+        new KeyValuePair<string, string>("Flux", "https://bsdworld.org/flux<light_mode>.svgz"),
+        new KeyValuePair<string, string>("Outlook", "https://bsdworld.org/outlook<light_mode>.svgz"),
+        new KeyValuePair<string, string>("Solar Wind", "https://bsdworld.org/solarwind<light_mode>.svgz"),
+        new KeyValuePair<string, string>("SSN", "https://bsdworld.org/ssn<light_mode>.svgz"),
+        new KeyValuePair<string, string>("SSN History", "https://bsdworld.org/ssnhist<light_mode>.svgz"),
+        new KeyValuePair<string, string>("EISN", "https://bsdworld.org/eisn<light_mode>.svgz"),
+        new KeyValuePair<string, string>("Proton Flux", "https://bsdworld.org/proton_flux<light_mode>.svgz"),
+        new KeyValuePair<string, string>("X-Ray Flux", "https://bsdworld.org/xray_flux<light_mode>.svgz"),
+        new KeyValuePair<string, string>("D-Layer", "https://bsdworld.org/d-rap/latest<light_mode>.svgz"),
+        };
+
+        private KeyValuePair<string, string>[] _nasa_urls =
+        {
+        new KeyValuePair<string, string>("select one", ""),
+        new KeyValuePair<string, string>("SOHO EIT 171", "https://soho.nascom.nasa.gov/data/realtime/eit_171/512/latest.jpg"),
+        new KeyValuePair<string, string>("SOHO EIT 195", "https://soho.nascom.nasa.gov/data/realtime/eit_195/512/latest.jpg"),
+        new KeyValuePair<string, string>("SOHO EIT 284", "https://soho.nascom.nasa.gov/data/realtime/eit_284/512/latest.jpg"),
+        new KeyValuePair<string, string>("SOHO EIT 304", "https://soho.nascom.nasa.gov/data/realtime/eit_304/512/latest.jpg"),
+        new KeyValuePair<string, string>("SOHO SDO/HMI Continuum", "https://soho.nascom.nasa.gov/data/realtime/hmi_igr/512/latest.jpg"),
+        new KeyValuePair<string, string>("SOHO SDO/HMI Magnetogram", "https://soho.nascom.nasa.gov/data/realtime/hmi_mag/512/latest.jpg"),
+        new KeyValuePair<string, string>("SOHO LASCO C2", "https://soho.nascom.nasa.gov/data/realtime/c2/512/latest.jpg"),
+        new KeyValuePair<string, string>("SOHO LASCO C3", "https://soho.nascom.nasa.gov/data/realtime/c3/512/latest.jpg")
+        };
+
+        private KeyValuePair<string, string>[] _noaa_urls =
+        {
+        new KeyValuePair<string, string>("select one", ""),
+        new KeyValuePair<string, string>("Northern Aurora Latest", "https://services.swpc.noaa.gov/images/animations/ovation/north/latest.jpg"),
+        new KeyValuePair<string, string>("Southern Aurora Latest", "https://services.swpc.noaa.gov/images/animations/ovation/south/latest.jpg"),
+        new KeyValuePair<string, string>("Northern Aurora Forecast", "https://services.swpc.noaa.gov/images/aurora-forecast-northern-hemisphere.jpg"),
+        new KeyValuePair<string, string>("Southern Aurora Forecast", "https://services.swpc.noaa.gov/images/aurora-forecast-southern-hemisphere.jpg"),
+        new KeyValuePair<string, string>("SWX Solar Overiew", "https://services.swpc.noaa.gov/images/swx-overview-large.gif"),
+        new KeyValuePair<string, string>("K Indicies", "https://services.swpc.noaa.gov/images/station-k-index.png"),
+        new KeyValuePair<string, string>("D Region Absorption Map", "https://services.swpc.noaa.gov/images/animations/d-rap/global/d-rap/latest.png")
+        };
+
+        private class clsComboHistoryItem
+        {
+        private string _reading_name;
+        private Reading _reading;
+        public clsComboHistoryItem(Reading r)
+        {
+        _reading = r;
+        _reading_name = MeterManager.ReadingName(r);
+        }
+        public Reading Reading
+        {
+        get { return _reading; }
+        }
+        public string ReadingName
+        {
+        get { return _reading_name; }
+        }
+        public override string ToString()
+        {
+        return _reading_name;
+        }
+        }
+
         private System.Windows.Forms.ButtonTS p24_bntMultiMeterItemRotator_default_pstRotator;
         private System.Windows.Forms.ButtonTS p24_btnAddMeterItem;
         private System.Windows.Forms.ButtonTS p24_btnAddRX1Container;
@@ -1233,7 +1368,7 @@ namespace PowerSDR
             this.p24_bntMultiMeterItemRotator_default_pstRotator.Image = null;
             this.p24_bntMultiMeterItemRotator_default_pstRotator.Location = new System.Drawing.Point(222, 245);
             this.p24_bntMultiMeterItemRotator_default_pstRotator.Name = "p24_bntMultiMeterItemRotator_default_pstRotator";
-            this.p24_bntMultiMeterItemRotator_default_pstRotator.Selectable = true;
+            this.p24_bntMultiMeterItemRotator_default_pstRotator.TabStop = true;
             this.p24_bntMultiMeterItemRotator_default_pstRotator.Size = new System.Drawing.Size(63, 23);
             this.p24_bntMultiMeterItemRotator_default_pstRotator.TabIndex = 166;
             this.p24_bntMultiMeterItemRotator_default_pstRotator.Text = "pstRotator";
@@ -1247,7 +1382,7 @@ namespace PowerSDR
             this.p24_btnAddMeterItem.Image = global::PowerSDR.P24MeterResources.arrow_right_black;
             this.p24_btnAddMeterItem.Location = new System.Drawing.Point(153, 174);
             this.p24_btnAddMeterItem.Name = "p24_btnAddMeterItem";
-            this.p24_btnAddMeterItem.Selectable = true;
+            this.p24_btnAddMeterItem.TabStop = true;
             this.p24_btnAddMeterItem.Size = new System.Drawing.Size(32, 32);
             this.p24_btnAddMeterItem.TabIndex = 92;
             this.toolTip1.SetToolTip(this.p24_btnAddMeterItem, "Include the item");
@@ -1260,7 +1395,7 @@ namespace PowerSDR
             this.p24_btnAddRX1Container.Image = null;
             this.p24_btnAddRX1Container.Location = new System.Drawing.Point(209, 13);
             this.p24_btnAddRX1Container.Name = "p24_btnAddRX1Container";
-            this.p24_btnAddRX1Container.Selectable = true;
+            this.p24_btnAddRX1Container.TabStop = true;
             this.p24_btnAddRX1Container.Size = new System.Drawing.Size(71, 44);
             this.p24_btnAddRX1Container.TabIndex = 0;
             this.p24_btnAddRX1Container.Text = "Add\r\nContainer";
@@ -1274,7 +1409,7 @@ namespace PowerSDR
             this.p24_btnBandButtons_font.Image = null;
             this.p24_btnBandButtons_font.Location = new System.Drawing.Point(241, 61);
             this.p24_btnBandButtons_font.Name = "p24_btnBandButtons_font";
-            this.p24_btnBandButtons_font.Selectable = true;
+            this.p24_btnBandButtons_font.TabStop = true;
             this.p24_btnBandButtons_font.Size = new System.Drawing.Size(56, 23);
             this.p24_btnBandButtons_font.TabIndex = 137;
             this.p24_btnBandButtons_font.Text = "Font";
@@ -1287,7 +1422,7 @@ namespace PowerSDR
             this.p24_btnContainerDelete.Image = null;
             this.p24_btnContainerDelete.Location = new System.Drawing.Point(209, 119);
             this.p24_btnContainerDelete.Name = "p24_btnContainerDelete";
-            this.p24_btnContainerDelete.Selectable = true;
+            this.p24_btnContainerDelete.TabStop = true;
             this.p24_btnContainerDelete.Size = new System.Drawing.Size(71, 44);
             this.p24_btnContainerDelete.TabIndex = 88;
             this.p24_btnContainerDelete.Text = "Remove Container";
@@ -1301,7 +1436,7 @@ namespace PowerSDR
             this.p24_btnContainer_dupe.Image = global::PowerSDR.P24MeterResources.cont_copy;
             this.p24_btnContainer_dupe.Location = new System.Drawing.Point(153, 278);
             this.p24_btnContainer_dupe.Name = "p24_btnContainer_dupe";
-            this.p24_btnContainer_dupe.Selectable = true;
+            this.p24_btnContainer_dupe.TabStop = true;
             this.p24_btnContainer_dupe.Size = new System.Drawing.Size(32, 32);
             this.p24_btnContainer_dupe.TabIndex = 117;
             this.toolTip1.SetToolTip(this.p24_btnContainer_dupe, "Duplicate the current container");
@@ -1314,7 +1449,7 @@ namespace PowerSDR
             this.p24_btnContainer_load.Image = global::PowerSDR.P24MeterResources.cont_load;
             this.p24_btnContainer_load.Location = new System.Drawing.Point(153, 316);
             this.p24_btnContainer_load.Name = "p24_btnContainer_load";
-            this.p24_btnContainer_load.Selectable = true;
+            this.p24_btnContainer_load.TabStop = true;
             this.p24_btnContainer_load.Size = new System.Drawing.Size(32, 32);
             this.p24_btnContainer_load.TabIndex = 116;
             this.toolTip1.SetToolTip(this.p24_btnContainer_load, "Load a container file");
@@ -1327,7 +1462,7 @@ namespace PowerSDR
             this.p24_btnContainer_save.Image = global::PowerSDR.P24MeterResources.cont_save;
             this.p24_btnContainer_save.Location = new System.Drawing.Point(153, 354);
             this.p24_btnContainer_save.Name = "p24_btnContainer_save";
-            this.p24_btnContainer_save.Selectable = true;
+            this.p24_btnContainer_save.TabStop = true;
             this.p24_btnContainer_save.Size = new System.Drawing.Size(32, 32);
             this.p24_btnContainer_save.TabIndex = 115;
             this.p24_btnContainer_save.Text = "S";
@@ -1341,7 +1476,7 @@ namespace PowerSDR
             this.p24_btnFilter_4char_copy.Image = global::PowerSDR.P24MeterResources.copy;
             this.p24_btnFilter_4char_copy.Location = new System.Drawing.Point(284, 84);
             this.p24_btnFilter_4char_copy.Name = "p24_btnFilter_4char_copy";
-            this.p24_btnFilter_4char_copy.Selectable = true;
+            this.p24_btnFilter_4char_copy.TabStop = true;
             this.p24_btnFilter_4char_copy.Size = new System.Drawing.Size(27, 27);
             this.p24_btnFilter_4char_copy.TabIndex = 118;
             this.toolTip1.SetToolTip(this.p24_btnFilter_4char_copy, "Copy to clipboard");
@@ -1354,7 +1489,7 @@ namespace PowerSDR
             this.p24_btnHistory_copy_minmax_from_0.Image = null;
             this.p24_btnHistory_copy_minmax_from_0.Location = new System.Drawing.Point(249, 72);
             this.p24_btnHistory_copy_minmax_from_0.Name = "p24_btnHistory_copy_minmax_from_0";
-            this.p24_btnHistory_copy_minmax_from_0.Selectable = true;
+            this.p24_btnHistory_copy_minmax_from_0.TabStop = true;
             this.p24_btnHistory_copy_minmax_from_0.Size = new System.Drawing.Size(32, 24);
             this.p24_btnHistory_copy_minmax_from_0.TabIndex = 146;
             this.p24_btnHistory_copy_minmax_from_0.Text = "=";
@@ -1368,7 +1503,7 @@ namespace PowerSDR
             this.p24_btnLedIndicatorVarPicker.Image = null;
             this.p24_btnLedIndicatorVarPicker.Location = new System.Drawing.Point(289, 98);
             this.p24_btnLedIndicatorVarPicker.Name = "p24_btnLedIndicatorVarPicker";
-            this.p24_btnLedIndicatorVarPicker.Selectable = true;
+            this.p24_btnLedIndicatorVarPicker.TabStop = true;
             this.p24_btnLedIndicatorVarPicker.Size = new System.Drawing.Size(28, 28);
             this.p24_btnLedIndicatorVarPicker.TabIndex = 181;
             this.p24_btnLedIndicatorVarPicker.Text = "%";
@@ -1381,7 +1516,7 @@ namespace PowerSDR
             this.p24_btnLedIndicator_4char_copy.Image = global::PowerSDR.P24MeterResources.copy;
             this.p24_btnLedIndicator_4char_copy.Location = new System.Drawing.Point(290, 210);
             this.p24_btnLedIndicator_4char_copy.Name = "p24_btnLedIndicator_4char_copy";
-            this.p24_btnLedIndicator_4char_copy.Selectable = true;
+            this.p24_btnLedIndicator_4char_copy.TabStop = true;
             this.p24_btnLedIndicator_4char_copy.Size = new System.Drawing.Size(27, 27);
             this.p24_btnLedIndicator_4char_copy.TabIndex = 179;
             this.toolTip1.SetToolTip(this.p24_btnLedIndicator_4char_copy, "Copy to clipboard");
@@ -1394,7 +1529,7 @@ namespace PowerSDR
             this.p24_btnLedIndicator_copy_sizex_to_y.Image = null;
             this.p24_btnLedIndicator_copy_sizex_to_y.Location = new System.Drawing.Point(180, 313);
             this.p24_btnLedIndicator_copy_sizex_to_y.Name = "p24_btnLedIndicator_copy_sizex_to_y";
-            this.p24_btnLedIndicator_copy_sizex_to_y.Selectable = true;
+            this.p24_btnLedIndicator_copy_sizex_to_y.TabStop = true;
             this.p24_btnLedIndicator_copy_sizex_to_y.Size = new System.Drawing.Size(33, 23);
             this.p24_btnLedIndicator_copy_sizex_to_y.TabIndex = 155;
             this.p24_btnLedIndicator_copy_sizex_to_y.Text = "=";
@@ -1408,7 +1543,7 @@ namespace PowerSDR
             this.p24_btnLedIndicator_copy_truefalse_colours.Image = null;
             this.p24_btnLedIndicator_copy_truefalse_colours.Location = new System.Drawing.Point(115, 171);
             this.p24_btnLedIndicator_copy_truefalse_colours.Name = "p24_btnLedIndicator_copy_truefalse_colours";
-            this.p24_btnLedIndicator_copy_truefalse_colours.Selectable = true;
+            this.p24_btnLedIndicator_copy_truefalse_colours.TabStop = true;
             this.p24_btnLedIndicator_copy_truefalse_colours.Size = new System.Drawing.Size(33, 23);
             this.p24_btnLedIndicator_copy_truefalse_colours.TabIndex = 165;
             this.p24_btnLedIndicator_copy_truefalse_colours.Text = "=";
@@ -1423,7 +1558,7 @@ namespace PowerSDR
             this.p24_btnMMIO_variable.Image = null;
             this.p24_btnMMIO_variable.Location = new System.Drawing.Point(243, 57);
             this.p24_btnMMIO_variable.Name = "p24_btnMMIO_variable";
-            this.p24_btnMMIO_variable.Selectable = true;
+            this.p24_btnMMIO_variable.TabStop = true;
             this.p24_btnMMIO_variable.Size = new System.Drawing.Size(28, 28);
             this.p24_btnMMIO_variable.TabIndex = 128;
             this.p24_btnMMIO_variable.Text = "%";
@@ -1437,7 +1572,7 @@ namespace PowerSDR
             this.p24_btnMMIO_variable_2.Image = null;
             this.p24_btnMMIO_variable_2.Location = new System.Drawing.Point(275, 57);
             this.p24_btnMMIO_variable_2.Name = "p24_btnMMIO_variable_2";
-            this.p24_btnMMIO_variable_2.Selectable = true;
+            this.p24_btnMMIO_variable_2.TabStop = true;
             this.p24_btnMMIO_variable_2.Size = new System.Drawing.Size(28, 28);
             this.p24_btnMMIO_variable_2.TabIndex = 129;
             this.p24_btnMMIO_variable_2.Text = "%";
@@ -1451,7 +1586,7 @@ namespace PowerSDR
             this.p24_btnMMIO_variable_2_history.Image = null;
             this.p24_btnMMIO_variable_2_history.Location = new System.Drawing.Point(284, 52);
             this.p24_btnMMIO_variable_2_history.Name = "p24_btnMMIO_variable_2_history";
-            this.p24_btnMMIO_variable_2_history.Selectable = true;
+            this.p24_btnMMIO_variable_2_history.TabStop = true;
             this.p24_btnMMIO_variable_2_history.Size = new System.Drawing.Size(28, 28);
             this.p24_btnMMIO_variable_2_history.TabIndex = 140;
             this.p24_btnMMIO_variable_2_history.Text = "%";
@@ -1465,7 +1600,7 @@ namespace PowerSDR
             this.p24_btnMMIO_variable_2_rotator.Image = null;
             this.p24_btnMMIO_variable_2_rotator.Location = new System.Drawing.Point(275, 46);
             this.p24_btnMMIO_variable_2_rotator.Name = "p24_btnMMIO_variable_2_rotator";
-            this.p24_btnMMIO_variable_2_rotator.Selectable = true;
+            this.p24_btnMMIO_variable_2_rotator.TabStop = true;
             this.p24_btnMMIO_variable_2_rotator.Size = new System.Drawing.Size(28, 28);
             this.p24_btnMMIO_variable_2_rotator.TabIndex = 129;
             this.p24_btnMMIO_variable_2_rotator.Text = "%";
@@ -1479,7 +1614,7 @@ namespace PowerSDR
             this.p24_btnMMIO_variable_history.Image = null;
             this.p24_btnMMIO_variable_history.Location = new System.Drawing.Point(252, 52);
             this.p24_btnMMIO_variable_history.Name = "p24_btnMMIO_variable_history";
-            this.p24_btnMMIO_variable_history.Selectable = true;
+            this.p24_btnMMIO_variable_history.TabStop = true;
             this.p24_btnMMIO_variable_history.Size = new System.Drawing.Size(28, 28);
             this.p24_btnMMIO_variable_history.TabIndex = 139;
             this.p24_btnMMIO_variable_history.Text = "%";
@@ -1493,7 +1628,7 @@ namespace PowerSDR
             this.p24_btnMMIO_variable_rotator.Image = null;
             this.p24_btnMMIO_variable_rotator.Location = new System.Drawing.Point(243, 46);
             this.p24_btnMMIO_variable_rotator.Name = "p24_btnMMIO_variable_rotator";
-            this.p24_btnMMIO_variable_rotator.Selectable = true;
+            this.p24_btnMMIO_variable_rotator.TabStop = true;
             this.p24_btnMMIO_variable_rotator.Size = new System.Drawing.Size(28, 28);
             this.p24_btnMMIO_variable_rotator.TabIndex = 128;
             this.p24_btnMMIO_variable_rotator.Text = "%";
@@ -1506,7 +1641,7 @@ namespace PowerSDR
             this.p24_btnMeterCopySettings.Image = global::PowerSDR.P24MeterResources.pipette32border;
             this.p24_btnMeterCopySettings.Location = new System.Drawing.Point(337, 316);
             this.p24_btnMeterCopySettings.Name = "p24_btnMeterCopySettings";
-            this.p24_btnMeterCopySettings.Selectable = true;
+            this.p24_btnMeterCopySettings.TabStop = true;
             this.p24_btnMeterCopySettings.Size = new System.Drawing.Size(32, 32);
             this.p24_btnMeterCopySettings.TabIndex = 103;
             this.toolTip1.SetToolTip(this.p24_btnMeterCopySettings, "Copy settings and colours");
@@ -1519,7 +1654,7 @@ namespace PowerSDR
             this.p24_btnMeterDown.Image = global::PowerSDR.P24MeterResources.down_black;
             this.p24_btnMeterDown.Location = new System.Drawing.Point(336, 212);
             this.p24_btnMeterDown.Name = "p24_btnMeterDown";
-            this.p24_btnMeterDown.Selectable = true;
+            this.p24_btnMeterDown.TabStop = true;
             this.p24_btnMeterDown.Size = new System.Drawing.Size(32, 32);
             this.p24_btnMeterDown.TabIndex = 94;
             this.toolTip1.SetToolTip(this.p24_btnMeterDown, "Move item down");
@@ -1532,7 +1667,7 @@ namespace PowerSDR
             this.p24_btnMeterPasteSettings.Image = global::PowerSDR.P24MeterResources.brush32border;
             this.p24_btnMeterPasteSettings.Location = new System.Drawing.Point(336, 353);
             this.p24_btnMeterPasteSettings.Name = "p24_btnMeterPasteSettings";
-            this.p24_btnMeterPasteSettings.Selectable = true;
+            this.p24_btnMeterPasteSettings.TabStop = true;
             this.p24_btnMeterPasteSettings.Size = new System.Drawing.Size(32, 32);
             this.p24_btnMeterPasteSettings.TabIndex = 102;
             this.toolTip1.SetToolTip(this.p24_btnMeterPasteSettings, "Paste settings and colours into suitable meter item");
@@ -1545,7 +1680,7 @@ namespace PowerSDR
             this.p24_btnMeterUp.Image = global::PowerSDR.P24MeterResources.arrow_up_black;
             this.p24_btnMeterUp.Location = new System.Drawing.Point(337, 174);
             this.p24_btnMeterUp.Name = "p24_btnMeterUp";
-            this.p24_btnMeterUp.Selectable = true;
+            this.p24_btnMeterUp.TabStop = true;
             this.p24_btnMeterUp.Size = new System.Drawing.Size(32, 32);
             this.p24_btnMeterUp.TabIndex = 95;
             this.toolTip1.SetToolTip(this.p24_btnMeterUp, "Move item up");
@@ -1559,7 +1694,7 @@ namespace PowerSDR
             this.p24_btnOtherButtons_reset_layout.Image = global::PowerSDR.P24MeterResources.grid;
             this.p24_btnOtherButtons_reset_layout.Location = new System.Drawing.Point(106, 338);
             this.p24_btnOtherButtons_reset_layout.Name = "p24_btnOtherButtons_reset_layout";
-            this.p24_btnOtherButtons_reset_layout.Selectable = true;
+            this.p24_btnOtherButtons_reset_layout.TabStop = true;
             this.p24_btnOtherButtons_reset_layout.Size = new System.Drawing.Size(32, 32);
             this.p24_btnOtherButtons_reset_layout.TabIndex = 113;
             this.toolTip1.SetToolTip(this.p24_btnOtherButtons_reset_layout, "Reset layout");
@@ -1572,7 +1707,7 @@ namespace PowerSDR
             this.p24_btnRecording_4char_copy.Image = global::PowerSDR.P24MeterResources.copy;
             this.p24_btnRecording_4char_copy.Location = new System.Drawing.Point(107, 24);
             this.p24_btnRecording_4char_copy.Name = "p24_btnRecording_4char_copy";
-            this.p24_btnRecording_4char_copy.Selectable = true;
+            this.p24_btnRecording_4char_copy.TabStop = true;
             this.p24_btnRecording_4char_copy.Size = new System.Drawing.Size(27, 27);
             this.p24_btnRecording_4char_copy.TabIndex = 185;
             this.toolTip1.SetToolTip(this.p24_btnRecording_4char_copy, "Copy to clipboard");
@@ -1586,7 +1721,7 @@ namespace PowerSDR
             this.p24_btnRecording_assingnkeybind.Image = null;
             this.p24_btnRecording_assingnkeybind.Location = new System.Drawing.Point(93, 67);
             this.p24_btnRecording_assingnkeybind.Name = "p24_btnRecording_assingnkeybind";
-            this.p24_btnRecording_assingnkeybind.Selectable = true;
+            this.p24_btnRecording_assingnkeybind.TabStop = true;
             this.p24_btnRecording_assingnkeybind.Size = new System.Drawing.Size(53, 23);
             this.p24_btnRecording_assingnkeybind.TabIndex = 179;
             this.p24_btnRecording_assingnkeybind.Text = "assign";
@@ -1601,7 +1736,7 @@ namespace PowerSDR
             this.p24_btnRecording_export_wav_from_slot.Image = global::PowerSDR.P24MeterResources.cont_save;
             this.p24_btnRecording_export_wav_from_slot.Location = new System.Drawing.Point(140, 36);
             this.p24_btnRecording_export_wav_from_slot.Name = "p24_btnRecording_export_wav_from_slot";
-            this.p24_btnRecording_export_wav_from_slot.Selectable = true;
+            this.p24_btnRecording_export_wav_from_slot.TabStop = true;
             this.p24_btnRecording_export_wav_from_slot.Size = new System.Drawing.Size(27, 27);
             this.p24_btnRecording_export_wav_from_slot.TabIndex = 186;
             this.toolTip1.SetToolTip(this.p24_btnRecording_export_wav_from_slot, "Export wav from slot");
@@ -1615,7 +1750,7 @@ namespace PowerSDR
             this.p24_btnRecording_globalkeybind_assign.Image = null;
             this.p24_btnRecording_globalkeybind_assign.Location = new System.Drawing.Point(103, 19);
             this.p24_btnRecording_globalkeybind_assign.Name = "p24_btnRecording_globalkeybind_assign";
-            this.p24_btnRecording_globalkeybind_assign.Selectable = true;
+            this.p24_btnRecording_globalkeybind_assign.TabStop = true;
             this.p24_btnRecording_globalkeybind_assign.Size = new System.Drawing.Size(53, 23);
             this.p24_btnRecording_globalkeybind_assign.TabIndex = 182;
             this.p24_btnRecording_globalkeybind_assign.Text = "assign";
@@ -1630,7 +1765,7 @@ namespace PowerSDR
             this.p24_btnRecording_load_wav_to_slot.Image = global::PowerSDR.P24MeterResources.cont_load;
             this.p24_btnRecording_load_wav_to_slot.Location = new System.Drawing.Point(140, 3);
             this.p24_btnRecording_load_wav_to_slot.Name = "p24_btnRecording_load_wav_to_slot";
-            this.p24_btnRecording_load_wav_to_slot.Selectable = true;
+            this.p24_btnRecording_load_wav_to_slot.TabStop = true;
             this.p24_btnRecording_load_wav_to_slot.Size = new System.Drawing.Size(27, 27);
             this.p24_btnRecording_load_wav_to_slot.TabIndex = 114;
             this.toolTip1.SetToolTip(this.p24_btnRecording_load_wav_to_slot, "Load wav to slot");
@@ -1643,7 +1778,7 @@ namespace PowerSDR
             this.p24_btnRecording_openStorageFolder.Image = null;
             this.p24_btnRecording_openStorageFolder.Location = new System.Drawing.Point(100, 3);
             this.p24_btnRecording_openStorageFolder.Name = "p24_btnRecording_openStorageFolder";
-            this.p24_btnRecording_openStorageFolder.Selectable = true;
+            this.p24_btnRecording_openStorageFolder.TabStop = true;
             this.p24_btnRecording_openStorageFolder.Size = new System.Drawing.Size(34, 20);
             this.p24_btnRecording_openStorageFolder.TabIndex = 172;
             this.p24_btnRecording_openStorageFolder.Text = "...";
@@ -1657,7 +1792,7 @@ namespace PowerSDR
             this.p24_btnRecoverContainer.Image = null;
             this.p24_btnRecoverContainer.Location = new System.Drawing.Point(209, 63);
             this.p24_btnRecoverContainer.Name = "p24_btnRecoverContainer";
-            this.p24_btnRecoverContainer.Selectable = true;
+            this.p24_btnRecoverContainer.TabStop = true;
             this.p24_btnRecoverContainer.Size = new System.Drawing.Size(71, 44);
             this.p24_btnRecoverContainer.TabIndex = 118;
             this.p24_btnRecoverContainer.Text = "Recover Container";
@@ -1671,7 +1806,7 @@ namespace PowerSDR
             this.p24_btnRemoveMeterItem.Image = global::PowerSDR.P24MeterResources.arrow_left_black;
             this.p24_btnRemoveMeterItem.Location = new System.Drawing.Point(153, 212);
             this.p24_btnRemoveMeterItem.Name = "p24_btnRemoveMeterItem";
-            this.p24_btnRemoveMeterItem.Selectable = true;
+            this.p24_btnRemoveMeterItem.TabStop = true;
             this.p24_btnRemoveMeterItem.Size = new System.Drawing.Size(32, 32);
             this.p24_btnRemoveMeterItem.TabIndex = 93;
             this.toolTip1.SetToolTip(this.p24_btnRemoveMeterItem, "Remove the item");
@@ -1685,7 +1820,7 @@ namespace PowerSDR
             this.p24_btnTextOverlayVarPicker.Image = null;
             this.p24_btnTextOverlayVarPicker.Location = new System.Drawing.Point(289, 98);
             this.p24_btnTextOverlayVarPicker.Name = "p24_btnTextOverlayVarPicker";
-            this.p24_btnTextOverlayVarPicker.Selectable = true;
+            this.p24_btnTextOverlayVarPicker.TabStop = true;
             this.p24_btnTextOverlayVarPicker.Size = new System.Drawing.Size(28, 28);
             this.p24_btnTextOverlayVarPicker.TabIndex = 170;
             this.p24_btnTextOverlayVarPicker.Text = "%";
@@ -1698,7 +1833,7 @@ namespace PowerSDR
             this.p24_btnTextOverlay_Font1.Image = null;
             this.p24_btnTextOverlay_Font1.Location = new System.Drawing.Point(36, 183);
             this.p24_btnTextOverlay_Font1.Name = "p24_btnTextOverlay_Font1";
-            this.p24_btnTextOverlay_Font1.Selectable = true;
+            this.p24_btnTextOverlay_Font1.TabStop = true;
             this.p24_btnTextOverlay_Font1.Size = new System.Drawing.Size(49, 23);
             this.p24_btnTextOverlay_Font1.TabIndex = 137;
             this.p24_btnTextOverlay_Font1.Text = "Font";
@@ -1711,7 +1846,7 @@ namespace PowerSDR
             this.p24_btnTextOverlay_Font2.Image = null;
             this.p24_btnTextOverlay_Font2.Location = new System.Drawing.Point(36, 209);
             this.p24_btnTextOverlay_Font2.Name = "p24_btnTextOverlay_Font2";
-            this.p24_btnTextOverlay_Font2.Selectable = true;
+            this.p24_btnTextOverlay_Font2.TabStop = true;
             this.p24_btnTextOverlay_Font2.Size = new System.Drawing.Size(49, 23);
             this.p24_btnTextOverlay_Font2.TabIndex = 140;
             this.p24_btnTextOverlay_Font2.Text = "Font";
@@ -1724,7 +1859,7 @@ namespace PowerSDR
             this.p24_btnTextOverlay_copyfonts.Image = null;
             this.p24_btnTextOverlay_copyfonts.Location = new System.Drawing.Point(236, 195);
             this.p24_btnTextOverlay_copyfonts.Name = "p24_btnTextOverlay_copyfonts";
-            this.p24_btnTextOverlay_copyfonts.Selectable = true;
+            this.p24_btnTextOverlay_copyfonts.TabStop = true;
             this.p24_btnTextOverlay_copyfonts.Size = new System.Drawing.Size(28, 23);
             this.p24_btnTextOverlay_copyfonts.TabIndex = 165;
             this.p24_btnTextOverlay_copyfonts.Text = "=";
@@ -1738,7 +1873,7 @@ namespace PowerSDR
             this.p24_btnTextOverlay_copyoffsets.Image = null;
             this.p24_btnTextOverlay_copyoffsets.Location = new System.Drawing.Point(178, 333);
             this.p24_btnTextOverlay_copyoffsets.Name = "p24_btnTextOverlay_copyoffsets";
-            this.p24_btnTextOverlay_copyoffsets.Selectable = true;
+            this.p24_btnTextOverlay_copyoffsets.TabStop = true;
             this.p24_btnTextOverlay_copyoffsets.Size = new System.Drawing.Size(33, 23);
             this.p24_btnTextOverlay_copyoffsets.TabIndex = 155;
             this.p24_btnTextOverlay_copyoffsets.Text = "=";
@@ -1752,7 +1887,7 @@ namespace PowerSDR
             this.p24_btnVFOCopyColourFromMainNumbers.Image = null;
             this.p24_btnVFOCopyColourFromMainNumbers.Location = new System.Drawing.Point(274, 88);
             this.p24_btnVFOCopyColourFromMainNumbers.Name = "p24_btnVFOCopyColourFromMainNumbers";
-            this.p24_btnVFOCopyColourFromMainNumbers.Selectable = true;
+            this.p24_btnVFOCopyColourFromMainNumbers.TabStop = true;
             this.p24_btnVFOCopyColourFromMainNumbers.Size = new System.Drawing.Size(25, 23);
             this.p24_btnVFOCopyColourFromMainNumbers.TabIndex = 139;
             this.p24_btnVFOCopyColourFromMainNumbers.Text = "=";
@@ -1767,7 +1902,7 @@ namespace PowerSDR
             this.p24_btnWaveRecord_reset_layout.Image = global::PowerSDR.P24MeterResources.grid;
             this.p24_btnWaveRecord_reset_layout.Location = new System.Drawing.Point(280, 229);
             this.p24_btnWaveRecord_reset_layout.Name = "p24_btnWaveRecord_reset_layout";
-            this.p24_btnWaveRecord_reset_layout.Selectable = true;
+            this.p24_btnWaveRecord_reset_layout.TabStop = true;
             this.p24_btnWaveRecord_reset_layout.Size = new System.Drawing.Size(32, 32);
             this.p24_btnWaveRecord_reset_layout.TabIndex = 32;
             this.toolTip1.SetToolTip(this.p24_btnWaveRecord_reset_layout, "Reset order");
@@ -1781,7 +1916,7 @@ namespace PowerSDR
             this.p24_btnWebImage_bsdworld_visit.Image = null;
             this.p24_btnWebImage_bsdworld_visit.Location = new System.Drawing.Point(208, 12);
             this.p24_btnWebImage_bsdworld_visit.Name = "p24_btnWebImage_bsdworld_visit";
-            this.p24_btnWebImage_bsdworld_visit.Selectable = true;
+            this.p24_btnWebImage_bsdworld_visit.TabStop = true;
             this.p24_btnWebImage_bsdworld_visit.Size = new System.Drawing.Size(63, 24);
             this.p24_btnWebImage_bsdworld_visit.TabIndex = 1;
             this.p24_btnWebImage_bsdworld_visit.Text = "Visit";
@@ -1794,7 +1929,7 @@ namespace PowerSDR
             this.p24_btnWebImage_goto_next.Image = null;
             this.p24_btnWebImage_goto_next.Location = new System.Drawing.Point(257, 162);
             this.p24_btnWebImage_goto_next.Name = "p24_btnWebImage_goto_next";
-            this.p24_btnWebImage_goto_next.Selectable = true;
+            this.p24_btnWebImage_goto_next.TabStop = true;
             this.p24_btnWebImage_goto_next.Size = new System.Drawing.Size(26, 26);
             this.p24_btnWebImage_goto_next.TabIndex = 151;
             this.p24_btnWebImage_goto_next.Text = ">";
@@ -1809,7 +1944,7 @@ namespace PowerSDR
             this.p24_btnWebImage_hamqsl_donate.Image = null;
             this.p24_btnWebImage_hamqsl_donate.Location = new System.Drawing.Point(208, 12);
             this.p24_btnWebImage_hamqsl_donate.Name = "p24_btnWebImage_hamqsl_donate";
-            this.p24_btnWebImage_hamqsl_donate.Selectable = true;
+            this.p24_btnWebImage_hamqsl_donate.TabStop = true;
             this.p24_btnWebImage_hamqsl_donate.Size = new System.Drawing.Size(63, 24);
             this.p24_btnWebImage_hamqsl_donate.TabIndex = 1;
             this.p24_btnWebImage_hamqsl_donate.Text = "Donate";
@@ -1823,7 +1958,7 @@ namespace PowerSDR
             this.p24_buttonTS1.Image = null;
             this.p24_buttonTS1.Location = new System.Drawing.Point(208, 12);
             this.p24_buttonTS1.Name = "p24_buttonTS1";
-            this.p24_buttonTS1.Selectable = true;
+            this.p24_buttonTS1.TabStop = true;
             this.p24_buttonTS1.Size = new System.Drawing.Size(63, 24);
             this.p24_buttonTS1.TabIndex = 1;
             this.p24_buttonTS1.Text = "Visit";
@@ -1837,7 +1972,7 @@ namespace PowerSDR
             this.p24_buttonTS2.Image = null;
             this.p24_buttonTS2.Location = new System.Drawing.Point(208, 12);
             this.p24_buttonTS2.Name = "p24_buttonTS2";
-            this.p24_buttonTS2.Selectable = true;
+            this.p24_buttonTS2.TabStop = true;
             this.p24_buttonTS2.Size = new System.Drawing.Size(63, 24);
             this.p24_buttonTS2.TabIndex = 1;
             this.p24_buttonTS2.Text = "Visit";
@@ -3153,7 +3288,7 @@ namespace PowerSDR
             this.p24_clrbtnBandButtons_border.Location = new System.Drawing.Point(60, 260);
             this.p24_clrbtnBandButtons_border.MoreColors = "More Colors...";
             this.p24_clrbtnBandButtons_border.Name = "p24_clrbtnBandButtons_border";
-            this.p24_clrbtnBandButtons_border.Selectable = true;
+            this.p24_clrbtnBandButtons_border.TabStop = true;
             this.p24_clrbtnBandButtons_border.Size = new System.Drawing.Size(40, 23);
             this.p24_clrbtnBandButtons_border.TabIndex = 151;
             this.toolTip1.SetToolTip(this.p24_clrbtnBandButtons_border, "Border colour");
@@ -3169,7 +3304,7 @@ namespace PowerSDR
             this.p24_clrbtnBandButtons_fill.Location = new System.Drawing.Point(60, 289);
             this.p24_clrbtnBandButtons_fill.MoreColors = "More Colors...";
             this.p24_clrbtnBandButtons_fill.Name = "p24_clrbtnBandButtons_fill";
-            this.p24_clrbtnBandButtons_fill.Selectable = true;
+            this.p24_clrbtnBandButtons_fill.TabStop = true;
             this.p24_clrbtnBandButtons_fill.Size = new System.Drawing.Size(40, 23);
             this.p24_clrbtnBandButtons_fill.TabIndex = 153;
             this.toolTip1.SetToolTip(this.p24_clrbtnBandButtons_fill, "Fill colour");
@@ -3185,7 +3320,7 @@ namespace PowerSDR
             this.p24_clrbtnBandButtons_hover.Location = new System.Drawing.Point(60, 318);
             this.p24_clrbtnBandButtons_hover.MoreColors = "More Colors...";
             this.p24_clrbtnBandButtons_hover.Name = "p24_clrbtnBandButtons_hover";
-            this.p24_clrbtnBandButtons_hover.Selectable = true;
+            this.p24_clrbtnBandButtons_hover.TabStop = true;
             this.p24_clrbtnBandButtons_hover.Size = new System.Drawing.Size(40, 23);
             this.p24_clrbtnBandButtons_hover.TabIndex = 155;
             this.toolTip1.SetToolTip(this.p24_clrbtnBandButtons_hover, "Hover colour");
@@ -3201,7 +3336,7 @@ namespace PowerSDR
             this.p24_clrbtnBandButtons_indicator_off.Location = new System.Drawing.Point(60, 231);
             this.p24_clrbtnBandButtons_indicator_off.MoreColors = "More Colors...";
             this.p24_clrbtnBandButtons_indicator_off.Name = "p24_clrbtnBandButtons_indicator_off";
-            this.p24_clrbtnBandButtons_indicator_off.Selectable = true;
+            this.p24_clrbtnBandButtons_indicator_off.TabStop = true;
             this.p24_clrbtnBandButtons_indicator_off.Size = new System.Drawing.Size(40, 23);
             this.p24_clrbtnBandButtons_indicator_off.TabIndex = 149;
             this.toolTip1.SetToolTip(this.p24_clrbtnBandButtons_indicator_off, "Inactive colour");
@@ -3217,7 +3352,7 @@ namespace PowerSDR
             this.p24_clrbtnBandButtons_indicator_on.Location = new System.Drawing.Point(60, 202);
             this.p24_clrbtnBandButtons_indicator_on.MoreColors = "More Colors...";
             this.p24_clrbtnBandButtons_indicator_on.Name = "p24_clrbtnBandButtons_indicator_on";
-            this.p24_clrbtnBandButtons_indicator_on.Selectable = true;
+            this.p24_clrbtnBandButtons_indicator_on.TabStop = true;
             this.p24_clrbtnBandButtons_indicator_on.Size = new System.Drawing.Size(40, 23);
             this.p24_clrbtnBandButtons_indicator_on.TabIndex = 129;
             this.toolTip1.SetToolTip(this.p24_clrbtnBandButtons_indicator_on, "Active colour");
@@ -3233,7 +3368,7 @@ namespace PowerSDR
             this.p24_clrbtnButonBox_click.Location = new System.Drawing.Point(60, 347);
             this.p24_clrbtnButonBox_click.MoreColors = "More Colors...";
             this.p24_clrbtnButonBox_click.Name = "p24_clrbtnButonBox_click";
-            this.p24_clrbtnButonBox_click.Selectable = true;
+            this.p24_clrbtnButonBox_click.TabStop = true;
             this.p24_clrbtnButonBox_click.Size = new System.Drawing.Size(40, 23);
             this.p24_clrbtnButonBox_click.TabIndex = 166;
             this.toolTip1.SetToolTip(this.p24_clrbtnButonBox_click, "Click colour");
@@ -3249,7 +3384,7 @@ namespace PowerSDR
             this.p24_clrbtnButonBox_fontcolour.Location = new System.Drawing.Point(195, 60);
             this.p24_clrbtnButonBox_fontcolour.MoreColors = "More Colors...";
             this.p24_clrbtnButonBox_fontcolour.Name = "p24_clrbtnButonBox_fontcolour";
-            this.p24_clrbtnButonBox_fontcolour.Selectable = true;
+            this.p24_clrbtnButonBox_fontcolour.TabStop = true;
             this.p24_clrbtnButonBox_fontcolour.Size = new System.Drawing.Size(40, 23);
             this.p24_clrbtnButonBox_fontcolour.TabIndex = 168;
             this.toolTip1.SetToolTip(this.p24_clrbtnButonBox_fontcolour, "Font colour");
@@ -3264,7 +3399,7 @@ namespace PowerSDR
             this.p24_clrbtnContainerBackground.Location = new System.Drawing.Point(159, 102);
             this.p24_clrbtnContainerBackground.MoreColors = "More Colors...";
             this.p24_clrbtnContainerBackground.Name = "p24_clrbtnContainerBackground";
-            this.p24_clrbtnContainerBackground.Selectable = true;
+            this.p24_clrbtnContainerBackground.TabStop = true;
             this.p24_clrbtnContainerBackground.Size = new System.Drawing.Size(40, 23);
             this.p24_clrbtnContainerBackground.TabIndex = 98;
             this.toolTip1.SetToolTip(this.p24_clrbtnContainerBackground, "Container Background Colour");
@@ -3280,7 +3415,7 @@ namespace PowerSDR
             this.p24_clrbtnDial_button_highlight.Location = new System.Drawing.Point(271, 314);
             this.p24_clrbtnDial_button_highlight.MoreColors = "More Colors...";
             this.p24_clrbtnDial_button_highlight.Name = "p24_clrbtnDial_button_highlight";
-            this.p24_clrbtnDial_button_highlight.Selectable = true;
+            this.p24_clrbtnDial_button_highlight.TabStop = true;
             this.p24_clrbtnDial_button_highlight.Size = new System.Drawing.Size(40, 23);
             this.p24_clrbtnDial_button_highlight.TabIndex = 195;
             this.p24_clrbtnDial_button_highlight.Changed += new System.EventHandler(this.clrbtnDial_colours_changed);
@@ -3295,7 +3430,7 @@ namespace PowerSDR
             this.p24_clrbtnDial_button_off.Location = new System.Drawing.Point(271, 339);
             this.p24_clrbtnDial_button_off.MoreColors = "More Colors...";
             this.p24_clrbtnDial_button_off.Name = "p24_clrbtnDial_button_off";
-            this.p24_clrbtnDial_button_off.Selectable = true;
+            this.p24_clrbtnDial_button_off.TabStop = true;
             this.p24_clrbtnDial_button_off.Size = new System.Drawing.Size(40, 23);
             this.p24_clrbtnDial_button_off.TabIndex = 185;
             this.p24_clrbtnDial_button_off.Changed += new System.EventHandler(this.clrbtnDial_colours_changed);
@@ -3310,7 +3445,7 @@ namespace PowerSDR
             this.p24_clrbtnDial_button_on.Location = new System.Drawing.Point(99, 339);
             this.p24_clrbtnDial_button_on.MoreColors = "More Colors...";
             this.p24_clrbtnDial_button_on.Name = "p24_clrbtnDial_button_on";
-            this.p24_clrbtnDial_button_on.Selectable = true;
+            this.p24_clrbtnDial_button_on.TabStop = true;
             this.p24_clrbtnDial_button_on.Size = new System.Drawing.Size(40, 23);
             this.p24_clrbtnDial_button_on.TabIndex = 183;
             this.p24_clrbtnDial_button_on.Changed += new System.EventHandler(this.clrbtnDial_colours_changed);
@@ -3325,7 +3460,7 @@ namespace PowerSDR
             this.p24_clrbtnDial_circle.Location = new System.Drawing.Point(99, 264);
             this.p24_clrbtnDial_circle.MoreColors = "More Colors...";
             this.p24_clrbtnDial_circle.Name = "p24_clrbtnDial_circle";
-            this.p24_clrbtnDial_circle.Selectable = true;
+            this.p24_clrbtnDial_circle.TabStop = true;
             this.p24_clrbtnDial_circle.Size = new System.Drawing.Size(40, 23);
             this.p24_clrbtnDial_circle.TabIndex = 177;
             this.p24_clrbtnDial_circle.Changed += new System.EventHandler(this.clrbtnDial_colours_changed);
@@ -3340,7 +3475,7 @@ namespace PowerSDR
             this.p24_clrbtnDial_fast.Location = new System.Drawing.Point(271, 289);
             this.p24_clrbtnDial_fast.MoreColors = "More Colors...";
             this.p24_clrbtnDial_fast.Name = "p24_clrbtnDial_fast";
-            this.p24_clrbtnDial_fast.Selectable = true;
+            this.p24_clrbtnDial_fast.TabStop = true;
             this.p24_clrbtnDial_fast.Size = new System.Drawing.Size(40, 23);
             this.p24_clrbtnDial_fast.TabIndex = 193;
             this.p24_clrbtnDial_fast.Changed += new System.EventHandler(this.clrbtnDial_colours_changed);
@@ -3355,7 +3490,7 @@ namespace PowerSDR
             this.p24_clrbtnDial_hold.Location = new System.Drawing.Point(271, 264);
             this.p24_clrbtnDial_hold.MoreColors = "More Colors...";
             this.p24_clrbtnDial_hold.Name = "p24_clrbtnDial_hold";
-            this.p24_clrbtnDial_hold.Selectable = true;
+            this.p24_clrbtnDial_hold.TabStop = true;
             this.p24_clrbtnDial_hold.Size = new System.Drawing.Size(40, 23);
             this.p24_clrbtnDial_hold.TabIndex = 191;
             this.p24_clrbtnDial_hold.Changed += new System.EventHandler(this.clrbtnDial_colours_changed);
@@ -3370,7 +3505,7 @@ namespace PowerSDR
             this.p24_clrbtnDial_pad.Location = new System.Drawing.Point(99, 289);
             this.p24_clrbtnDial_pad.MoreColors = "More Colors...";
             this.p24_clrbtnDial_pad.Name = "p24_clrbtnDial_pad";
-            this.p24_clrbtnDial_pad.Selectable = true;
+            this.p24_clrbtnDial_pad.TabStop = true;
             this.p24_clrbtnDial_pad.Size = new System.Drawing.Size(40, 23);
             this.p24_clrbtnDial_pad.TabIndex = 179;
             this.p24_clrbtnDial_pad.Changed += new System.EventHandler(this.clrbtnDial_colours_changed);
@@ -3385,7 +3520,7 @@ namespace PowerSDR
             this.p24_clrbtnDial_pad_pressed.Location = new System.Drawing.Point(99, 314);
             this.p24_clrbtnDial_pad_pressed.MoreColors = "More Colors...";
             this.p24_clrbtnDial_pad_pressed.Name = "p24_clrbtnDial_pad_pressed";
-            this.p24_clrbtnDial_pad_pressed.Selectable = true;
+            this.p24_clrbtnDial_pad_pressed.TabStop = true;
             this.p24_clrbtnDial_pad_pressed.Size = new System.Drawing.Size(40, 23);
             this.p24_clrbtnDial_pad_pressed.TabIndex = 181;
             this.p24_clrbtnDial_pad_pressed.Changed += new System.EventHandler(this.clrbtnDial_colours_changed);
@@ -3400,7 +3535,7 @@ namespace PowerSDR
             this.p24_clrbtnDial_ring.Location = new System.Drawing.Point(271, 214);
             this.p24_clrbtnDial_ring.MoreColors = "More Colors...";
             this.p24_clrbtnDial_ring.Name = "p24_clrbtnDial_ring";
-            this.p24_clrbtnDial_ring.Selectable = true;
+            this.p24_clrbtnDial_ring.TabStop = true;
             this.p24_clrbtnDial_ring.Size = new System.Drawing.Size(40, 23);
             this.p24_clrbtnDial_ring.TabIndex = 187;
             this.p24_clrbtnDial_ring.Changed += new System.EventHandler(this.clrbtnDial_colours_changed);
@@ -3415,7 +3550,7 @@ namespace PowerSDR
             this.p24_clrbtnDial_slow.Location = new System.Drawing.Point(271, 239);
             this.p24_clrbtnDial_slow.MoreColors = "More Colors...";
             this.p24_clrbtnDial_slow.Name = "p24_clrbtnDial_slow";
-            this.p24_clrbtnDial_slow.Selectable = true;
+            this.p24_clrbtnDial_slow.TabStop = true;
             this.p24_clrbtnDial_slow.Size = new System.Drawing.Size(40, 23);
             this.p24_clrbtnDial_slow.TabIndex = 189;
             this.p24_clrbtnDial_slow.Changed += new System.EventHandler(this.clrbtnDial_colours_changed);
@@ -3430,7 +3565,7 @@ namespace PowerSDR
             this.p24_clrbtnDial_text.Location = new System.Drawing.Point(99, 239);
             this.p24_clrbtnDial_text.MoreColors = "More Colors...";
             this.p24_clrbtnDial_text.Name = "p24_clrbtnDial_text";
-            this.p24_clrbtnDial_text.Selectable = true;
+            this.p24_clrbtnDial_text.TabStop = true;
             this.p24_clrbtnDial_text.Size = new System.Drawing.Size(40, 23);
             this.p24_clrbtnDial_text.TabIndex = 165;
             this.p24_clrbtnDial_text.Changed += new System.EventHandler(this.clrbtnDial_colours_changed);
@@ -3445,7 +3580,7 @@ namespace PowerSDR
             this.p24_clrbtnFilterDisplay_backcolour.Location = new System.Drawing.Point(272, 13);
             this.p24_clrbtnFilterDisplay_backcolour.MoreColors = "More Colors...";
             this.p24_clrbtnFilterDisplay_backcolour.Name = "p24_clrbtnFilterDisplay_backcolour";
-            this.p24_clrbtnFilterDisplay_backcolour.Selectable = true;
+            this.p24_clrbtnFilterDisplay_backcolour.TabStop = true;
             this.p24_clrbtnFilterDisplay_backcolour.Size = new System.Drawing.Size(40, 23);
             this.p24_clrbtnFilterDisplay_backcolour.TabIndex = 129;
             this.toolTip1.SetToolTip(this.p24_clrbtnFilterDisplay_backcolour, "Background colour");
@@ -3460,7 +3595,7 @@ namespace PowerSDR
             this.p24_clrbtnFilter_button_highlight.Location = new System.Drawing.Point(95, 183);
             this.p24_clrbtnFilter_button_highlight.MoreColors = "More Colors...";
             this.p24_clrbtnFilter_button_highlight.Name = "p24_clrbtnFilter_button_highlight";
-            this.p24_clrbtnFilter_button_highlight.Selectable = true;
+            this.p24_clrbtnFilter_button_highlight.TabStop = true;
             this.p24_clrbtnFilter_button_highlight.Size = new System.Drawing.Size(40, 23);
             this.p24_clrbtnFilter_button_highlight.TabIndex = 200;
             this.p24_clrbtnFilter_button_highlight.Changed += new System.EventHandler(this.clrbtnFilter_button_highlight_Changed);
@@ -3474,7 +3609,7 @@ namespace PowerSDR
             this.p24_clrbtnFilter_data_fill.Location = new System.Drawing.Point(95, 94);
             this.p24_clrbtnFilter_data_fill.MoreColors = "More Colors...";
             this.p24_clrbtnFilter_data_fill.Name = "p24_clrbtnFilter_data_fill";
-            this.p24_clrbtnFilter_data_fill.Selectable = true;
+            this.p24_clrbtnFilter_data_fill.TabStop = true;
             this.p24_clrbtnFilter_data_fill.Size = new System.Drawing.Size(40, 23);
             this.p24_clrbtnFilter_data_fill.TabIndex = 172;
             this.p24_clrbtnFilter_data_fill.Changed += new System.EventHandler(this.clrbtnFilter_data_fill_Changed);
@@ -3488,7 +3623,7 @@ namespace PowerSDR
             this.p24_clrbtnFilter_data_line.Location = new System.Drawing.Point(95, 72);
             this.p24_clrbtnFilter_data_line.MoreColors = "More Colors...";
             this.p24_clrbtnFilter_data_line.Name = "p24_clrbtnFilter_data_line";
-            this.p24_clrbtnFilter_data_line.Selectable = true;
+            this.p24_clrbtnFilter_data_line.TabStop = true;
             this.p24_clrbtnFilter_data_line.Size = new System.Drawing.Size(40, 23);
             this.p24_clrbtnFilter_data_line.TabIndex = 170;
             this.p24_clrbtnFilter_data_line.Changed += new System.EventHandler(this.clrbtnFilter_data_line_Changed);
@@ -3502,7 +3637,7 @@ namespace PowerSDR
             this.p24_clrbtnFilter_edge_highlight.Location = new System.Drawing.Point(249, 143);
             this.p24_clrbtnFilter_edge_highlight.MoreColors = "More Colors...";
             this.p24_clrbtnFilter_edge_highlight.Name = "p24_clrbtnFilter_edge_highlight";
-            this.p24_clrbtnFilter_edge_highlight.Selectable = true;
+            this.p24_clrbtnFilter_edge_highlight.TabStop = true;
             this.p24_clrbtnFilter_edge_highlight.Size = new System.Drawing.Size(40, 23);
             this.p24_clrbtnFilter_edge_highlight.TabIndex = 180;
             this.p24_clrbtnFilter_edge_highlight.Changed += new System.EventHandler(this.clrbtnFilter_edge_highlight_Changed);
@@ -3516,7 +3651,7 @@ namespace PowerSDR
             this.p24_clrbtnFilter_edges.Location = new System.Drawing.Point(249, 95);
             this.p24_clrbtnFilter_edges.MoreColors = "More Colors...";
             this.p24_clrbtnFilter_edges.Name = "p24_clrbtnFilter_edges";
-            this.p24_clrbtnFilter_edges.Selectable = true;
+            this.p24_clrbtnFilter_edges.TabStop = true;
             this.p24_clrbtnFilter_edges.Size = new System.Drawing.Size(40, 23);
             this.p24_clrbtnFilter_edges.TabIndex = 178;
             this.p24_clrbtnFilter_edges.Changed += new System.EventHandler(this.clrbtnFilter_edges_Changed);
@@ -3530,7 +3665,7 @@ namespace PowerSDR
             this.p24_clrbtnFilter_edges_tx.Location = new System.Drawing.Point(249, 119);
             this.p24_clrbtnFilter_edges_tx.MoreColors = "More Colors...";
             this.p24_clrbtnFilter_edges_tx.Name = "p24_clrbtnFilter_edges_tx";
-            this.p24_clrbtnFilter_edges_tx.Selectable = true;
+            this.p24_clrbtnFilter_edges_tx.TabStop = true;
             this.p24_clrbtnFilter_edges_tx.Size = new System.Drawing.Size(40, 23);
             this.p24_clrbtnFilter_edges_tx.TabIndex = 202;
             this.p24_clrbtnFilter_edges_tx.Changed += new System.EventHandler(this.clrbtnFilter_edges_tx_Changed);
@@ -3544,7 +3679,7 @@ namespace PowerSDR
             this.p24_clrbtnFilter_extents.Location = new System.Drawing.Point(95, 138);
             this.p24_clrbtnFilter_extents.MoreColors = "More Colors...";
             this.p24_clrbtnFilter_extents.Name = "p24_clrbtnFilter_extents";
-            this.p24_clrbtnFilter_extents.Selectable = true;
+            this.p24_clrbtnFilter_extents.TabStop = true;
             this.p24_clrbtnFilter_extents.Size = new System.Drawing.Size(40, 23);
             this.p24_clrbtnFilter_extents.TabIndex = 188;
             this.p24_clrbtnFilter_extents.Changed += new System.EventHandler(this.clrbtnFilter_extents_Changed);
@@ -3558,7 +3693,7 @@ namespace PowerSDR
             this.p24_clrbtnFilter_meter_back.Location = new System.Drawing.Point(95, 116);
             this.p24_clrbtnFilter_meter_back.MoreColors = "More Colors...";
             this.p24_clrbtnFilter_meter_back.Name = "p24_clrbtnFilter_meter_back";
-            this.p24_clrbtnFilter_meter_back.Selectable = true;
+            this.p24_clrbtnFilter_meter_back.TabStop = true;
             this.p24_clrbtnFilter_meter_back.Size = new System.Drawing.Size(40, 23);
             this.p24_clrbtnFilter_meter_back.TabIndex = 182;
             this.p24_clrbtnFilter_meter_back.Changed += new System.EventHandler(this.clrbtnFilter_meter_back_Changed);
@@ -3572,7 +3707,7 @@ namespace PowerSDR
             this.p24_clrbtnFilter_notch.Location = new System.Drawing.Point(249, 165);
             this.p24_clrbtnFilter_notch.MoreColors = "More Colors...";
             this.p24_clrbtnFilter_notch.Name = "p24_clrbtnFilter_notch";
-            this.p24_clrbtnFilter_notch.Selectable = true;
+            this.p24_clrbtnFilter_notch.TabStop = true;
             this.p24_clrbtnFilter_notch.Size = new System.Drawing.Size(40, 23);
             this.p24_clrbtnFilter_notch.TabIndex = 184;
             this.p24_clrbtnFilter_notch.Changed += new System.EventHandler(this.clrbtnFilter_notch_Changed);
@@ -3586,7 +3721,7 @@ namespace PowerSDR
             this.p24_clrbtnFilter_notch_highlight.Location = new System.Drawing.Point(249, 187);
             this.p24_clrbtnFilter_notch_highlight.MoreColors = "More Colors...";
             this.p24_clrbtnFilter_notch_highlight.Name = "p24_clrbtnFilter_notch_highlight";
-            this.p24_clrbtnFilter_notch_highlight.Selectable = true;
+            this.p24_clrbtnFilter_notch_highlight.TabStop = true;
             this.p24_clrbtnFilter_notch_highlight.Size = new System.Drawing.Size(40, 23);
             this.p24_clrbtnFilter_notch_highlight.TabIndex = 186;
             this.p24_clrbtnFilter_notch_highlight.Changed += new System.EventHandler(this.clrbtnFilter_notch_highlight_Changed);
@@ -3600,7 +3735,7 @@ namespace PowerSDR
             this.p24_clrbtnFilter_number_highlight.Location = new System.Drawing.Point(249, 72);
             this.p24_clrbtnFilter_number_highlight.MoreColors = "More Colors...";
             this.p24_clrbtnFilter_number_highlight.Name = "p24_clrbtnFilter_number_highlight";
-            this.p24_clrbtnFilter_number_highlight.Selectable = true;
+            this.p24_clrbtnFilter_number_highlight.TabStop = true;
             this.p24_clrbtnFilter_number_highlight.Size = new System.Drawing.Size(40, 23);
             this.p24_clrbtnFilter_number_highlight.TabIndex = 176;
             this.p24_clrbtnFilter_number_highlight.Changed += new System.EventHandler(this.clrbtnFilter_number_highlight_Changed);
@@ -3614,7 +3749,7 @@ namespace PowerSDR
             this.p24_clrbtnFilter_setting_on.Location = new System.Drawing.Point(95, 160);
             this.p24_clrbtnFilter_setting_on.MoreColors = "More Colors...";
             this.p24_clrbtnFilter_setting_on.Name = "p24_clrbtnFilter_setting_on";
-            this.p24_clrbtnFilter_setting_on.Selectable = true;
+            this.p24_clrbtnFilter_setting_on.TabStop = true;
             this.p24_clrbtnFilter_setting_on.Size = new System.Drawing.Size(40, 23);
             this.p24_clrbtnFilter_setting_on.TabIndex = 198;
             this.p24_clrbtnFilter_setting_on.Changed += new System.EventHandler(this.clrbtnFilter_setting_on_Changed);
@@ -3628,7 +3763,7 @@ namespace PowerSDR
             this.p24_clrbtnFilter_snap_line.Location = new System.Drawing.Point(249, 209);
             this.p24_clrbtnFilter_snap_line.MoreColors = "More Colors...";
             this.p24_clrbtnFilter_snap_line.Name = "p24_clrbtnFilter_snap_line";
-            this.p24_clrbtnFilter_snap_line.Selectable = true;
+            this.p24_clrbtnFilter_snap_line.TabStop = true;
             this.p24_clrbtnFilter_snap_line.Size = new System.Drawing.Size(40, 23);
             this.p24_clrbtnFilter_snap_line.TabIndex = 196;
             this.p24_clrbtnFilter_snap_line.Changed += new System.EventHandler(this.clrbtnFilter_snap_line_Changed);
@@ -3642,7 +3777,7 @@ namespace PowerSDR
             this.p24_clrbtnFilter_text.Location = new System.Drawing.Point(249, 50);
             this.p24_clrbtnFilter_text.MoreColors = "More Colors...";
             this.p24_clrbtnFilter_text.Name = "p24_clrbtnFilter_text";
-            this.p24_clrbtnFilter_text.Selectable = true;
+            this.p24_clrbtnFilter_text.TabStop = true;
             this.p24_clrbtnFilter_text.Size = new System.Drawing.Size(40, 23);
             this.p24_clrbtnFilter_text.TabIndex = 174;
             this.p24_clrbtnFilter_text.Changed += new System.EventHandler(this.clrbtnFilter_text_Changed);
@@ -3656,7 +3791,7 @@ namespace PowerSDR
             this.p24_clrbtnFilter_wf_low.Location = new System.Drawing.Point(249, 27);
             this.p24_clrbtnFilter_wf_low.MoreColors = "More Colors...";
             this.p24_clrbtnFilter_wf_low.Name = "p24_clrbtnFilter_wf_low";
-            this.p24_clrbtnFilter_wf_low.Selectable = true;
+            this.p24_clrbtnFilter_wf_low.TabStop = true;
             this.p24_clrbtnFilter_wf_low.Size = new System.Drawing.Size(40, 23);
             this.p24_clrbtnFilter_wf_low.TabIndex = 168;
             this.p24_clrbtnFilter_wf_low.Changed += new System.EventHandler(this.clrbtnFilter_wf_low_Changed);
@@ -3671,7 +3806,7 @@ namespace PowerSDR
             this.p24_clrbtnHistory_background.Location = new System.Drawing.Point(272, 23);
             this.p24_clrbtnHistory_background.MoreColors = "More Colors...";
             this.p24_clrbtnHistory_background.Name = "p24_clrbtnHistory_background";
-            this.p24_clrbtnHistory_background.Selectable = true;
+            this.p24_clrbtnHistory_background.TabStop = true;
             this.p24_clrbtnHistory_background.Size = new System.Drawing.Size(40, 23);
             this.p24_clrbtnHistory_background.TabIndex = 129;
             this.toolTip1.SetToolTip(this.p24_clrbtnHistory_background, "Background colour");
@@ -3687,7 +3822,7 @@ namespace PowerSDR
             this.p24_clrbtnHistory_colour_0.Location = new System.Drawing.Point(215, 21);
             this.p24_clrbtnHistory_colour_0.MoreColors = "More Colors...";
             this.p24_clrbtnHistory_colour_0.Name = "p24_clrbtnHistory_colour_0";
-            this.p24_clrbtnHistory_colour_0.Selectable = true;
+            this.p24_clrbtnHistory_colour_0.TabStop = true;
             this.p24_clrbtnHistory_colour_0.Size = new System.Drawing.Size(40, 23);
             this.p24_clrbtnHistory_colour_0.TabIndex = 130;
             this.toolTip1.SetToolTip(this.p24_clrbtnHistory_colour_0, "Reading colour");
@@ -3703,7 +3838,7 @@ namespace PowerSDR
             this.p24_clrbtnHistory_colour_1.Location = new System.Drawing.Point(215, 21);
             this.p24_clrbtnHistory_colour_1.MoreColors = "More Colors...";
             this.p24_clrbtnHistory_colour_1.Name = "p24_clrbtnHistory_colour_1";
-            this.p24_clrbtnHistory_colour_1.Selectable = true;
+            this.p24_clrbtnHistory_colour_1.TabStop = true;
             this.p24_clrbtnHistory_colour_1.Size = new System.Drawing.Size(40, 23);
             this.p24_clrbtnHistory_colour_1.TabIndex = 147;
             this.toolTip1.SetToolTip(this.p24_clrbtnHistory_colour_1, "Reading colour");
@@ -3719,7 +3854,7 @@ namespace PowerSDR
             this.p24_clrbtnHistory_lines.Location = new System.Drawing.Point(72, 110);
             this.p24_clrbtnHistory_lines.MoreColors = "More Colors...";
             this.p24_clrbtnHistory_lines.Name = "p24_clrbtnHistory_lines";
-            this.p24_clrbtnHistory_lines.Selectable = true;
+            this.p24_clrbtnHistory_lines.TabStop = true;
             this.p24_clrbtnHistory_lines.Size = new System.Drawing.Size(40, 23);
             this.p24_clrbtnHistory_lines.TabIndex = 145;
             this.toolTip1.SetToolTip(this.p24_clrbtnHistory_lines, "Lines colour");
@@ -3735,7 +3870,7 @@ namespace PowerSDR
             this.p24_clrbtnHistory_time.Location = new System.Drawing.Point(170, 110);
             this.p24_clrbtnHistory_time.MoreColors = "More Colors...";
             this.p24_clrbtnHistory_time.Name = "p24_clrbtnHistory_time";
-            this.p24_clrbtnHistory_time.Selectable = true;
+            this.p24_clrbtnHistory_time.TabStop = true;
             this.p24_clrbtnHistory_time.Size = new System.Drawing.Size(40, 23);
             this.p24_clrbtnHistory_time.TabIndex = 146;
             this.toolTip1.SetToolTip(this.p24_clrbtnHistory_time, "Time colour");
@@ -3751,7 +3886,7 @@ namespace PowerSDR
             this.p24_clrbtnLedIndicator_PanelBackground.Location = new System.Drawing.Point(125, 47);
             this.p24_clrbtnLedIndicator_PanelBackground.MoreColors = "More Colors...";
             this.p24_clrbtnLedIndicator_PanelBackground.Name = "p24_clrbtnLedIndicator_PanelBackground";
-            this.p24_clrbtnLedIndicator_PanelBackground.Selectable = true;
+            this.p24_clrbtnLedIndicator_PanelBackground.TabStop = true;
             this.p24_clrbtnLedIndicator_PanelBackground.Size = new System.Drawing.Size(40, 23);
             this.p24_clrbtnLedIndicator_PanelBackground.TabIndex = 129;
             this.toolTip1.SetToolTip(this.p24_clrbtnLedIndicator_PanelBackground, "Background colour");
@@ -3767,7 +3902,7 @@ namespace PowerSDR
             this.p24_clrbtnLedIndicator_PanelBackgroundTX.Location = new System.Drawing.Point(125, 72);
             this.p24_clrbtnLedIndicator_PanelBackgroundTX.MoreColors = "More Colors...";
             this.p24_clrbtnLedIndicator_PanelBackgroundTX.Name = "p24_clrbtnLedIndicator_PanelBackgroundTX";
-            this.p24_clrbtnLedIndicator_PanelBackgroundTX.Selectable = true;
+            this.p24_clrbtnLedIndicator_PanelBackgroundTX.TabStop = true;
             this.p24_clrbtnLedIndicator_PanelBackgroundTX.Size = new System.Drawing.Size(40, 23);
             this.p24_clrbtnLedIndicator_PanelBackgroundTX.TabIndex = 162;
             this.toolTip1.SetToolTip(this.p24_clrbtnLedIndicator_PanelBackgroundTX, "Background colour");
@@ -3783,7 +3918,7 @@ namespace PowerSDR
             this.p24_clrbtnLedIndicator_false.Location = new System.Drawing.Point(65, 188);
             this.p24_clrbtnLedIndicator_false.MoreColors = "More Colors...";
             this.p24_clrbtnLedIndicator_false.Name = "p24_clrbtnLedIndicator_false";
-            this.p24_clrbtnLedIndicator_false.Selectable = true;
+            this.p24_clrbtnLedIndicator_false.TabStop = true;
             this.p24_clrbtnLedIndicator_false.Size = new System.Drawing.Size(40, 23);
             this.p24_clrbtnLedIndicator_false.TabIndex = 157;
             this.toolTip1.SetToolTip(this.p24_clrbtnLedIndicator_false, "False colour");
@@ -3799,7 +3934,7 @@ namespace PowerSDR
             this.p24_clrbtnLedIndicator_true.Location = new System.Drawing.Point(65, 162);
             this.p24_clrbtnLedIndicator_true.MoreColors = "More Colors...";
             this.p24_clrbtnLedIndicator_true.Name = "p24_clrbtnLedIndicator_true";
-            this.p24_clrbtnLedIndicator_true.Selectable = true;
+            this.p24_clrbtnLedIndicator_true.TabStop = true;
             this.p24_clrbtnLedIndicator_true.Size = new System.Drawing.Size(40, 23);
             this.p24_clrbtnLedIndicator_true.TabIndex = 156;
             this.toolTip1.SetToolTip(this.p24_clrbtnLedIndicator_true, "True colour");
@@ -3815,7 +3950,7 @@ namespace PowerSDR
             this.p24_clrbtnMMClockBackground.Location = new System.Drawing.Point(106, 53);
             this.p24_clrbtnMMClockBackground.MoreColors = "More Colors...";
             this.p24_clrbtnMMClockBackground.Name = "p24_clrbtnMMClockBackground";
-            this.p24_clrbtnMMClockBackground.Selectable = true;
+            this.p24_clrbtnMMClockBackground.TabStop = true;
             this.p24_clrbtnMMClockBackground.Size = new System.Drawing.Size(40, 23);
             this.p24_clrbtnMMClockBackground.TabIndex = 115;
             this.toolTip1.SetToolTip(this.p24_clrbtnMMClockBackground, "Background colour");
@@ -3831,7 +3966,7 @@ namespace PowerSDR
             this.p24_clrbtnMMClockTitle.Location = new System.Drawing.Point(105, 86);
             this.p24_clrbtnMMClockTitle.MoreColors = "More Colors...";
             this.p24_clrbtnMMClockTitle.Name = "p24_clrbtnMMClockTitle";
-            this.p24_clrbtnMMClockTitle.Selectable = true;
+            this.p24_clrbtnMMClockTitle.TabStop = true;
             this.p24_clrbtnMMClockTitle.Size = new System.Drawing.Size(40, 23);
             this.p24_clrbtnMMClockTitle.TabIndex = 110;
             this.toolTip1.SetToolTip(this.p24_clrbtnMMClockTitle, "Meter title colour");
@@ -3847,7 +3982,7 @@ namespace PowerSDR
             this.p24_clrbtnMMDate.Location = new System.Drawing.Point(105, 142);
             this.p24_clrbtnMMDate.MoreColors = "More Colors...";
             this.p24_clrbtnMMDate.Name = "p24_clrbtnMMDate";
-            this.p24_clrbtnMMDate.Selectable = true;
+            this.p24_clrbtnMMDate.TabStop = true;
             this.p24_clrbtnMMDate.Size = new System.Drawing.Size(40, 23);
             this.p24_clrbtnMMDate.TabIndex = 113;
             this.toolTip1.SetToolTip(this.p24_clrbtnMMDate, "Date colour");
@@ -3863,7 +3998,7 @@ namespace PowerSDR
             this.p24_clrbtnMMTime.Location = new System.Drawing.Point(105, 118);
             this.p24_clrbtnMMTime.MoreColors = "More Colors...";
             this.p24_clrbtnMMTime.Name = "p24_clrbtnMMTime";
-            this.p24_clrbtnMMTime.Selectable = true;
+            this.p24_clrbtnMMTime.TabStop = true;
             this.p24_clrbtnMMTime.Size = new System.Drawing.Size(40, 23);
             this.p24_clrbtnMMTime.TabIndex = 111;
             this.toolTip1.SetToolTip(this.p24_clrbtnMMTime, "Time");
@@ -3879,7 +4014,7 @@ namespace PowerSDR
             this.p24_clrbtnMMVfoDigitHighlight.Location = new System.Drawing.Point(105, 288);
             this.p24_clrbtnMMVfoDigitHighlight.MoreColors = "More Colors...";
             this.p24_clrbtnMMVfoDigitHighlight.Name = "p24_clrbtnMMVfoDigitHighlight";
-            this.p24_clrbtnMMVfoDigitHighlight.Selectable = true;
+            this.p24_clrbtnMMVfoDigitHighlight.TabStop = true;
             this.p24_clrbtnMMVfoDigitHighlight.Size = new System.Drawing.Size(40, 23);
             this.p24_clrbtnMMVfoDigitHighlight.TabIndex = 130;
             this.toolTip1.SetToolTip(this.p24_clrbtnMMVfoDigitHighlight, "Any highlights from the mouse will be in this colour");
@@ -3895,7 +4030,7 @@ namespace PowerSDR
             this.p24_clrbtnMMVfoDisplayBackground.Location = new System.Drawing.Point(105, 30);
             this.p24_clrbtnMMVfoDisplayBackground.MoreColors = "More Colors...";
             this.p24_clrbtnMMVfoDisplayBackground.Name = "p24_clrbtnMMVfoDisplayBackground";
-            this.p24_clrbtnMMVfoDisplayBackground.Selectable = true;
+            this.p24_clrbtnMMVfoDisplayBackground.TabStop = true;
             this.p24_clrbtnMMVfoDisplayBackground.Size = new System.Drawing.Size(40, 23);
             this.p24_clrbtnMMVfoDisplayBackground.TabIndex = 127;
             this.toolTip1.SetToolTip(this.p24_clrbtnMMVfoDisplayBackground, "Background colour");
@@ -3911,7 +4046,7 @@ namespace PowerSDR
             this.p24_clrbtnMMVfoDisplayBand.Location = new System.Drawing.Point(105, 259);
             this.p24_clrbtnMMVfoDisplayBand.MoreColors = "More Colors...";
             this.p24_clrbtnMMVfoDisplayBand.Name = "p24_clrbtnMMVfoDisplayBand";
-            this.p24_clrbtnMMVfoDisplayBand.Selectable = true;
+            this.p24_clrbtnMMVfoDisplayBand.TabStop = true;
             this.p24_clrbtnMMVfoDisplayBand.Size = new System.Drawing.Size(40, 23);
             this.p24_clrbtnMMVfoDisplayBand.TabIndex = 123;
             this.toolTip1.SetToolTip(this.p24_clrbtnMMVfoDisplayBand, "Band colour");
@@ -3927,7 +4062,7 @@ namespace PowerSDR
             this.p24_clrbtnMMVfoDisplayFilter.Location = new System.Drawing.Point(105, 230);
             this.p24_clrbtnMMVfoDisplayFilter.MoreColors = "More Colors...";
             this.p24_clrbtnMMVfoDisplayFilter.Name = "p24_clrbtnMMVfoDisplayFilter";
-            this.p24_clrbtnMMVfoDisplayFilter.Selectable = true;
+            this.p24_clrbtnMMVfoDisplayFilter.TabStop = true;
             this.p24_clrbtnMMVfoDisplayFilter.Size = new System.Drawing.Size(40, 23);
             this.p24_clrbtnMMVfoDisplayFilter.TabIndex = 121;
             this.toolTip1.SetToolTip(this.p24_clrbtnMMVfoDisplayFilter, "Filter colour");
@@ -3943,7 +4078,7 @@ namespace PowerSDR
             this.p24_clrbtnMMVfoDisplayFrequency.Location = new System.Drawing.Point(105, 88);
             this.p24_clrbtnMMVfoDisplayFrequency.MoreColors = "More Colors...";
             this.p24_clrbtnMMVfoDisplayFrequency.Name = "p24_clrbtnMMVfoDisplayFrequency";
-            this.p24_clrbtnMMVfoDisplayFrequency.Selectable = true;
+            this.p24_clrbtnMMVfoDisplayFrequency.TabStop = true;
             this.p24_clrbtnMMVfoDisplayFrequency.Size = new System.Drawing.Size(40, 23);
             this.p24_clrbtnMMVfoDisplayFrequency.TabIndex = 125;
             this.toolTip1.SetToolTip(this.p24_clrbtnMMVfoDisplayFrequency, "Frequency Colour");
@@ -3959,7 +4094,7 @@ namespace PowerSDR
             this.p24_clrbtnMMVfoDisplayFrequency_small.Location = new System.Drawing.Point(228, 88);
             this.p24_clrbtnMMVfoDisplayFrequency_small.MoreColors = "More Colors...";
             this.p24_clrbtnMMVfoDisplayFrequency_small.Name = "p24_clrbtnMMVfoDisplayFrequency_small";
-            this.p24_clrbtnMMVfoDisplayFrequency_small.Selectable = true;
+            this.p24_clrbtnMMVfoDisplayFrequency_small.TabStop = true;
             this.p24_clrbtnMMVfoDisplayFrequency_small.Size = new System.Drawing.Size(40, 23);
             this.p24_clrbtnMMVfoDisplayFrequency_small.TabIndex = 137;
             this.toolTip1.SetToolTip(this.p24_clrbtnMMVfoDisplayFrequency_small, "Frequency Colour");
@@ -3975,7 +4110,7 @@ namespace PowerSDR
             this.p24_clrbtnMMVfoDisplayMode.Location = new System.Drawing.Point(105, 118);
             this.p24_clrbtnMMVfoDisplayMode.MoreColors = "More Colors...";
             this.p24_clrbtnMMVfoDisplayMode.Name = "p24_clrbtnMMVfoDisplayMode";
-            this.p24_clrbtnMMVfoDisplayMode.Selectable = true;
+            this.p24_clrbtnMMVfoDisplayMode.TabStop = true;
             this.p24_clrbtnMMVfoDisplayMode.Size = new System.Drawing.Size(40, 23);
             this.p24_clrbtnMMVfoDisplayMode.TabIndex = 111;
             this.toolTip1.SetToolTip(this.p24_clrbtnMMVfoDisplayMode, "Mode colour");
@@ -3991,7 +4126,7 @@ namespace PowerSDR
             this.p24_clrbtnMMVfoDisplayRx.Location = new System.Drawing.Point(105, 171);
             this.p24_clrbtnMMVfoDisplayRx.MoreColors = "More Colors...";
             this.p24_clrbtnMMVfoDisplayRx.Name = "p24_clrbtnMMVfoDisplayRx";
-            this.p24_clrbtnMMVfoDisplayRx.Selectable = true;
+            this.p24_clrbtnMMVfoDisplayRx.TabStop = true;
             this.p24_clrbtnMMVfoDisplayRx.Size = new System.Drawing.Size(40, 23);
             this.p24_clrbtnMMVfoDisplayRx.TabIndex = 117;
             this.toolTip1.SetToolTip(this.p24_clrbtnMMVfoDisplayRx, "RX box colour");
@@ -4007,7 +4142,7 @@ namespace PowerSDR
             this.p24_clrbtnMMVfoDisplaySplit.Location = new System.Drawing.Point(205, 142);
             this.p24_clrbtnMMVfoDisplaySplit.MoreColors = "More Colors...";
             this.p24_clrbtnMMVfoDisplaySplit.Name = "p24_clrbtnMMVfoDisplaySplit";
-            this.p24_clrbtnMMVfoDisplaySplit.Selectable = true;
+            this.p24_clrbtnMMVfoDisplaySplit.TabStop = true;
             this.p24_clrbtnMMVfoDisplaySplit.Size = new System.Drawing.Size(40, 23);
             this.p24_clrbtnMMVfoDisplaySplit.TabIndex = 115;
             this.toolTip1.SetToolTip(this.p24_clrbtnMMVfoDisplaySplit, "Split colour");
@@ -4023,7 +4158,7 @@ namespace PowerSDR
             this.p24_clrbtnMMVfoDisplaySplitBack.Location = new System.Drawing.Point(105, 142);
             this.p24_clrbtnMMVfoDisplaySplitBack.MoreColors = "More Colors...";
             this.p24_clrbtnMMVfoDisplaySplitBack.Name = "p24_clrbtnMMVfoDisplaySplitBack";
-            this.p24_clrbtnMMVfoDisplaySplitBack.Selectable = true;
+            this.p24_clrbtnMMVfoDisplaySplitBack.TabStop = true;
             this.p24_clrbtnMMVfoDisplaySplitBack.Size = new System.Drawing.Size(40, 23);
             this.p24_clrbtnMMVfoDisplaySplitBack.TabIndex = 113;
             this.toolTip1.SetToolTip(this.p24_clrbtnMMVfoDisplaySplitBack, "Background of the split");
@@ -4039,7 +4174,7 @@ namespace PowerSDR
             this.p24_clrbtnMMVfoDisplayTitle.Location = new System.Drawing.Point(105, 59);
             this.p24_clrbtnMMVfoDisplayTitle.MoreColors = "More Colors...";
             this.p24_clrbtnMMVfoDisplayTitle.Name = "p24_clrbtnMMVfoDisplayTitle";
-            this.p24_clrbtnMMVfoDisplayTitle.Selectable = true;
+            this.p24_clrbtnMMVfoDisplayTitle.TabStop = true;
             this.p24_clrbtnMMVfoDisplayTitle.Size = new System.Drawing.Size(40, 23);
             this.p24_clrbtnMMVfoDisplayTitle.TabIndex = 110;
             this.toolTip1.SetToolTip(this.p24_clrbtnMMVfoDisplayTitle, "Titles colour");
@@ -4055,7 +4190,7 @@ namespace PowerSDR
             this.p24_clrbtnMMVfoDisplayTx.Location = new System.Drawing.Point(105, 200);
             this.p24_clrbtnMMVfoDisplayTx.MoreColors = "More Colors...";
             this.p24_clrbtnMMVfoDisplayTx.Name = "p24_clrbtnMMVfoDisplayTx";
-            this.p24_clrbtnMMVfoDisplayTx.Selectable = true;
+            this.p24_clrbtnMMVfoDisplayTx.TabStop = true;
             this.p24_clrbtnMMVfoDisplayTx.Size = new System.Drawing.Size(40, 23);
             this.p24_clrbtnMMVfoDisplayTx.TabIndex = 119;
             this.toolTip1.SetToolTip(this.p24_clrbtnMMVfoDisplayTx, "TX box colour");
@@ -4071,7 +4206,7 @@ namespace PowerSDR
             this.p24_clrbtnMeterItemHBackground.Location = new System.Drawing.Point(263, 17);
             this.p24_clrbtnMeterItemHBackground.MoreColors = "More Colors...";
             this.p24_clrbtnMeterItemHBackground.Name = "p24_clrbtnMeterItemHBackground";
-            this.p24_clrbtnMeterItemHBackground.Selectable = true;
+            this.p24_clrbtnMeterItemHBackground.TabStop = true;
             this.p24_clrbtnMeterItemHBackground.Size = new System.Drawing.Size(40, 23);
             this.p24_clrbtnMeterItemHBackground.TabIndex = 92;
             this.toolTip1.SetToolTip(this.p24_clrbtnMeterItemHBackground, "Background colour");
@@ -4087,7 +4222,7 @@ namespace PowerSDR
             this.p24_clrbtnMeterItemHBackgroundRotator.Location = new System.Drawing.Point(263, 17);
             this.p24_clrbtnMeterItemHBackgroundRotator.MoreColors = "More Colors...";
             this.p24_clrbtnMeterItemHBackgroundRotator.Name = "p24_clrbtnMeterItemHBackgroundRotator";
-            this.p24_clrbtnMeterItemHBackgroundRotator.Selectable = true;
+            this.p24_clrbtnMeterItemHBackgroundRotator.TabStop = true;
             this.p24_clrbtnMeterItemHBackgroundRotator.Size = new System.Drawing.Size(40, 23);
             this.p24_clrbtnMeterItemHBackgroundRotator.TabIndex = 92;
             this.toolTip1.SetToolTip(this.p24_clrbtnMeterItemHBackgroundRotator, "Background colour");
@@ -4103,7 +4238,7 @@ namespace PowerSDR
             this.p24_clrbtnMeterItemHBackgroundSpacerRX.Location = new System.Drawing.Point(103, 29);
             this.p24_clrbtnMeterItemHBackgroundSpacerRX.MoreColors = "More Colors...";
             this.p24_clrbtnMeterItemHBackgroundSpacerRX.Name = "p24_clrbtnMeterItemHBackgroundSpacerRX";
-            this.p24_clrbtnMeterItemHBackgroundSpacerRX.Selectable = true;
+            this.p24_clrbtnMeterItemHBackgroundSpacerRX.TabStop = true;
             this.p24_clrbtnMeterItemHBackgroundSpacerRX.Size = new System.Drawing.Size(40, 23);
             this.p24_clrbtnMeterItemHBackgroundSpacerRX.TabIndex = 129;
             this.toolTip1.SetToolTip(this.p24_clrbtnMeterItemHBackgroundSpacerRX, "Background colour");
@@ -4119,7 +4254,7 @@ namespace PowerSDR
             this.p24_clrbtnMeterItemHBackgroundSpacerTX.Location = new System.Drawing.Point(103, 58);
             this.p24_clrbtnMeterItemHBackgroundSpacerTX.MoreColors = "More Colors...";
             this.p24_clrbtnMeterItemHBackgroundSpacerTX.Name = "p24_clrbtnMeterItemHBackgroundSpacerTX";
-            this.p24_clrbtnMeterItemHBackgroundSpacerTX.Selectable = true;
+            this.p24_clrbtnMeterItemHBackgroundSpacerTX.TabStop = true;
             this.p24_clrbtnMeterItemHBackgroundSpacerTX.Size = new System.Drawing.Size(40, 23);
             this.p24_clrbtnMeterItemHBackgroundSpacerTX.TabIndex = 133;
             this.toolTip1.SetToolTip(this.p24_clrbtnMeterItemHBackgroundSpacerTX, "Background colour");
@@ -4134,7 +4269,7 @@ namespace PowerSDR
             this.p24_clrbtnMeterItemHigh.Location = new System.Drawing.Point(148, 4);
             this.p24_clrbtnMeterItemHigh.MoreColors = "More Colors...";
             this.p24_clrbtnMeterItemHigh.Name = "p24_clrbtnMeterItemHigh";
-            this.p24_clrbtnMeterItemHigh.Selectable = true;
+            this.p24_clrbtnMeterItemHigh.TabStop = true;
             this.p24_clrbtnMeterItemHigh.Size = new System.Drawing.Size(40, 23);
             this.p24_clrbtnMeterItemHigh.TabIndex = 77;
             this.toolTip1.SetToolTip(this.p24_clrbtnMeterItemHigh, "High scale colour");
@@ -4150,7 +4285,7 @@ namespace PowerSDR
             this.p24_clrbtnMeterItemHistory.Location = new System.Drawing.Point(191, 122);
             this.p24_clrbtnMeterItemHistory.MoreColors = "More Colors...";
             this.p24_clrbtnMeterItemHistory.Name = "p24_clrbtnMeterItemHistory";
-            this.p24_clrbtnMeterItemHistory.Selectable = true;
+            this.p24_clrbtnMeterItemHistory.TabStop = true;
             this.p24_clrbtnMeterItemHistory.Size = new System.Drawing.Size(40, 23);
             this.p24_clrbtnMeterItemHistory.TabIndex = 83;
             this.p24_clrbtnMeterItemHistory.Changed += new System.EventHandler(this.clrbtnMeterItemHistory_Changed);
@@ -4165,7 +4300,7 @@ namespace PowerSDR
             this.p24_clrbtnMeterItemIndicator.Location = new System.Drawing.Point(55, 29);
             this.p24_clrbtnMeterItemIndicator.MoreColors = "More Colors...";
             this.p24_clrbtnMeterItemIndicator.Name = "p24_clrbtnMeterItemIndicator";
-            this.p24_clrbtnMeterItemIndicator.Selectable = true;
+            this.p24_clrbtnMeterItemIndicator.TabStop = true;
             this.p24_clrbtnMeterItemIndicator.Size = new System.Drawing.Size(40, 23);
             this.p24_clrbtnMeterItemIndicator.TabIndex = 80;
             this.toolTip1.SetToolTip(this.p24_clrbtnMeterItemIndicator, "Indicator colour");
@@ -4180,7 +4315,7 @@ namespace PowerSDR
             this.p24_clrbtnMeterItemLow.Location = new System.Drawing.Point(55, 4);
             this.p24_clrbtnMeterItemLow.MoreColors = "More Colors...";
             this.p24_clrbtnMeterItemLow.Name = "p24_clrbtnMeterItemLow";
-            this.p24_clrbtnMeterItemLow.Selectable = true;
+            this.p24_clrbtnMeterItemLow.TabStop = true;
             this.p24_clrbtnMeterItemLow.Size = new System.Drawing.Size(40, 23);
             this.p24_clrbtnMeterItemLow.TabIndex = 76;
             this.toolTip1.SetToolTip(this.p24_clrbtnMeterItemLow, "Low scale colour and value");
@@ -4196,7 +4331,7 @@ namespace PowerSDR
             this.p24_clrbtnMeterItemMeterTitle.Location = new System.Drawing.Point(85, 168);
             this.p24_clrbtnMeterItemMeterTitle.MoreColors = "More Colors...";
             this.p24_clrbtnMeterItemMeterTitle.Name = "p24_clrbtnMeterItemMeterTitle";
-            this.p24_clrbtnMeterItemMeterTitle.Selectable = true;
+            this.p24_clrbtnMeterItemMeterTitle.TabStop = true;
             this.p24_clrbtnMeterItemMeterTitle.Size = new System.Drawing.Size(40, 23);
             this.p24_clrbtnMeterItemMeterTitle.TabIndex = 108;
             this.toolTip1.SetToolTip(this.p24_clrbtnMeterItemMeterTitle, "Meter title colour");
@@ -4212,7 +4347,7 @@ namespace PowerSDR
             this.p24_clrbtnMeterItemPeakHold.Location = new System.Drawing.Point(191, 168);
             this.p24_clrbtnMeterItemPeakHold.MoreColors = "More Colors...";
             this.p24_clrbtnMeterItemPeakHold.Name = "p24_clrbtnMeterItemPeakHold";
-            this.p24_clrbtnMeterItemPeakHold.Selectable = true;
+            this.p24_clrbtnMeterItemPeakHold.TabStop = true;
             this.p24_clrbtnMeterItemPeakHold.Size = new System.Drawing.Size(40, 23);
             this.p24_clrbtnMeterItemPeakHold.TabIndex = 82;
             this.p24_clrbtnMeterItemPeakHold.Changed += new System.EventHandler(this.clrbtnMeterItemPeakHold_Changed);
@@ -4227,7 +4362,7 @@ namespace PowerSDR
             this.p24_clrbtnMeterItemPeakValueColour.Location = new System.Drawing.Point(85, 191);
             this.p24_clrbtnMeterItemPeakValueColour.MoreColors = "More Colors...";
             this.p24_clrbtnMeterItemPeakValueColour.Name = "p24_clrbtnMeterItemPeakValueColour";
-            this.p24_clrbtnMeterItemPeakValueColour.Selectable = true;
+            this.p24_clrbtnMeterItemPeakValueColour.TabStop = true;
             this.p24_clrbtnMeterItemPeakValueColour.Size = new System.Drawing.Size(40, 23);
             this.p24_clrbtnMeterItemPeakValueColour.TabIndex = 107;
             this.toolTip1.SetToolTip(this.p24_clrbtnMeterItemPeakValueColour, "Peak value colour");
@@ -4243,7 +4378,7 @@ namespace PowerSDR
             this.p24_clrbtnMeterItemPowerScale.Location = new System.Drawing.Point(249, 240);
             this.p24_clrbtnMeterItemPowerScale.MoreColors = "More Colors...";
             this.p24_clrbtnMeterItemPowerScale.Name = "p24_clrbtnMeterItemPowerScale";
-            this.p24_clrbtnMeterItemPowerScale.Selectable = true;
+            this.p24_clrbtnMeterItemPowerScale.TabStop = true;
             this.p24_clrbtnMeterItemPowerScale.Size = new System.Drawing.Size(40, 23);
             this.p24_clrbtnMeterItemPowerScale.TabIndex = 125;
             this.p24_clrbtnMeterItemPowerScale.Changed += new System.EventHandler(this.clrbtnMeterItemPowerScale_Changed);
@@ -4257,7 +4392,7 @@ namespace PowerSDR
             this.p24_clrbtnMeterItemRotatorArrow.Location = new System.Drawing.Point(83, 52);
             this.p24_clrbtnMeterItemRotatorArrow.MoreColors = "More Colors...";
             this.p24_clrbtnMeterItemRotatorArrow.Name = "p24_clrbtnMeterItemRotatorArrow";
-            this.p24_clrbtnMeterItemRotatorArrow.Selectable = true;
+            this.p24_clrbtnMeterItemRotatorArrow.TabStop = true;
             this.p24_clrbtnMeterItemRotatorArrow.Size = new System.Drawing.Size(40, 23);
             this.p24_clrbtnMeterItemRotatorArrow.TabIndex = 76;
             this.toolTip1.SetToolTip(this.p24_clrbtnMeterItemRotatorArrow, "The arrow/pointer colour");
@@ -4273,7 +4408,7 @@ namespace PowerSDR
             this.p24_clrbtnMeterItemRotatorBeamWidth.Location = new System.Drawing.Point(83, 139);
             this.p24_clrbtnMeterItemRotatorBeamWidth.MoreColors = "More Colors...";
             this.p24_clrbtnMeterItemRotatorBeamWidth.Name = "p24_clrbtnMeterItemRotatorBeamWidth";
-            this.p24_clrbtnMeterItemRotatorBeamWidth.Selectable = true;
+            this.p24_clrbtnMeterItemRotatorBeamWidth.TabStop = true;
             this.p24_clrbtnMeterItemRotatorBeamWidth.Size = new System.Drawing.Size(40, 23);
             this.p24_clrbtnMeterItemRotatorBeamWidth.TabIndex = 120;
             this.toolTip1.SetToolTip(this.p24_clrbtnMeterItemRotatorBeamWidth, "Beam width colour");
@@ -4289,7 +4424,7 @@ namespace PowerSDR
             this.p24_clrbtnMeterItemRotatorControlColour.Location = new System.Drawing.Point(110, 268);
             this.p24_clrbtnMeterItemRotatorControlColour.MoreColors = "More Colors...";
             this.p24_clrbtnMeterItemRotatorControlColour.Name = "p24_clrbtnMeterItemRotatorControlColour";
-            this.p24_clrbtnMeterItemRotatorControlColour.Selectable = true;
+            this.p24_clrbtnMeterItemRotatorControlColour.TabStop = true;
             this.p24_clrbtnMeterItemRotatorControlColour.Size = new System.Drawing.Size(40, 23);
             this.p24_clrbtnMeterItemRotatorControlColour.TabIndex = 137;
             this.toolTip1.SetToolTip(this.p24_clrbtnMeterItemRotatorControlColour, "Control arrow colour");
@@ -4304,7 +4439,7 @@ namespace PowerSDR
             this.p24_clrbtnMeterItemRotatorLargeDot.Location = new System.Drawing.Point(83, 81);
             this.p24_clrbtnMeterItemRotatorLargeDot.MoreColors = "More Colors...";
             this.p24_clrbtnMeterItemRotatorLargeDot.Name = "p24_clrbtnMeterItemRotatorLargeDot";
-            this.p24_clrbtnMeterItemRotatorLargeDot.Selectable = true;
+            this.p24_clrbtnMeterItemRotatorLargeDot.TabStop = true;
             this.p24_clrbtnMeterItemRotatorLargeDot.Size = new System.Drawing.Size(40, 23);
             this.p24_clrbtnMeterItemRotatorLargeDot.TabIndex = 77;
             this.toolTip1.SetToolTip(this.p24_clrbtnMeterItemRotatorLargeDot, "Large dot colour");
@@ -4320,7 +4455,7 @@ namespace PowerSDR
             this.p24_clrbtnMeterItemRotatorSmallDot.Location = new System.Drawing.Point(83, 110);
             this.p24_clrbtnMeterItemRotatorSmallDot.MoreColors = "More Colors...";
             this.p24_clrbtnMeterItemRotatorSmallDot.Name = "p24_clrbtnMeterItemRotatorSmallDot";
-            this.p24_clrbtnMeterItemRotatorSmallDot.Selectable = true;
+            this.p24_clrbtnMeterItemRotatorSmallDot.TabStop = true;
             this.p24_clrbtnMeterItemRotatorSmallDot.Size = new System.Drawing.Size(40, 23);
             this.p24_clrbtnMeterItemRotatorSmallDot.TabIndex = 80;
             this.toolTip1.SetToolTip(this.p24_clrbtnMeterItemRotatorSmallDot, "Small dot colour");
@@ -4336,7 +4471,7 @@ namespace PowerSDR
             this.p24_clrbtnMeterItemRotatorText.Location = new System.Drawing.Point(83, 194);
             this.p24_clrbtnMeterItemRotatorText.MoreColors = "More Colors...";
             this.p24_clrbtnMeterItemRotatorText.Name = "p24_clrbtnMeterItemRotatorText";
-            this.p24_clrbtnMeterItemRotatorText.Selectable = true;
+            this.p24_clrbtnMeterItemRotatorText.TabStop = true;
             this.p24_clrbtnMeterItemRotatorText.Size = new System.Drawing.Size(40, 23);
             this.p24_clrbtnMeterItemRotatorText.TabIndex = 132;
             this.toolTip1.SetToolTip(this.p24_clrbtnMeterItemRotatorText, "Text colour");
@@ -4352,7 +4487,7 @@ namespace PowerSDR
             this.p24_clrbtnMeterItemSegmentedSolidColourHigh.Location = new System.Drawing.Point(131, 122);
             this.p24_clrbtnMeterItemSegmentedSolidColourHigh.MoreColors = "More Colors...";
             this.p24_clrbtnMeterItemSegmentedSolidColourHigh.Name = "p24_clrbtnMeterItemSegmentedSolidColourHigh";
-            this.p24_clrbtnMeterItemSegmentedSolidColourHigh.Selectable = true;
+            this.p24_clrbtnMeterItemSegmentedSolidColourHigh.TabStop = true;
             this.p24_clrbtnMeterItemSegmentedSolidColourHigh.Size = new System.Drawing.Size(40, 23);
             this.p24_clrbtnMeterItemSegmentedSolidColourHigh.TabIndex = 116;
             this.toolTip1.SetToolTip(this.p24_clrbtnMeterItemSegmentedSolidColourHigh, "High section colour");
@@ -4368,7 +4503,7 @@ namespace PowerSDR
             this.p24_clrbtnMeterItemSegmentedSolidColourLow.Location = new System.Drawing.Point(85, 122);
             this.p24_clrbtnMeterItemSegmentedSolidColourLow.MoreColors = "More Colors...";
             this.p24_clrbtnMeterItemSegmentedSolidColourLow.Name = "p24_clrbtnMeterItemSegmentedSolidColourLow";
-            this.p24_clrbtnMeterItemSegmentedSolidColourLow.Selectable = true;
+            this.p24_clrbtnMeterItemSegmentedSolidColourLow.TabStop = true;
             this.p24_clrbtnMeterItemSegmentedSolidColourLow.Size = new System.Drawing.Size(40, 23);
             this.p24_clrbtnMeterItemSegmentedSolidColourLow.TabIndex = 106;
             this.toolTip1.SetToolTip(this.p24_clrbtnMeterItemSegmentedSolidColourLow, "Low section colour");
@@ -4384,7 +4519,7 @@ namespace PowerSDR
             this.p24_clrbtnMeterItemSubIndicator.Location = new System.Drawing.Point(200, 29);
             this.p24_clrbtnMeterItemSubIndicator.MoreColors = "More Colors...";
             this.p24_clrbtnMeterItemSubIndicator.Name = "p24_clrbtnMeterItemSubIndicator";
-            this.p24_clrbtnMeterItemSubIndicator.Selectable = true;
+            this.p24_clrbtnMeterItemSubIndicator.TabStop = true;
             this.p24_clrbtnMeterItemSubIndicator.Size = new System.Drawing.Size(40, 23);
             this.p24_clrbtnMeterItemSubIndicator.TabIndex = 120;
             this.toolTip1.SetToolTip(this.p24_clrbtnMeterItemSubIndicator, "Sub Indicator colour for sub needles and avg markers on some horizontal meters");
@@ -4400,7 +4535,7 @@ namespace PowerSDR
             this.p24_clrbtnMultiMeter_vfo_lock.Location = new System.Drawing.Point(203, 253);
             this.p24_clrbtnMultiMeter_vfo_lock.MoreColors = "More Colors...";
             this.p24_clrbtnMultiMeter_vfo_lock.Name = "p24_clrbtnMultiMeter_vfo_lock";
-            this.p24_clrbtnMultiMeter_vfo_lock.Selectable = true;
+            this.p24_clrbtnMultiMeter_vfo_lock.TabStop = true;
             this.p24_clrbtnMultiMeter_vfo_lock.Size = new System.Drawing.Size(40, 23);
             this.p24_clrbtnMultiMeter_vfo_lock.TabIndex = 140;
             this.toolTip1.SetToolTip(this.p24_clrbtnMultiMeter_vfo_lock, "Lock colour");
@@ -4416,7 +4551,7 @@ namespace PowerSDR
             this.p24_clrbtnMultiMeter_vfo_show_bandtext.Location = new System.Drawing.Point(203, 203);
             this.p24_clrbtnMultiMeter_vfo_show_bandtext.MoreColors = "More Colors...";
             this.p24_clrbtnMultiMeter_vfo_show_bandtext.Name = "p24_clrbtnMultiMeter_vfo_show_bandtext";
-            this.p24_clrbtnMultiMeter_vfo_show_bandtext.Selectable = true;
+            this.p24_clrbtnMultiMeter_vfo_show_bandtext.TabStop = true;
             this.p24_clrbtnMultiMeter_vfo_show_bandtext.Size = new System.Drawing.Size(40, 23);
             this.p24_clrbtnMultiMeter_vfo_show_bandtext.TabIndex = 136;
             this.toolTip1.SetToolTip(this.p24_clrbtnMultiMeter_vfo_show_bandtext, "Band text colour");
@@ -4432,7 +4567,7 @@ namespace PowerSDR
             this.p24_clrbtnMultiMeter_vfo_sync.Location = new System.Drawing.Point(203, 282);
             this.p24_clrbtnMultiMeter_vfo_sync.MoreColors = "More Colors...";
             this.p24_clrbtnMultiMeter_vfo_sync.Name = "p24_clrbtnMultiMeter_vfo_sync";
-            this.p24_clrbtnMultiMeter_vfo_sync.Selectable = true;
+            this.p24_clrbtnMultiMeter_vfo_sync.TabStop = true;
             this.p24_clrbtnMultiMeter_vfo_sync.Size = new System.Drawing.Size(40, 23);
             this.p24_clrbtnMultiMeter_vfo_sync.TabIndex = 142;
             this.toolTip1.SetToolTip(this.p24_clrbtnMultiMeter_vfo_sync, "Sync colour");
@@ -4448,7 +4583,7 @@ namespace PowerSDR
             this.p24_clrbtnTextOverlay_PanelBackground.Location = new System.Drawing.Point(141, 45);
             this.p24_clrbtnTextOverlay_PanelBackground.MoreColors = "More Colors...";
             this.p24_clrbtnTextOverlay_PanelBackground.Name = "p24_clrbtnTextOverlay_PanelBackground";
-            this.p24_clrbtnTextOverlay_PanelBackground.Selectable = true;
+            this.p24_clrbtnTextOverlay_PanelBackground.TabStop = true;
             this.p24_clrbtnTextOverlay_PanelBackground.Size = new System.Drawing.Size(40, 23);
             this.p24_clrbtnTextOverlay_PanelBackground.TabIndex = 129;
             this.toolTip1.SetToolTip(this.p24_clrbtnTextOverlay_PanelBackground, "Background colour");
@@ -4464,7 +4599,7 @@ namespace PowerSDR
             this.p24_clrbtnTextOverlay_PanelBackgroundTX.Location = new System.Drawing.Point(141, 70);
             this.p24_clrbtnTextOverlay_PanelBackgroundTX.MoreColors = "More Colors...";
             this.p24_clrbtnTextOverlay_PanelBackgroundTX.Name = "p24_clrbtnTextOverlay_PanelBackgroundTX";
-            this.p24_clrbtnTextOverlay_PanelBackgroundTX.Selectable = true;
+            this.p24_clrbtnTextOverlay_PanelBackgroundTX.TabStop = true;
             this.p24_clrbtnTextOverlay_PanelBackgroundTX.Size = new System.Drawing.Size(40, 23);
             this.p24_clrbtnTextOverlay_PanelBackgroundTX.TabIndex = 162;
             this.toolTip1.SetToolTip(this.p24_clrbtnTextOverlay_PanelBackgroundTX, "Background colour");
@@ -4480,7 +4615,7 @@ namespace PowerSDR
             this.p24_clrbtnTextOverlay_TextBackColour1.Location = new System.Drawing.Point(133, 183);
             this.p24_clrbtnTextOverlay_TextBackColour1.MoreColors = "More Colors...";
             this.p24_clrbtnTextOverlay_TextBackColour1.Name = "p24_clrbtnTextOverlay_TextBackColour1";
-            this.p24_clrbtnTextOverlay_TextBackColour1.Selectable = true;
+            this.p24_clrbtnTextOverlay_TextBackColour1.TabStop = true;
             this.p24_clrbtnTextOverlay_TextBackColour1.Size = new System.Drawing.Size(40, 23);
             this.p24_clrbtnTextOverlay_TextBackColour1.TabIndex = 156;
             this.toolTip1.SetToolTip(this.p24_clrbtnTextOverlay_TextBackColour1, "Background colour");
@@ -4496,7 +4631,7 @@ namespace PowerSDR
             this.p24_clrbtnTextOverlay_TextBackColour2.Location = new System.Drawing.Point(133, 209);
             this.p24_clrbtnTextOverlay_TextBackColour2.MoreColors = "More Colors...";
             this.p24_clrbtnTextOverlay_TextBackColour2.Name = "p24_clrbtnTextOverlay_TextBackColour2";
-            this.p24_clrbtnTextOverlay_TextBackColour2.Selectable = true;
+            this.p24_clrbtnTextOverlay_TextBackColour2.TabStop = true;
             this.p24_clrbtnTextOverlay_TextBackColour2.Size = new System.Drawing.Size(40, 23);
             this.p24_clrbtnTextOverlay_TextBackColour2.TabIndex = 157;
             this.toolTip1.SetToolTip(this.p24_clrbtnTextOverlay_TextBackColour2, "Background colour");
@@ -4512,7 +4647,7 @@ namespace PowerSDR
             this.p24_clrbtnTextOverlay_TextColour1.Location = new System.Drawing.Point(87, 183);
             this.p24_clrbtnTextOverlay_TextColour1.MoreColors = "More Colors...";
             this.p24_clrbtnTextOverlay_TextColour1.Name = "p24_clrbtnTextOverlay_TextColour1";
-            this.p24_clrbtnTextOverlay_TextColour1.Selectable = true;
+            this.p24_clrbtnTextOverlay_TextColour1.TabStop = true;
             this.p24_clrbtnTextOverlay_TextColour1.Size = new System.Drawing.Size(40, 23);
             this.p24_clrbtnTextOverlay_TextColour1.TabIndex = 133;
             this.toolTip1.SetToolTip(this.p24_clrbtnTextOverlay_TextColour1, "Font colour");
@@ -4528,7 +4663,7 @@ namespace PowerSDR
             this.p24_clrbtnTextOverlay_TextColour2.Location = new System.Drawing.Point(87, 209);
             this.p24_clrbtnTextOverlay_TextColour2.MoreColors = "More Colors...";
             this.p24_clrbtnTextOverlay_TextColour2.Name = "p24_clrbtnTextOverlay_TextColour2";
-            this.p24_clrbtnTextOverlay_TextColour2.Selectable = true;
+            this.p24_clrbtnTextOverlay_TextColour2.TabStop = true;
             this.p24_clrbtnTextOverlay_TextColour2.Size = new System.Drawing.Size(40, 23);
             this.p24_clrbtnTextOverlay_TextColour2.TabIndex = 142;
             this.toolTip1.SetToolTip(this.p24_clrbtnTextOverlay_TextColour2, "Font colour");
@@ -4544,7 +4679,7 @@ namespace PowerSDR
             this.p24_clrbtnWaveRecord_back.Location = new System.Drawing.Point(118, 72);
             this.p24_clrbtnWaveRecord_back.MoreColors = "More Colors...";
             this.p24_clrbtnWaveRecord_back.Name = "p24_clrbtnWaveRecord_back";
-            this.p24_clrbtnWaveRecord_back.Selectable = true;
+            this.p24_clrbtnWaveRecord_back.TabStop = true;
             this.p24_clrbtnWaveRecord_back.Size = new System.Drawing.Size(40, 23);
             this.p24_clrbtnWaveRecord_back.TabIndex = 3;
             this.toolTip1.SetToolTip(this.p24_clrbtnWaveRecord_back, "Panel background colour");
@@ -4560,7 +4695,7 @@ namespace PowerSDR
             this.p24_clrbtnWaveRecord_border.Location = new System.Drawing.Point(272, 72);
             this.p24_clrbtnWaveRecord_border.MoreColors = "More Colors...";
             this.p24_clrbtnWaveRecord_border.Name = "p24_clrbtnWaveRecord_border";
-            this.p24_clrbtnWaveRecord_border.Selectable = true;
+            this.p24_clrbtnWaveRecord_border.TabStop = true;
             this.p24_clrbtnWaveRecord_border.Size = new System.Drawing.Size(40, 23);
             this.p24_clrbtnWaveRecord_border.TabIndex = 4;
             this.toolTip1.SetToolTip(this.p24_clrbtnWaveRecord_border, "Row border colour");
@@ -4576,7 +4711,7 @@ namespace PowerSDR
             this.p24_clrbtnWaveRecord_button_border.Location = new System.Drawing.Point(272, 120);
             this.p24_clrbtnWaveRecord_button_border.MoreColors = "More Colors...";
             this.p24_clrbtnWaveRecord_button_border.Name = "p24_clrbtnWaveRecord_button_border";
-            this.p24_clrbtnWaveRecord_button_border.Selectable = true;
+            this.p24_clrbtnWaveRecord_button_border.TabStop = true;
             this.p24_clrbtnWaveRecord_button_border.Size = new System.Drawing.Size(40, 23);
             this.p24_clrbtnWaveRecord_button_border.TabIndex = 8;
             this.toolTip1.SetToolTip(this.p24_clrbtnWaveRecord_button_border, "Button border colour");
@@ -4592,7 +4727,7 @@ namespace PowerSDR
             this.p24_clrbtnWaveRecord_button_fill.Location = new System.Drawing.Point(118, 120);
             this.p24_clrbtnWaveRecord_button_fill.MoreColors = "More Colors...";
             this.p24_clrbtnWaveRecord_button_fill.Name = "p24_clrbtnWaveRecord_button_fill";
-            this.p24_clrbtnWaveRecord_button_fill.Selectable = true;
+            this.p24_clrbtnWaveRecord_button_fill.TabStop = true;
             this.p24_clrbtnWaveRecord_button_fill.Size = new System.Drawing.Size(40, 23);
             this.p24_clrbtnWaveRecord_button_fill.TabIndex = 7;
             this.toolTip1.SetToolTip(this.p24_clrbtnWaveRecord_button_fill, "Button background colour");
@@ -4608,7 +4743,7 @@ namespace PowerSDR
             this.p24_clrbtnWaveRecord_button_hover.Location = new System.Drawing.Point(118, 144);
             this.p24_clrbtnWaveRecord_button_hover.MoreColors = "More Colors...";
             this.p24_clrbtnWaveRecord_button_hover.Name = "p24_clrbtnWaveRecord_button_hover";
-            this.p24_clrbtnWaveRecord_button_hover.Selectable = true;
+            this.p24_clrbtnWaveRecord_button_hover.TabStop = true;
             this.p24_clrbtnWaveRecord_button_hover.Size = new System.Drawing.Size(40, 23);
             this.p24_clrbtnWaveRecord_button_hover.TabIndex = 9;
             this.toolTip1.SetToolTip(this.p24_clrbtnWaveRecord_button_hover, "Button hover fill colour");
@@ -4624,7 +4759,7 @@ namespace PowerSDR
             this.p24_clrbtnWaveRecord_delete.Location = new System.Drawing.Point(272, 168);
             this.p24_clrbtnWaveRecord_delete.MoreColors = "More Colors...";
             this.p24_clrbtnWaveRecord_delete.Name = "p24_clrbtnWaveRecord_delete";
-            this.p24_clrbtnWaveRecord_delete.Selectable = true;
+            this.p24_clrbtnWaveRecord_delete.TabStop = true;
             this.p24_clrbtnWaveRecord_delete.Size = new System.Drawing.Size(40, 23);
             this.p24_clrbtnWaveRecord_delete.TabIndex = 12;
             this.toolTip1.SetToolTip(this.p24_clrbtnWaveRecord_delete, "Trash icon colour");
@@ -4640,7 +4775,7 @@ namespace PowerSDR
             this.p24_clrbtnWaveRecord_play.Location = new System.Drawing.Point(272, 144);
             this.p24_clrbtnWaveRecord_play.MoreColors = "More Colors...";
             this.p24_clrbtnWaveRecord_play.Name = "p24_clrbtnWaveRecord_play";
-            this.p24_clrbtnWaveRecord_play.Selectable = true;
+            this.p24_clrbtnWaveRecord_play.TabStop = true;
             this.p24_clrbtnWaveRecord_play.Size = new System.Drawing.Size(40, 23);
             this.p24_clrbtnWaveRecord_play.TabIndex = 10;
             this.toolTip1.SetToolTip(this.p24_clrbtnWaveRecord_play, "Play icon colour");
@@ -4656,7 +4791,7 @@ namespace PowerSDR
             this.p24_clrbtnWaveRecord_row.Location = new System.Drawing.Point(118, 96);
             this.p24_clrbtnWaveRecord_row.MoreColors = "More Colors...";
             this.p24_clrbtnWaveRecord_row.Name = "p24_clrbtnWaveRecord_row";
-            this.p24_clrbtnWaveRecord_row.Selectable = true;
+            this.p24_clrbtnWaveRecord_row.TabStop = true;
             this.p24_clrbtnWaveRecord_row.Size = new System.Drawing.Size(40, 23);
             this.p24_clrbtnWaveRecord_row.TabIndex = 5;
             this.toolTip1.SetToolTip(this.p24_clrbtnWaveRecord_row, "Row background colour");
@@ -4672,7 +4807,7 @@ namespace PowerSDR
             this.p24_clrbtnWaveRecord_scroll_hover.Location = new System.Drawing.Point(118, 216);
             this.p24_clrbtnWaveRecord_scroll_hover.MoreColors = "More Colors...";
             this.p24_clrbtnWaveRecord_scroll_hover.Name = "p24_clrbtnWaveRecord_scroll_hover";
-            this.p24_clrbtnWaveRecord_scroll_hover.Selectable = true;
+            this.p24_clrbtnWaveRecord_scroll_hover.TabStop = true;
             this.p24_clrbtnWaveRecord_scroll_hover.Size = new System.Drawing.Size(40, 23);
             this.p24_clrbtnWaveRecord_scroll_hover.TabIndex = 15;
             this.toolTip1.SetToolTip(this.p24_clrbtnWaveRecord_scroll_hover, "Scrollbar thumb hover colour");
@@ -4688,7 +4823,7 @@ namespace PowerSDR
             this.p24_clrbtnWaveRecord_scroll_thumb.Location = new System.Drawing.Point(272, 192);
             this.p24_clrbtnWaveRecord_scroll_thumb.MoreColors = "More Colors...";
             this.p24_clrbtnWaveRecord_scroll_thumb.Name = "p24_clrbtnWaveRecord_scroll_thumb";
-            this.p24_clrbtnWaveRecord_scroll_thumb.Selectable = true;
+            this.p24_clrbtnWaveRecord_scroll_thumb.TabStop = true;
             this.p24_clrbtnWaveRecord_scroll_thumb.Size = new System.Drawing.Size(40, 23);
             this.p24_clrbtnWaveRecord_scroll_thumb.TabIndex = 14;
             this.toolTip1.SetToolTip(this.p24_clrbtnWaveRecord_scroll_thumb, "Scrollbar thumb colour");
@@ -4704,7 +4839,7 @@ namespace PowerSDR
             this.p24_clrbtnWaveRecord_scroll_track.Location = new System.Drawing.Point(118, 192);
             this.p24_clrbtnWaveRecord_scroll_track.MoreColors = "More Colors...";
             this.p24_clrbtnWaveRecord_scroll_track.Name = "p24_clrbtnWaveRecord_scroll_track";
-            this.p24_clrbtnWaveRecord_scroll_track.Selectable = true;
+            this.p24_clrbtnWaveRecord_scroll_track.TabStop = true;
             this.p24_clrbtnWaveRecord_scroll_track.Size = new System.Drawing.Size(40, 23);
             this.p24_clrbtnWaveRecord_scroll_track.TabIndex = 13;
             this.toolTip1.SetToolTip(this.p24_clrbtnWaveRecord_scroll_track, "Scrollbar track colour");
@@ -4720,7 +4855,7 @@ namespace PowerSDR
             this.p24_clrbtnWaveRecord_stop.Location = new System.Drawing.Point(118, 168);
             this.p24_clrbtnWaveRecord_stop.MoreColors = "More Colors...";
             this.p24_clrbtnWaveRecord_stop.Name = "p24_clrbtnWaveRecord_stop";
-            this.p24_clrbtnWaveRecord_stop.Selectable = true;
+            this.p24_clrbtnWaveRecord_stop.TabStop = true;
             this.p24_clrbtnWaveRecord_stop.Size = new System.Drawing.Size(40, 23);
             this.p24_clrbtnWaveRecord_stop.TabIndex = 11;
             this.toolTip1.SetToolTip(this.p24_clrbtnWaveRecord_stop, "Stop icon colour");
@@ -4736,7 +4871,7 @@ namespace PowerSDR
             this.p24_clrbtnWaveRecord_text.Location = new System.Drawing.Point(272, 96);
             this.p24_clrbtnWaveRecord_text.MoreColors = "More Colors...";
             this.p24_clrbtnWaveRecord_text.Name = "p24_clrbtnWaveRecord_text";
-            this.p24_clrbtnWaveRecord_text.Selectable = true;
+            this.p24_clrbtnWaveRecord_text.TabStop = true;
             this.p24_clrbtnWaveRecord_text.Size = new System.Drawing.Size(40, 23);
             this.p24_clrbtnWaveRecord_text.TabIndex = 6;
             this.toolTip1.SetToolTip(this.p24_clrbtnWaveRecord_text, "Recording name colour");
@@ -7716,9 +7851,7 @@ namespace PowerSDR
             0});
             this.p24_nudBandButtons_border.Name = "p24_nudBandButtons_border";
             this.p24_nudBandButtons_border.Size = new System.Drawing.Size(56, 20);
-            this.p24_nudBandButtons_border.TabIndex = 139;
-            this.p24_nudBandButtons_border.TinyStep = false;
-            this.toolTip1.SetToolTip(this.p24_nudBandButtons_border, "Border size");
+            this.p24_nudBandButtons_border.TabIndex = 139;            this.toolTip1.SetToolTip(this.p24_nudBandButtons_border, "Border size");
             this.p24_nudBandButtons_border.Value = new decimal(new int[] {
             1,
             0,
@@ -7747,9 +7880,7 @@ namespace PowerSDR
             0});
             this.p24_nudBandButtons_columns.Name = "p24_nudBandButtons_columns";
             this.p24_nudBandButtons_columns.Size = new System.Drawing.Size(56, 20);
-            this.p24_nudBandButtons_columns.TabIndex = 132;
-            this.p24_nudBandButtons_columns.TinyStep = false;
-            this.toolTip1.SetToolTip(this.p24_nudBandButtons_columns, "Number of button columns");
+            this.p24_nudBandButtons_columns.TabIndex = 132;            this.toolTip1.SetToolTip(this.p24_nudBandButtons_columns, "Number of button columns");
             this.p24_nudBandButtons_columns.Value = new decimal(new int[] {
             1,
             0,
@@ -7779,9 +7910,7 @@ namespace PowerSDR
             131072});
             this.p24_nudBandButtons_height_ratio.Name = "p24_nudBandButtons_height_ratio";
             this.p24_nudBandButtons_height_ratio.Size = new System.Drawing.Size(56, 20);
-            this.p24_nudBandButtons_height_ratio.TabIndex = 145;
-            this.p24_nudBandButtons_height_ratio.TinyStep = false;
-            this.toolTip1.SetToolTip(this.p24_nudBandButtons_height_ratio, "Ratio of height to width");
+            this.p24_nudBandButtons_height_ratio.TabIndex = 145;            this.toolTip1.SetToolTip(this.p24_nudBandButtons_height_ratio, "Ratio of height to width");
             this.p24_nudBandButtons_height_ratio.Value = new decimal(new int[] {
             1,
             0,
@@ -7811,9 +7940,7 @@ namespace PowerSDR
             0});
             this.p24_nudBandButtons_indicator_border.Name = "p24_nudBandButtons_indicator_border";
             this.p24_nudBandButtons_indicator_border.Size = new System.Drawing.Size(56, 20);
-            this.p24_nudBandButtons_indicator_border.TabIndex = 147;
-            this.p24_nudBandButtons_indicator_border.TinyStep = false;
-            this.toolTip1.SetToolTip(this.p24_nudBandButtons_indicator_border, "Border size of indicator ring");
+            this.p24_nudBandButtons_indicator_border.TabIndex = 147;            this.toolTip1.SetToolTip(this.p24_nudBandButtons_indicator_border, "Border size of indicator ring");
             this.p24_nudBandButtons_indicator_border.Value = new decimal(new int[] {
             1,
             0,
@@ -7842,9 +7969,7 @@ namespace PowerSDR
             0});
             this.p24_nudBandButtons_indicator_style.Name = "p24_nudBandButtons_indicator_style";
             this.p24_nudBandButtons_indicator_style.Size = new System.Drawing.Size(37, 20);
-            this.p24_nudBandButtons_indicator_style.TabIndex = 158;
-            this.p24_nudBandButtons_indicator_style.TinyStep = false;
-            this.toolTip1.SetToolTip(this.p24_nudBandButtons_indicator_style, "Indicator style");
+            this.p24_nudBandButtons_indicator_style.TabIndex = 158;            this.toolTip1.SetToolTip(this.p24_nudBandButtons_indicator_style, "Indicator style");
             this.p24_nudBandButtons_indicator_style.Value = new decimal(new int[] {
             1,
             0,
@@ -7874,9 +7999,7 @@ namespace PowerSDR
             0});
             this.p24_nudBandButtons_margin.Name = "p24_nudBandButtons_margin";
             this.p24_nudBandButtons_margin.Size = new System.Drawing.Size(56, 20);
-            this.p24_nudBandButtons_margin.TabIndex = 141;
-            this.p24_nudBandButtons_margin.TinyStep = false;
-            this.toolTip1.SetToolTip(this.p24_nudBandButtons_margin, "Margin size");
+            this.p24_nudBandButtons_margin.TabIndex = 141;            this.toolTip1.SetToolTip(this.p24_nudBandButtons_margin, "Margin size");
             this.p24_nudBandButtons_margin.Value = new decimal(new int[] {
             1,
             0,
@@ -7906,9 +8029,7 @@ namespace PowerSDR
             0});
             this.p24_nudBandButtons_radius.Name = "p24_nudBandButtons_radius";
             this.p24_nudBandButtons_radius.Size = new System.Drawing.Size(56, 20);
-            this.p24_nudBandButtons_radius.TabIndex = 143;
-            this.p24_nudBandButtons_radius.TinyStep = false;
-            this.toolTip1.SetToolTip(this.p24_nudBandButtons_radius, "Radius corner size");
+            this.p24_nudBandButtons_radius.TabIndex = 143;            this.toolTip1.SetToolTip(this.p24_nudBandButtons_radius, "Radius corner size");
             this.p24_nudBandButtons_radius.Value = new decimal(new int[] {
             1,
             0,
@@ -7938,9 +8059,7 @@ namespace PowerSDR
             131072});
             this.p24_nudButtonBox_font_scale.Name = "p24_nudButtonBox_font_scale";
             this.p24_nudButtonBox_font_scale.Size = new System.Drawing.Size(56, 20);
-            this.p24_nudButtonBox_font_scale.TabIndex = 161;
-            this.p24_nudButtonBox_font_scale.TinyStep = false;
-            this.toolTip1.SetToolTip(this.p24_nudButtonBox_font_scale, "Font scale adjustment");
+            this.p24_nudButtonBox_font_scale.TabIndex = 161;            this.toolTip1.SetToolTip(this.p24_nudButtonBox_font_scale, "Font scale adjustment");
             this.p24_nudButtonBox_font_scale.Value = new decimal(new int[] {
             1,
             0,
@@ -7970,9 +8089,7 @@ namespace PowerSDR
             -2147352576});
             this.p24_nudButtonBox_font_x_shift.Name = "p24_nudButtonBox_font_x_shift";
             this.p24_nudButtonBox_font_x_shift.Size = new System.Drawing.Size(56, 20);
-            this.p24_nudButtonBox_font_x_shift.TabIndex = 163;
-            this.p24_nudButtonBox_font_x_shift.TinyStep = false;
-            this.toolTip1.SetToolTip(this.p24_nudButtonBox_font_x_shift, "Font x shift");
+            this.p24_nudButtonBox_font_x_shift.TabIndex = 163;            this.toolTip1.SetToolTip(this.p24_nudButtonBox_font_x_shift, "Font x shift");
             this.p24_nudButtonBox_font_x_shift.Value = new decimal(new int[] {
             0,
             0,
@@ -8002,9 +8119,7 @@ namespace PowerSDR
             -2147352576});
             this.p24_nudButtonBox_font_y_shift.Name = "p24_nudButtonBox_font_y_shift";
             this.p24_nudButtonBox_font_y_shift.Size = new System.Drawing.Size(56, 20);
-            this.p24_nudButtonBox_font_y_shift.TabIndex = 165;
-            this.p24_nudButtonBox_font_y_shift.TinyStep = false;
-            this.toolTip1.SetToolTip(this.p24_nudButtonBox_font_y_shift, "Font y shift");
+            this.p24_nudButtonBox_font_y_shift.TabIndex = 165;            this.toolTip1.SetToolTip(this.p24_nudButtonBox_font_y_shift, "Font y shift");
             this.p24_nudButtonBox_font_y_shift.Value = new decimal(new int[] {
             0,
             0,
@@ -8033,9 +8148,7 @@ namespace PowerSDR
             0});
             this.p24_nudDataOutNode_sendinterval.Name = "p24_nudDataOutNode_sendinterval";
             this.p24_nudDataOutNode_sendinterval.Size = new System.Drawing.Size(56, 20);
-            this.p24_nudDataOutNode_sendinterval.TabIndex = 132;
-            this.p24_nudDataOutNode_sendinterval.TinyStep = false;
-            this.toolTip1.SetToolTip(this.p24_nudDataOutNode_sendinterval, "The interval that the data is sent.");
+            this.p24_nudDataOutNode_sendinterval.TabIndex = 132;            this.toolTip1.SetToolTip(this.p24_nudDataOutNode_sendinterval, "The interval that the data is sent.");
             this.p24_nudDataOutNode_sendinterval.Value = new decimal(new int[] {
             1000,
             0,
@@ -8065,9 +8178,7 @@ namespace PowerSDR
             131072});
             this.p24_nudDialDisplay_font_scale.Name = "p24_nudDialDisplay_font_scale";
             this.p24_nudDialDisplay_font_scale.Size = new System.Drawing.Size(56, 20);
-            this.p24_nudDialDisplay_font_scale.TabIndex = 163;
-            this.p24_nudDialDisplay_font_scale.TinyStep = false;
-            this.toolTip1.SetToolTip(this.p24_nudDialDisplay_font_scale, "Font scale adjustment");
+            this.p24_nudDialDisplay_font_scale.TabIndex = 163;            this.toolTip1.SetToolTip(this.p24_nudDialDisplay_font_scale, "Font scale adjustment");
             this.p24_nudDialDisplay_font_scale.Value = new decimal(new int[] {
             1,
             0,
@@ -8097,9 +8208,7 @@ namespace PowerSDR
             131072});
             this.p24_nudDialDisplay_vertical_ratio.Name = "p24_nudDialDisplay_vertical_ratio";
             this.p24_nudDialDisplay_vertical_ratio.Size = new System.Drawing.Size(56, 20);
-            this.p24_nudDialDisplay_vertical_ratio.TabIndex = 132;
-            this.p24_nudDialDisplay_vertical_ratio.TinyStep = false;
-            this.toolTip1.SetToolTip(this.p24_nudDialDisplay_vertical_ratio, "Vertical size, compared to width");
+            this.p24_nudDialDisplay_vertical_ratio.TabIndex = 132;            this.toolTip1.SetToolTip(this.p24_nudDialDisplay_vertical_ratio, "Vertical size, compared to width");
             this.p24_nudDialDisplay_vertical_ratio.Value = new decimal(new int[] {
             1,
             0,
@@ -8128,9 +8237,7 @@ namespace PowerSDR
             0});
             this.p24_nudDial_decrement.Name = "p24_nudDial_decrement";
             this.p24_nudDial_decrement.Size = new System.Drawing.Size(44, 20);
-            this.p24_nudDial_decrement.TabIndex = 171;
-            this.p24_nudDial_decrement.TinyStep = false;
-            this.toolTip1.SetToolTip(this.p24_nudDial_decrement, "At this degree per second tunstep will be decremented");
+            this.p24_nudDial_decrement.TabIndex = 171;            this.toolTip1.SetToolTip(this.p24_nudDial_decrement, "At this degree per second tunstep will be decremented");
             this.p24_nudDial_decrement.Value = new decimal(new int[] {
             360,
             0,
@@ -8159,9 +8266,7 @@ namespace PowerSDR
             0});
             this.p24_nudDial_degrees_for_change.Name = "p24_nudDial_degrees_for_change";
             this.p24_nudDial_degrees_for_change.Size = new System.Drawing.Size(44, 20);
-            this.p24_nudDial_degrees_for_change.TabIndex = 200;
-            this.p24_nudDial_degrees_for_change.TinyStep = false;
-            this.toolTip1.SetToolTip(this.p24_nudDial_degrees_for_change, "The number of degrees required for a VFO change");
+            this.p24_nudDial_degrees_for_change.TabIndex = 200;            this.toolTip1.SetToolTip(this.p24_nudDial_degrees_for_change, "The number of degrees required for a VFO change");
             this.p24_nudDial_degrees_for_change.Value = new decimal(new int[] {
             5,
             0,
@@ -8190,9 +8295,7 @@ namespace PowerSDR
             0});
             this.p24_nudDial_increment.Name = "p24_nudDial_increment";
             this.p24_nudDial_increment.Size = new System.Drawing.Size(44, 20);
-            this.p24_nudDial_increment.TabIndex = 168;
-            this.p24_nudDial_increment.TinyStep = false;
-            this.toolTip1.SetToolTip(this.p24_nudDial_increment, "At this degree per second tunstep will be incremented");
+            this.p24_nudDial_increment.TabIndex = 168;            this.toolTip1.SetToolTip(this.p24_nudDial_increment, "At this degree per second tunstep will be incremented");
             this.p24_nudDial_increment.Value = new decimal(new int[] {
             540,
             0,
@@ -8221,9 +8324,7 @@ namespace PowerSDR
             0});
             this.p24_nudDial_interval.Name = "p24_nudDial_interval";
             this.p24_nudDial_interval.Size = new System.Drawing.Size(44, 20);
-            this.p24_nudDial_interval.TabIndex = 174;
-            this.p24_nudDial_interval.TinyStep = false;
-            this.toolTip1.SetToolTip(this.p24_nudDial_interval, "Apply a tunestep change at this interval");
+            this.p24_nudDial_interval.TabIndex = 174;            this.toolTip1.SetToolTip(this.p24_nudDial_interval, "Apply a tunestep change at this interval");
             this.p24_nudDial_interval.Value = new decimal(new int[] {
             2,
             0,
@@ -8252,9 +8353,7 @@ namespace PowerSDR
             0});
             this.p24_nudDial_max_increments.Name = "p24_nudDial_max_increments";
             this.p24_nudDial_max_increments.Size = new System.Drawing.Size(44, 20);
-            this.p24_nudDial_max_increments.TabIndex = 198;
-            this.p24_nudDial_max_increments.TinyStep = false;
-            this.toolTip1.SetToolTip(this.p24_nudDial_max_increments, "The maximum number of tunestep increments that can happen");
+            this.p24_nudDial_max_increments.TabIndex = 198;            this.toolTip1.SetToolTip(this.p24_nudDial_max_increments, "The maximum number of tunestep increments that can happen");
             this.p24_nudDial_max_increments.Value = new decimal(new int[] {
             4,
             0,
@@ -8284,9 +8383,7 @@ namespace PowerSDR
             0});
             this.p24_nudFilterDisplay_fixed_tx_zoom_level.Name = "p24_nudFilterDisplay_fixed_tx_zoom_level";
             this.p24_nudFilterDisplay_fixed_tx_zoom_level.Size = new System.Drawing.Size(56, 20);
-            this.p24_nudFilterDisplay_fixed_tx_zoom_level.TabIndex = 142;
-            this.p24_nudFilterDisplay_fixed_tx_zoom_level.TinyStep = false;
-            this.toolTip1.SetToolTip(this.p24_nudFilterDisplay_fixed_tx_zoom_level, "Scale");
+            this.p24_nudFilterDisplay_fixed_tx_zoom_level.TabIndex = 142;            this.toolTip1.SetToolTip(this.p24_nudFilterDisplay_fixed_tx_zoom_level, "Scale");
             this.p24_nudFilterDisplay_fixed_tx_zoom_level.Value = new decimal(new int[] {
             1,
             0,
@@ -8316,9 +8413,7 @@ namespace PowerSDR
             0});
             this.p24_nudFilterDisplay_fixed_zoom_level.Name = "p24_nudFilterDisplay_fixed_zoom_level";
             this.p24_nudFilterDisplay_fixed_zoom_level.Size = new System.Drawing.Size(56, 20);
-            this.p24_nudFilterDisplay_fixed_zoom_level.TabIndex = 140;
-            this.p24_nudFilterDisplay_fixed_zoom_level.TinyStep = false;
-            this.toolTip1.SetToolTip(this.p24_nudFilterDisplay_fixed_zoom_level, "Scale");
+            this.p24_nudFilterDisplay_fixed_zoom_level.TabIndex = 140;            this.toolTip1.SetToolTip(this.p24_nudFilterDisplay_fixed_zoom_level, "Scale");
             this.p24_nudFilterDisplay_fixed_zoom_level.Value = new decimal(new int[] {
             1,
             0,
@@ -8348,9 +8443,7 @@ namespace PowerSDR
             131072});
             this.p24_nudFilterDisplay_vertical_ratio.Name = "p24_nudFilterDisplay_vertical_ratio";
             this.p24_nudFilterDisplay_vertical_ratio.Size = new System.Drawing.Size(56, 20);
-            this.p24_nudFilterDisplay_vertical_ratio.TabIndex = 132;
-            this.p24_nudFilterDisplay_vertical_ratio.TinyStep = false;
-            this.toolTip1.SetToolTip(this.p24_nudFilterDisplay_vertical_ratio, "Vertical size, compared to width");
+            this.p24_nudFilterDisplay_vertical_ratio.TabIndex = 132;            this.toolTip1.SetToolTip(this.p24_nudFilterDisplay_vertical_ratio, "Vertical size, compared to width");
             this.p24_nudFilterDisplay_vertical_ratio.Value = new decimal(new int[] {
             1,
             0,
@@ -8380,9 +8473,7 @@ namespace PowerSDR
             0});
             this.p24_nudFilterItem_cw_scale.Name = "p24_nudFilterItem_cw_scale";
             this.p24_nudFilterItem_cw_scale.Size = new System.Drawing.Size(56, 20);
-            this.p24_nudFilterItem_cw_scale.TabIndex = 142;
-            this.p24_nudFilterItem_cw_scale.TinyStep = false;
-            this.toolTip1.SetToolTip(this.p24_nudFilterItem_cw_scale, "Mode scale");
+            this.p24_nudFilterItem_cw_scale.TabIndex = 142;            this.toolTip1.SetToolTip(this.p24_nudFilterItem_cw_scale, "Mode scale");
             this.p24_nudFilterItem_cw_scale.Value = new decimal(new int[] {
             0,
             0,
@@ -8412,9 +8503,7 @@ namespace PowerSDR
             131072});
             this.p24_nudFilterItem_font_scale.Name = "p24_nudFilterItem_font_scale";
             this.p24_nudFilterItem_font_scale.Size = new System.Drawing.Size(56, 20);
-            this.p24_nudFilterItem_font_scale.TabIndex = 163;
-            this.p24_nudFilterItem_font_scale.TinyStep = false;
-            this.toolTip1.SetToolTip(this.p24_nudFilterItem_font_scale, "Font scale adjustment");
+            this.p24_nudFilterItem_font_scale.TabIndex = 163;            this.toolTip1.SetToolTip(this.p24_nudFilterItem_font_scale, "Font scale adjustment");
             this.p24_nudFilterItem_font_scale.Value = new decimal(new int[] {
             1,
             0,
@@ -8444,9 +8533,7 @@ namespace PowerSDR
             0});
             this.p24_nudFilterItem_others_scale.Name = "p24_nudFilterItem_others_scale";
             this.p24_nudFilterItem_others_scale.Size = new System.Drawing.Size(56, 20);
-            this.p24_nudFilterItem_others_scale.TabIndex = 143;
-            this.p24_nudFilterItem_others_scale.TinyStep = false;
-            this.toolTip1.SetToolTip(this.p24_nudFilterItem_others_scale, "Mode scale");
+            this.p24_nudFilterItem_others_scale.TabIndex = 143;            this.toolTip1.SetToolTip(this.p24_nudFilterItem_others_scale, "Mode scale");
             this.p24_nudFilterItem_others_scale.Value = new decimal(new int[] {
             0,
             0,
@@ -8476,9 +8563,7 @@ namespace PowerSDR
             0});
             this.p24_nudFilterItem_sidebands_scale.Name = "p24_nudFilterItem_sidebands_scale";
             this.p24_nudFilterItem_sidebands_scale.Size = new System.Drawing.Size(56, 20);
-            this.p24_nudFilterItem_sidebands_scale.TabIndex = 141;
-            this.p24_nudFilterItem_sidebands_scale.TinyStep = false;
-            this.toolTip1.SetToolTip(this.p24_nudFilterItem_sidebands_scale, "Mode scale");
+            this.p24_nudFilterItem_sidebands_scale.TabIndex = 141;            this.toolTip1.SetToolTip(this.p24_nudFilterItem_sidebands_scale, "Mode scale");
             this.p24_nudFilterItem_sidebands_scale.Value = new decimal(new int[] {
             0,
             0,
@@ -8509,9 +8594,7 @@ namespace PowerSDR
             -2147483648});
             this.p24_nudFilter_lower_characteristic.Name = "p24_nudFilter_lower_characteristic";
             this.p24_nudFilter_lower_characteristic.Size = new System.Drawing.Size(50, 20);
-            this.p24_nudFilter_lower_characteristic.TabIndex = 202;
-            this.p24_nudFilter_lower_characteristic.TinyStep = false;
-            this.toolTip1.SetToolTip(this.p24_nudFilter_lower_characteristic, "The lower level of the characteristic plot");
+            this.p24_nudFilter_lower_characteristic.TabIndex = 202;            this.toolTip1.SetToolTip(this.p24_nudFilter_lower_characteristic, "The lower level of the characteristic plot");
             this.p24_nudFilter_lower_characteristic.Value = new decimal(new int[] {
             250,
             0,
@@ -8540,9 +8623,7 @@ namespace PowerSDR
             0});
             this.p24_nudFilter_waterfall_frame_update.Name = "p24_nudFilter_waterfall_frame_update";
             this.p24_nudFilter_waterfall_frame_update.Size = new System.Drawing.Size(47, 20);
-            this.p24_nudFilter_waterfall_frame_update.TabIndex = 190;
-            this.p24_nudFilter_waterfall_frame_update.TinyStep = false;
-            this.toolTip1.SetToolTip(this.p24_nudFilter_waterfall_frame_update, "How often to update (scroll another pixel line) on the waterfall display.\r\nFilter" +
+            this.p24_nudFilter_waterfall_frame_update.TabIndex = 190;            this.toolTip1.SetToolTip(this.p24_nudFilter_waterfall_frame_update, "How often to update (scroll another pixel line) on the waterfall display.\r\nFilter" +
         "s have a fixed fps of 30, so a setting of 1 here will be adding a row\r\nevery fra" +
         "me.");
             this.p24_nudFilter_waterfall_frame_update.Value = new decimal(new int[] {
@@ -8574,9 +8655,7 @@ namespace PowerSDR
             -2147483648});
             this.p24_nudHistory_axis0_max.Name = "p24_nudHistory_axis0_max";
             this.p24_nudHistory_axis0_max.Size = new System.Drawing.Size(56, 20);
-            this.p24_nudHistory_axis0_max.TabIndex = 143;
-            this.p24_nudHistory_axis0_max.TinyStep = false;
-            this.toolTip1.SetToolTip(this.p24_nudHistory_axis0_max, "Max scale");
+            this.p24_nudHistory_axis0_max.TabIndex = 143;            this.toolTip1.SetToolTip(this.p24_nudHistory_axis0_max, "Max scale");
             this.p24_nudHistory_axis0_max.Value = new decimal(new int[] {
             0,
             0,
@@ -8606,9 +8685,7 @@ namespace PowerSDR
             -2147483648});
             this.p24_nudHistory_axis0_min.Name = "p24_nudHistory_axis0_min";
             this.p24_nudHistory_axis0_min.Size = new System.Drawing.Size(56, 20);
-            this.p24_nudHistory_axis0_min.TabIndex = 141;
-            this.p24_nudHistory_axis0_min.TinyStep = false;
-            this.toolTip1.SetToolTip(this.p24_nudHistory_axis0_min, "Min scale");
+            this.p24_nudHistory_axis0_min.TabIndex = 141;            this.toolTip1.SetToolTip(this.p24_nudHistory_axis0_min, "Min scale");
             this.p24_nudHistory_axis0_min.Value = new decimal(new int[] {
             150,
             0,
@@ -8638,9 +8715,7 @@ namespace PowerSDR
             -2147483648});
             this.p24_nudHistory_axis1_max.Name = "p24_nudHistory_axis1_max";
             this.p24_nudHistory_axis1_max.Size = new System.Drawing.Size(56, 20);
-            this.p24_nudHistory_axis1_max.TabIndex = 143;
-            this.p24_nudHistory_axis1_max.TinyStep = false;
-            this.toolTip1.SetToolTip(this.p24_nudHistory_axis1_max, "Max scale");
+            this.p24_nudHistory_axis1_max.TabIndex = 143;            this.toolTip1.SetToolTip(this.p24_nudHistory_axis1_max, "Max scale");
             this.p24_nudHistory_axis1_max.Value = new decimal(new int[] {
             0,
             0,
@@ -8670,9 +8745,7 @@ namespace PowerSDR
             -2147483648});
             this.p24_nudHistory_axis1_min.Name = "p24_nudHistory_axis1_min";
             this.p24_nudHistory_axis1_min.Size = new System.Drawing.Size(56, 20);
-            this.p24_nudHistory_axis1_min.TabIndex = 141;
-            this.p24_nudHistory_axis1_min.TinyStep = false;
-            this.toolTip1.SetToolTip(this.p24_nudHistory_axis1_min, "Min scale");
+            this.p24_nudHistory_axis1_min.TabIndex = 141;            this.toolTip1.SetToolTip(this.p24_nudHistory_axis1_min, "Min scale");
             this.p24_nudHistory_axis1_min.Value = new decimal(new int[] {
             150,
             0,
@@ -8701,9 +8774,7 @@ namespace PowerSDR
             0});
             this.p24_nudHistory_keep_for.Name = "p24_nudHistory_keep_for";
             this.p24_nudHistory_keep_for.Size = new System.Drawing.Size(56, 20);
-            this.p24_nudHistory_keep_for.TabIndex = 136;
-            this.p24_nudHistory_keep_for.TinyStep = false;
-            this.toolTip1.SetToolTip(this.p24_nudHistory_keep_for, "Reading update and is related to screen update");
+            this.p24_nudHistory_keep_for.TabIndex = 136;            this.toolTip1.SetToolTip(this.p24_nudHistory_keep_for, "Reading update and is related to screen update");
             this.p24_nudHistory_keep_for.Value = new decimal(new int[] {
             20,
             0,
@@ -8732,9 +8803,7 @@ namespace PowerSDR
             0});
             this.p24_nudHistory_update.Name = "p24_nudHistory_update";
             this.p24_nudHistory_update.Size = new System.Drawing.Size(56, 20);
-            this.p24_nudHistory_update.TabIndex = 134;
-            this.p24_nudHistory_update.TinyStep = false;
-            this.toolTip1.SetToolTip(this.p24_nudHistory_update, "Reading update and is related to screen update");
+            this.p24_nudHistory_update.TabIndex = 134;            this.toolTip1.SetToolTip(this.p24_nudHistory_update, "Reading update and is related to screen update");
             this.p24_nudHistory_update.Value = new decimal(new int[] {
             100,
             0,
@@ -8764,9 +8833,7 @@ namespace PowerSDR
             196608});
             this.p24_nudHistory_vertical_ratio.Name = "p24_nudHistory_vertical_ratio";
             this.p24_nudHistory_vertical_ratio.Size = new System.Drawing.Size(56, 20);
-            this.p24_nudHistory_vertical_ratio.TabIndex = 132;
-            this.p24_nudHistory_vertical_ratio.TinyStep = false;
-            this.toolTip1.SetToolTip(this.p24_nudHistory_vertical_ratio, "Vertical size, compared to width");
+            this.p24_nudHistory_vertical_ratio.TabIndex = 132;            this.toolTip1.SetToolTip(this.p24_nudHistory_vertical_ratio, "Vertical size, compared to width");
             this.p24_nudHistory_vertical_ratio.Value = new decimal(new int[] {
             1,
             0,
@@ -8796,9 +8863,7 @@ namespace PowerSDR
             196608});
             this.p24_nudLedIndicator_PanelPadding.Name = "p24_nudLedIndicator_PanelPadding";
             this.p24_nudLedIndicator_PanelPadding.Size = new System.Drawing.Size(56, 20);
-            this.p24_nudLedIndicator_PanelPadding.TabIndex = 132;
-            this.p24_nudLedIndicator_PanelPadding.TinyStep = false;
-            this.toolTip1.SetToolTip(this.p24_nudLedIndicator_PanelPadding, "Size of the spacer. The number is a ratio with reference to the width.");
+            this.p24_nudLedIndicator_PanelPadding.TabIndex = 132;            this.toolTip1.SetToolTip(this.p24_nudLedIndicator_PanelPadding, "Size of the spacer. The number is a ratio with reference to the width.");
             this.p24_nudLedIndicator_PanelPadding.Value = new decimal(new int[] {
             1,
             0,
@@ -8827,9 +8892,7 @@ namespace PowerSDR
             0});
             this.p24_nudLedIndicator_UpdateInterval.Name = "p24_nudLedIndicator_UpdateInterval";
             this.p24_nudLedIndicator_UpdateInterval.Size = new System.Drawing.Size(56, 20);
-            this.p24_nudLedIndicator_UpdateInterval.TabIndex = 176;
-            this.p24_nudLedIndicator_UpdateInterval.TinyStep = false;
-            this.toolTip1.SetToolTip(this.p24_nudLedIndicator_UpdateInterval, "Reading update and is related to screen update");
+            this.p24_nudLedIndicator_UpdateInterval.TabIndex = 176;            this.toolTip1.SetToolTip(this.p24_nudLedIndicator_UpdateInterval, "Reading update and is related to screen update");
             this.p24_nudLedIndicator_UpdateInterval.Value = new decimal(new int[] {
             100,
             0,
@@ -8859,9 +8922,7 @@ namespace PowerSDR
             -2147483648});
             this.p24_nudLedIndicator_xOffset.Name = "p24_nudLedIndicator_xOffset";
             this.p24_nudLedIndicator_xOffset.Size = new System.Drawing.Size(56, 20);
-            this.p24_nudLedIndicator_xOffset.TabIndex = 143;
-            this.p24_nudLedIndicator_xOffset.TinyStep = false;
-            this.toolTip1.SetToolTip(this.p24_nudLedIndicator_xOffset, "X offset");
+            this.p24_nudLedIndicator_xOffset.TabIndex = 143;            this.toolTip1.SetToolTip(this.p24_nudLedIndicator_xOffset, "X offset");
             this.p24_nudLedIndicator_xOffset.Value = new decimal(new int[] {
             1,
             0,
@@ -8891,9 +8952,7 @@ namespace PowerSDR
             -2147483648});
             this.p24_nudLedIndicator_xSize.Name = "p24_nudLedIndicator_xSize";
             this.p24_nudLedIndicator_xSize.Size = new System.Drawing.Size(56, 20);
-            this.p24_nudLedIndicator_xSize.TabIndex = 150;
-            this.p24_nudLedIndicator_xSize.TinyStep = false;
-            this.toolTip1.SetToolTip(this.p24_nudLedIndicator_xSize, "Led size X");
+            this.p24_nudLedIndicator_xSize.TabIndex = 150;            this.toolTip1.SetToolTip(this.p24_nudLedIndicator_xSize, "Led size X");
             this.p24_nudLedIndicator_xSize.Value = new decimal(new int[] {
             1,
             0,
@@ -8923,9 +8982,7 @@ namespace PowerSDR
             -2147483648});
             this.p24_nudLedIndicator_yOffset.Name = "p24_nudLedIndicator_yOffset";
             this.p24_nudLedIndicator_yOffset.Size = new System.Drawing.Size(56, 20);
-            this.p24_nudLedIndicator_yOffset.TabIndex = 147;
-            this.p24_nudLedIndicator_yOffset.TinyStep = false;
-            this.toolTip1.SetToolTip(this.p24_nudLedIndicator_yOffset, "Y offset");
+            this.p24_nudLedIndicator_yOffset.TabIndex = 147;            this.toolTip1.SetToolTip(this.p24_nudLedIndicator_yOffset, "Y offset");
             this.p24_nudLedIndicator_yOffset.Value = new decimal(new int[] {
             1,
             0,
@@ -8955,9 +9012,7 @@ namespace PowerSDR
             -2147483648});
             this.p24_nudLedIndicator_ySize.Name = "p24_nudLedIndicator_ySize";
             this.p24_nudLedIndicator_ySize.Size = new System.Drawing.Size(56, 20);
-            this.p24_nudLedIndicator_ySize.TabIndex = 152;
-            this.p24_nudLedIndicator_ySize.TinyStep = false;
-            this.toolTip1.SetToolTip(this.p24_nudLedIndicator_ySize, "Led size Y");
+            this.p24_nudLedIndicator_ySize.TabIndex = 152;            this.toolTip1.SetToolTip(this.p24_nudLedIndicator_ySize, "Led size Y");
             this.p24_nudLedIndicator_ySize.Value = new decimal(new int[] {
             1,
             0,
@@ -8987,9 +9042,7 @@ namespace PowerSDR
             0});
             this.p24_nudMeterItemAttackRate.Name = "p24_nudMeterItemAttackRate";
             this.p24_nudMeterItemAttackRate.Size = new System.Drawing.Size(56, 20);
-            this.p24_nudMeterItemAttackRate.TabIndex = 103;
-            this.p24_nudMeterItemAttackRate.TinyStep = false;
-            this.toolTip1.SetToolTip(this.p24_nudMeterItemAttackRate, "The \'speed of rise\' to the new value if above current");
+            this.p24_nudMeterItemAttackRate.TabIndex = 103;            this.toolTip1.SetToolTip(this.p24_nudMeterItemAttackRate, "The \'speed of rise\' to the new value if above current");
             this.p24_nudMeterItemAttackRate.Value = new decimal(new int[] {
             1,
             0,
@@ -9019,9 +9072,7 @@ namespace PowerSDR
             0});
             this.p24_nudMeterItemDecayRate.Name = "p24_nudMeterItemDecayRate";
             this.p24_nudMeterItemDecayRate.Size = new System.Drawing.Size(56, 20);
-            this.p24_nudMeterItemDecayRate.TabIndex = 105;
-            this.p24_nudMeterItemDecayRate.TinyStep = false;
-            this.toolTip1.SetToolTip(this.p24_nudMeterItemDecayRate, "The \'speed of fall\' to the new value if below current");
+            this.p24_nudMeterItemDecayRate.TabIndex = 105;            this.toolTip1.SetToolTip(this.p24_nudMeterItemDecayRate, "The \'speed of fall\' to the new value if below current");
             this.p24_nudMeterItemDecayRate.Value = new decimal(new int[] {
             1,
             0,
@@ -9051,9 +9102,7 @@ namespace PowerSDR
             131072});
             this.p24_nudMeterItemEyeBezelScale.Name = "p24_nudMeterItemEyeBezelScale";
             this.p24_nudMeterItemEyeBezelScale.Size = new System.Drawing.Size(56, 20);
-            this.p24_nudMeterItemEyeBezelScale.TabIndex = 124;
-            this.p24_nudMeterItemEyeBezelScale.TinyStep = false;
-            this.toolTip1.SetToolTip(this.p24_nudMeterItemEyeBezelScale, "Size of the eye bezel, 1.0 is full width of container");
+            this.p24_nudMeterItemEyeBezelScale.TabIndex = 124;            this.toolTip1.SetToolTip(this.p24_nudMeterItemEyeBezelScale, "Size of the eye bezel, 1.0 is full width of container");
             this.p24_nudMeterItemEyeBezelScale.Value = new decimal(new int[] {
             1,
             0,
@@ -9083,9 +9132,7 @@ namespace PowerSDR
             131072});
             this.p24_nudMeterItemEyeScale.Name = "p24_nudMeterItemEyeScale";
             this.p24_nudMeterItemEyeScale.Size = new System.Drawing.Size(56, 20);
-            this.p24_nudMeterItemEyeScale.TabIndex = 110;
-            this.p24_nudMeterItemEyeScale.TinyStep = false;
-            this.toolTip1.SetToolTip(this.p24_nudMeterItemEyeScale, "Size of the eye, 1.0 is full width of container");
+            this.p24_nudMeterItemEyeScale.TabIndex = 110;            this.toolTip1.SetToolTip(this.p24_nudMeterItemEyeScale, "Size of the eye, 1.0 is full width of container");
             this.p24_nudMeterItemEyeScale.Value = new decimal(new int[] {
             1,
             0,
@@ -9114,9 +9161,7 @@ namespace PowerSDR
             0});
             this.p24_nudMeterItemHistoryDuration.Name = "p24_nudMeterItemHistoryDuration";
             this.p24_nudMeterItemHistoryDuration.Size = new System.Drawing.Size(56, 20);
-            this.p24_nudMeterItemHistoryDuration.TabIndex = 98;
-            this.p24_nudMeterItemHistoryDuration.TinyStep = false;
-            this.toolTip1.SetToolTip(this.p24_nudMeterItemHistoryDuration, "History duration for history display and peak hold");
+            this.p24_nudMeterItemHistoryDuration.TabIndex = 98;            this.toolTip1.SetToolTip(this.p24_nudMeterItemHistoryDuration, "History duration for history display and peak hold");
             this.p24_nudMeterItemHistoryDuration.Value = new decimal(new int[] {
             2000,
             0,
@@ -9145,9 +9190,7 @@ namespace PowerSDR
             0});
             this.p24_nudMeterItemIgnoreHistoryDuration.Name = "p24_nudMeterItemIgnoreHistoryDuration";
             this.p24_nudMeterItemIgnoreHistoryDuration.Size = new System.Drawing.Size(56, 20);
-            this.p24_nudMeterItemIgnoreHistoryDuration.TabIndex = 127;
-            this.p24_nudMeterItemIgnoreHistoryDuration.TinyStep = false;
-            this.toolTip1.SetToolTip(this.p24_nudMeterItemIgnoreHistoryDuration, "When rx/tx transition or band change let meters settle before gathering history/p" +
+            this.p24_nudMeterItemIgnoreHistoryDuration.TabIndex = 127;            this.toolTip1.SetToolTip(this.p24_nudMeterItemIgnoreHistoryDuration, "When rx/tx transition or band change let meters settle before gathering history/p" +
         "eak values");
             this.p24_nudMeterItemIgnoreHistoryDuration.Value = new decimal(new int[] {
             2000,
@@ -9178,9 +9221,7 @@ namespace PowerSDR
             0});
             this.p24_nudMeterItemRotatorBeamWidth.Name = "p24_nudMeterItemRotatorBeamWidth";
             this.p24_nudMeterItemRotatorBeamWidth.Size = new System.Drawing.Size(56, 20);
-            this.p24_nudMeterItemRotatorBeamWidth.TabIndex = 131;
-            this.p24_nudMeterItemRotatorBeamWidth.TinyStep = false;
-            this.toolTip1.SetToolTip(this.p24_nudMeterItemRotatorBeamWidth, "3dB beam width");
+            this.p24_nudMeterItemRotatorBeamWidth.TabIndex = 131;            this.toolTip1.SetToolTip(this.p24_nudMeterItemRotatorBeamWidth, "3dB beam width");
             this.p24_nudMeterItemRotatorBeamWidth.Value = new decimal(new int[] {
             0,
             0,
@@ -9210,9 +9251,7 @@ namespace PowerSDR
             0});
             this.p24_nudMeterItemRotatorBeamWidth_alpha.Name = "p24_nudMeterItemRotatorBeamWidth_alpha";
             this.p24_nudMeterItemRotatorBeamWidth_alpha.Size = new System.Drawing.Size(56, 20);
-            this.p24_nudMeterItemRotatorBeamWidth_alpha.TabIndex = 175;
-            this.p24_nudMeterItemRotatorBeamWidth_alpha.TinyStep = false;
-            this.toolTip1.SetToolTip(this.p24_nudMeterItemRotatorBeamWidth_alpha, "3dB beam width");
+            this.p24_nudMeterItemRotatorBeamWidth_alpha.TabIndex = 175;            this.toolTip1.SetToolTip(this.p24_nudMeterItemRotatorBeamWidth_alpha, "3dB beam width");
             this.p24_nudMeterItemRotatorBeamWidth_alpha.Value = new decimal(new int[] {
             0,
             0,
@@ -9242,9 +9281,7 @@ namespace PowerSDR
             196608});
             this.p24_nudMeterItemRotator_padding.Name = "p24_nudMeterItemRotator_padding";
             this.p24_nudMeterItemRotator_padding.Size = new System.Drawing.Size(56, 20);
-            this.p24_nudMeterItemRotator_padding.TabIndex = 172;
-            this.p24_nudMeterItemRotator_padding.TinyStep = false;
-            this.toolTip1.SetToolTip(this.p24_nudMeterItemRotator_padding, "Size of the spacer. The number is a ratio with reference to the width.");
+            this.p24_nudMeterItemRotator_padding.TabIndex = 172;            this.toolTip1.SetToolTip(this.p24_nudMeterItemRotator_padding, "Size of the spacer. The number is a ratio with reference to the width.");
             this.p24_nudMeterItemRotator_padding.Value = new decimal(new int[] {
             1,
             0,
@@ -9274,9 +9311,7 @@ namespace PowerSDR
             196608});
             this.p24_nudMeterItemSpacerPadding.Name = "p24_nudMeterItemSpacerPadding";
             this.p24_nudMeterItemSpacerPadding.Size = new System.Drawing.Size(56, 20);
-            this.p24_nudMeterItemSpacerPadding.TabIndex = 132;
-            this.p24_nudMeterItemSpacerPadding.TinyStep = false;
-            this.toolTip1.SetToolTip(this.p24_nudMeterItemSpacerPadding, "Size of the spacer. The number is a ratio with reference to the width.");
+            this.p24_nudMeterItemSpacerPadding.TabIndex = 132;            this.toolTip1.SetToolTip(this.p24_nudMeterItemSpacerPadding, "Size of the spacer. The number is a ratio with reference to the width.");
             this.p24_nudMeterItemSpacerPadding.Value = new decimal(new int[] {
             1,
             0,
@@ -9305,9 +9340,7 @@ namespace PowerSDR
             0});
             this.p24_nudMeterItemUpdateRate.Name = "p24_nudMeterItemUpdateRate";
             this.p24_nudMeterItemUpdateRate.Size = new System.Drawing.Size(56, 20);
-            this.p24_nudMeterItemUpdateRate.TabIndex = 101;
-            this.p24_nudMeterItemUpdateRate.TinyStep = false;
-            this.toolTip1.SetToolTip(this.p24_nudMeterItemUpdateRate, "Reading update and is related to screen update");
+            this.p24_nudMeterItemUpdateRate.TabIndex = 101;            this.toolTip1.SetToolTip(this.p24_nudMeterItemUpdateRate, "Reading update and is related to screen update");
             this.p24_nudMeterItemUpdateRate.Value = new decimal(new int[] {
             100,
             0,
@@ -9336,9 +9369,7 @@ namespace PowerSDR
             0});
             this.p24_nudMeterItemUpdateRateRotator.Name = "p24_nudMeterItemUpdateRateRotator";
             this.p24_nudMeterItemUpdateRateRotator.Size = new System.Drawing.Size(56, 20);
-            this.p24_nudMeterItemUpdateRateRotator.TabIndex = 101;
-            this.p24_nudMeterItemUpdateRateRotator.TinyStep = false;
-            this.toolTip1.SetToolTip(this.p24_nudMeterItemUpdateRateRotator, "Reading update and is related to screen update");
+            this.p24_nudMeterItemUpdateRateRotator.TabIndex = 101;            this.toolTip1.SetToolTip(this.p24_nudMeterItemUpdateRateRotator, "Reading update and is related to screen update");
             this.p24_nudMeterItemUpdateRateRotator.Value = new decimal(new int[] {
             100,
             0,
@@ -9368,9 +9399,7 @@ namespace PowerSDR
             -2147483648});
             this.p24_nudMeterItem_custom_high.Name = "p24_nudMeterItem_custom_high";
             this.p24_nudMeterItem_custom_high.Size = new System.Drawing.Size(56, 20);
-            this.p24_nudMeterItem_custom_high.TabIndex = 111;
-            this.p24_nudMeterItem_custom_high.TinyStep = false;
-            this.p24_nudMeterItem_custom_high.Value = new decimal(new int[] {
+            this.p24_nudMeterItem_custom_high.TabIndex = 111;            this.p24_nudMeterItem_custom_high.Value = new decimal(new int[] {
             1,
             0,
             0,
@@ -9399,9 +9428,7 @@ namespace PowerSDR
             -2147483648});
             this.p24_nudMeterItem_custom_max.Name = "p24_nudMeterItem_custom_max";
             this.p24_nudMeterItem_custom_max.Size = new System.Drawing.Size(56, 20);
-            this.p24_nudMeterItem_custom_max.TabIndex = 107;
-            this.p24_nudMeterItem_custom_max.TinyStep = false;
-            this.p24_nudMeterItem_custom_max.Value = new decimal(new int[] {
+            this.p24_nudMeterItem_custom_max.TabIndex = 107;            this.p24_nudMeterItem_custom_max.Value = new decimal(new int[] {
             1,
             0,
             0,
@@ -9430,9 +9457,7 @@ namespace PowerSDR
             -2147483648});
             this.p24_nudMeterItem_custom_min.Name = "p24_nudMeterItem_custom_min";
             this.p24_nudMeterItem_custom_min.Size = new System.Drawing.Size(56, 20);
-            this.p24_nudMeterItem_custom_min.TabIndex = 105;
-            this.p24_nudMeterItem_custom_min.TinyStep = false;
-            this.p24_nudMeterItem_custom_min.Value = new decimal(new int[] {
+            this.p24_nudMeterItem_custom_min.TabIndex = 105;            this.p24_nudMeterItem_custom_min.Value = new decimal(new int[] {
             1,
             0,
             0,
@@ -9461,9 +9486,7 @@ namespace PowerSDR
             65536});
             this.p24_nudMeterItemsPowerLimit.Name = "p24_nudMeterItemsPowerLimit";
             this.p24_nudMeterItemsPowerLimit.Size = new System.Drawing.Size(56, 20);
-            this.p24_nudMeterItemsPowerLimit.TabIndex = 114;
-            this.p24_nudMeterItemsPowerLimit.TinyStep = false;
-            this.toolTip1.SetToolTip(this.p24_nudMeterItemsPowerLimit, "Power limit of scale");
+            this.p24_nudMeterItemsPowerLimit.TabIndex = 114;            this.toolTip1.SetToolTip(this.p24_nudMeterItemsPowerLimit, "Power limit of scale");
             this.p24_nudMeterItemsPowerLimit.Value = new decimal(new int[] {
             100,
             0,
@@ -9492,9 +9515,7 @@ namespace PowerSDR
             0});
             this.p24_nudRecording_repeatDelay.Name = "p24_nudRecording_repeatDelay";
             this.p24_nudRecording_repeatDelay.Size = new System.Drawing.Size(38, 20);
-            this.p24_nudRecording_repeatDelay.TabIndex = 174;
-            this.p24_nudRecording_repeatDelay.TinyStep = false;
-            this.toolTip1.SetToolTip(this.p24_nudRecording_repeatDelay, "Auto repeat duration");
+            this.p24_nudRecording_repeatDelay.TabIndex = 174;            this.toolTip1.SetToolTip(this.p24_nudRecording_repeatDelay, "Auto repeat duration");
             this.p24_nudRecording_repeatDelay.Value = new decimal(new int[] {
             10,
             0,
@@ -9524,9 +9545,7 @@ namespace PowerSDR
             this.p24_nudRecording_slot_settings.Name = "p24_nudRecording_slot_settings";
             this.p24_nudRecording_slot_settings.ReadOnly = true;
             this.p24_nudRecording_slot_settings.Size = new System.Drawing.Size(42, 20);
-            this.p24_nudRecording_slot_settings.TabIndex = 181;
-            this.p24_nudRecording_slot_settings.TinyStep = false;
-            this.toolTip1.SetToolTip(this.p24_nudRecording_slot_settings, "The settings below are for this slot");
+            this.p24_nudRecording_slot_settings.TabIndex = 181;            this.toolTip1.SetToolTip(this.p24_nudRecording_slot_settings, "The settings below are for this slot");
             this.p24_nudRecording_slot_settings.Value = new decimal(new int[] {
             1,
             0,
@@ -9556,9 +9575,7 @@ namespace PowerSDR
             -2147483648});
             this.p24_nudRecording_tx_gain_adjust.Name = "p24_nudRecording_tx_gain_adjust";
             this.p24_nudRecording_tx_gain_adjust.Size = new System.Drawing.Size(48, 20);
-            this.p24_nudRecording_tx_gain_adjust.TabIndex = 181;
-            this.p24_nudRecording_tx_gain_adjust.TinyStep = false;
-            this.toolTip1.SetToolTip(this.p24_nudRecording_tx_gain_adjust, "Adjust the TX gain for this slot");
+            this.p24_nudRecording_tx_gain_adjust.TabIndex = 181;            this.toolTip1.SetToolTip(this.p24_nudRecording_tx_gain_adjust, "Adjust the TX gain for this slot");
             this.p24_nudRecording_tx_gain_adjust.Value = new decimal(new int[] {
             0,
             0,
@@ -9588,9 +9605,7 @@ namespace PowerSDR
             196608});
             this.p24_nudTextOverlay_PanelPadding.Name = "p24_nudTextOverlay_PanelPadding";
             this.p24_nudTextOverlay_PanelPadding.Size = new System.Drawing.Size(56, 20);
-            this.p24_nudTextOverlay_PanelPadding.TabIndex = 132;
-            this.p24_nudTextOverlay_PanelPadding.TinyStep = false;
-            this.toolTip1.SetToolTip(this.p24_nudTextOverlay_PanelPadding, "Size of the spacer. The number is a ratio with reference to the width.");
+            this.p24_nudTextOverlay_PanelPadding.TabIndex = 132;            this.toolTip1.SetToolTip(this.p24_nudTextOverlay_PanelPadding, "Size of the spacer. The number is a ratio with reference to the width.");
             this.p24_nudTextOverlay_PanelPadding.Value = new decimal(new int[] {
             1,
             0,
@@ -9620,9 +9635,7 @@ namespace PowerSDR
             -2147483648});
             this.p24_nudTextOverlay_RXxOffset.Name = "p24_nudTextOverlay_RXxOffset";
             this.p24_nudTextOverlay_RXxOffset.Size = new System.Drawing.Size(56, 20);
-            this.p24_nudTextOverlay_RXxOffset.TabIndex = 143;
-            this.p24_nudTextOverlay_RXxOffset.TinyStep = false;
-            this.toolTip1.SetToolTip(this.p24_nudTextOverlay_RXxOffset, "Size of the spacer. The number is a ratio with reference to the width.");
+            this.p24_nudTextOverlay_RXxOffset.TabIndex = 143;            this.toolTip1.SetToolTip(this.p24_nudTextOverlay_RXxOffset, "Size of the spacer. The number is a ratio with reference to the width.");
             this.p24_nudTextOverlay_RXxOffset.Value = new decimal(new int[] {
             1,
             0,
@@ -9652,9 +9665,7 @@ namespace PowerSDR
             -2147483648});
             this.p24_nudTextOverlay_RXyOffset.Name = "p24_nudTextOverlay_RXyOffset";
             this.p24_nudTextOverlay_RXyOffset.Size = new System.Drawing.Size(56, 20);
-            this.p24_nudTextOverlay_RXyOffset.TabIndex = 147;
-            this.p24_nudTextOverlay_RXyOffset.TinyStep = false;
-            this.toolTip1.SetToolTip(this.p24_nudTextOverlay_RXyOffset, "Size of the spacer. The number is a ratio with reference to the width.");
+            this.p24_nudTextOverlay_RXyOffset.TabIndex = 147;            this.toolTip1.SetToolTip(this.p24_nudTextOverlay_RXyOffset, "Size of the spacer. The number is a ratio with reference to the width.");
             this.p24_nudTextOverlay_RXyOffset.Value = new decimal(new int[] {
             1,
             0,
@@ -9684,9 +9695,7 @@ namespace PowerSDR
             -2147483648});
             this.p24_nudTextOverlay_TXxOffset.Name = "p24_nudTextOverlay_TXxOffset";
             this.p24_nudTextOverlay_TXxOffset.Size = new System.Drawing.Size(56, 20);
-            this.p24_nudTextOverlay_TXxOffset.TabIndex = 150;
-            this.p24_nudTextOverlay_TXxOffset.TinyStep = false;
-            this.toolTip1.SetToolTip(this.p24_nudTextOverlay_TXxOffset, "Size of the spacer. The number is a ratio with reference to the width.");
+            this.p24_nudTextOverlay_TXxOffset.TabIndex = 150;            this.toolTip1.SetToolTip(this.p24_nudTextOverlay_TXxOffset, "Size of the spacer. The number is a ratio with reference to the width.");
             this.p24_nudTextOverlay_TXxOffset.Value = new decimal(new int[] {
             1,
             0,
@@ -9716,9 +9725,7 @@ namespace PowerSDR
             -2147483648});
             this.p24_nudTextOverlay_TXyOffset.Name = "p24_nudTextOverlay_TXyOffset";
             this.p24_nudTextOverlay_TXyOffset.Size = new System.Drawing.Size(56, 20);
-            this.p24_nudTextOverlay_TXyOffset.TabIndex = 152;
-            this.p24_nudTextOverlay_TXyOffset.TinyStep = false;
-            this.toolTip1.SetToolTip(this.p24_nudTextOverlay_TXyOffset, "Size of the spacer. The number is a ratio with reference to the width.");
+            this.p24_nudTextOverlay_TXyOffset.TabIndex = 152;            this.toolTip1.SetToolTip(this.p24_nudTextOverlay_TXyOffset, "Size of the spacer. The number is a ratio with reference to the width.");
             this.p24_nudTextOverlay_TXyOffset.Value = new decimal(new int[] {
             1,
             0,
@@ -9747,9 +9754,7 @@ namespace PowerSDR
             0});
             this.p24_nudVoiceRecordingPlayback_slots.Name = "p24_nudVoiceRecordingPlayback_slots";
             this.p24_nudVoiceRecordingPlayback_slots.Size = new System.Drawing.Size(42, 20);
-            this.p24_nudVoiceRecordingPlayback_slots.TabIndex = 133;
-            this.p24_nudVoiceRecordingPlayback_slots.TinyStep = false;
-            this.toolTip1.SetToolTip(this.p24_nudVoiceRecordingPlayback_slots, "Number of recording/playback slots");
+            this.p24_nudVoiceRecordingPlayback_slots.TabIndex = 133;            this.toolTip1.SetToolTip(this.p24_nudVoiceRecordingPlayback_slots, "Number of recording/playback slots");
             this.p24_nudVoiceRecordingPlayback_slots.Value = new decimal(new int[] {
             1,
             0,
@@ -9779,9 +9784,7 @@ namespace PowerSDR
             0});
             this.p24_nudWaveRecord_radius.Name = "p24_nudWaveRecord_radius";
             this.p24_nudWaveRecord_radius.Size = new System.Drawing.Size(56, 20);
-            this.p24_nudWaveRecord_radius.TabIndex = 31;
-            this.p24_nudWaveRecord_radius.TinyStep = false;
-            this.toolTip1.SetToolTip(this.p24_nudWaveRecord_radius, "Corner radius for row panels and buttons");
+            this.p24_nudWaveRecord_radius.TabIndex = 31;            this.toolTip1.SetToolTip(this.p24_nudWaveRecord_radius, "Corner radius for row panels and buttons");
             this.p24_nudWaveRecord_radius.Value = new decimal(new int[] {
             20,
             0,
@@ -9811,9 +9814,7 @@ namespace PowerSDR
             131072});
             this.p24_nudWaveRecord_vertical_ratio.Name = "p24_nudWaveRecord_vertical_ratio";
             this.p24_nudWaveRecord_vertical_ratio.Size = new System.Drawing.Size(56, 20);
-            this.p24_nudWaveRecord_vertical_ratio.TabIndex = 0;
-            this.p24_nudWaveRecord_vertical_ratio.TinyStep = false;
-            this.toolTip1.SetToolTip(this.p24_nudWaveRecord_vertical_ratio, "Height compared to width");
+            this.p24_nudWaveRecord_vertical_ratio.TabIndex = 0;            this.toolTip1.SetToolTip(this.p24_nudWaveRecord_vertical_ratio, "Height compared to width");
             this.p24_nudWaveRecord_vertical_ratio.Value = new decimal(new int[] {
             60,
             0,
@@ -9842,9 +9843,7 @@ namespace PowerSDR
             0});
             this.p24_nudWebImage_background_time.Name = "p24_nudWebImage_background_time";
             this.p24_nudWebImage_background_time.Size = new System.Drawing.Size(47, 20);
-            this.p24_nudWebImage_background_time.TabIndex = 148;
-            this.p24_nudWebImage_background_time.TinyStep = false;
-            this.p24_nudWebImage_background_time.Value = new decimal(new int[] {
+            this.p24_nudWebImage_background_time.TabIndex = 148;            this.p24_nudWebImage_background_time.Value = new decimal(new int[] {
             5,
             0,
             0,
@@ -9872,9 +9871,7 @@ namespace PowerSDR
             0});
             this.p24_nudWebImage_update_interval.Name = "p24_nudWebImage_update_interval";
             this.p24_nudWebImage_update_interval.Size = new System.Drawing.Size(56, 20);
-            this.p24_nudWebImage_update_interval.TabIndex = 134;
-            this.p24_nudWebImage_update_interval.TinyStep = false;
-            this.toolTip1.SetToolTip(this.p24_nudWebImage_update_interval, "Frequency to grab the web image");
+            this.p24_nudWebImage_update_interval.TabIndex = 134;            this.toolTip1.SetToolTip(this.p24_nudWebImage_update_interval, "Frequency to grab the web image");
             this.p24_nudWebImage_update_interval.Value = new decimal(new int[] {
             60,
             0,
@@ -9904,9 +9901,7 @@ namespace PowerSDR
             196608});
             this.p24_nudWebImage_width_scale.Name = "p24_nudWebImage_width_scale";
             this.p24_nudWebImage_width_scale.Size = new System.Drawing.Size(56, 20);
-            this.p24_nudWebImage_width_scale.TabIndex = 132;
-            this.p24_nudWebImage_width_scale.TinyStep = false;
-            this.toolTip1.SetToolTip(this.p24_nudWebImage_width_scale, "Width scale. 1.0 will fill the container width");
+            this.p24_nudWebImage_width_scale.TabIndex = 132;            this.toolTip1.SetToolTip(this.p24_nudWebImage_width_scale, "Width scale. 1.0 will fill the container width");
             this.p24_nudWebImage_width_scale.Value = new decimal(new int[] {
             1,
             0,
@@ -13666,7 +13661,7 @@ private void btnContainer_dupe_Click(object sender, EventArgs e)
             DialogResult dr = MessageBox.Show("Are you sure you want to duplicate the current container?",
                 "Container Duplicate",
                 MessageBoxButtons.YesNo,
-                MessageBoxIcon.Question, MessageBoxDefaultButton.Button2, Common.MB_TOPMOST);
+                MessageBoxIcon.Question, MessageBoxDefaultButton.Button2, P24ThetisMeterCompat.MB_TOPMOST);
 
             if (dr != DialogResult.Yes) return;
 
@@ -13715,7 +13710,7 @@ private void btnContainer_load_Click(object sender, EventArgs e)
                             MessageBox.Show("This doesnt seem to be a valid container file.",
                                 "Container file not recognised",
                                 MessageBoxButtons.OK,
-                                MessageBoxIcon.Error, MessageBoxDefaultButton.Button1, Common.MB_TOPMOST);
+                                MessageBoxIcon.Error, MessageBoxDefaultButton.Button1, P24ThetisMeterCompat.MB_TOPMOST);
 
                             MeterScriptEngine.EndBatch();
 
@@ -13731,7 +13726,7 @@ private void btnContainer_load_Click(object sender, EventArgs e)
                             dr = MessageBox.Show(msg,
                                 "Container file contents warning",
                                 MessageBoxButtons.YesNo,
-                                MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2, Common.MB_TOPMOST);
+                                MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2, P24ThetisMeterCompat.MB_TOPMOST);
 
                             if (dr != DialogResult.Yes)
                             {
@@ -13746,7 +13741,7 @@ private void btnContainer_load_Click(object sender, EventArgs e)
                         dr = MessageBox.Show("Do you want DBManager to take a backup of the database before loading this container?",
                             "Database backup",
                             MessageBoxButtons.YesNo,
-                            MessageBoxIcon.Question, MessageBoxDefaultButton.Button1, Common.MB_TOPMOST);
+                            MessageBoxIcon.Question, MessageBoxDefaultButton.Button1, P24ThetisMeterCompat.MB_TOPMOST);
 
                         if (dr == DialogResult.Yes)
                         {
@@ -13883,14 +13878,14 @@ private void btnRecording_export_wav_from_slot_Click(object sender, EventArgs e)
             if (vrp == null) return;
 
             string file = "Slot_" + (_selected_voice_slot + 1).ToString() + ".wav";
-            string fullPath = System.IO.Path.Combine(console.ARP.AudioFolder, vrp.UniqueID, file);
+            string fullPath = System.IO.Path.Combine(P24ConsoleDynamic.WrapObject(console).ARP.AudioFolder, vrp.UniqueID, file);
 
             if (!File.Exists(fullPath))
             {
                 return;
             }
             
-            bool jsonok = console.ARP.GetJSONDetailsFromFile(fullPath, out clsAudioRecordPlayback.RecordingJsonModel json_data);
+            bool jsonok = P24ConsoleDynamic.WrapObject(console).ARP.GetJSONDetailsFromFile(fullPath, out clsAudioRecordPlayback.RecordingJsonModel json_data);
             if (jsonok)
             {
                 bool fulldata = !string.IsNullOrEmpty(json_data.mode) &&
@@ -13924,7 +13919,7 @@ private void btnRecording_export_wav_from_slot_Click(object sender, EventArgs e)
                 dlg.CheckPathExists = true;
                 dlg.DereferenceLinks = true;
 
-                dlg.InitialDirectory = console.ARP.AudioFolder;
+                dlg.InitialDirectory = P24ConsoleDynamic.WrapObject(console).ARP.AudioFolder;
 
                 dlg.FileName = file;
 
@@ -13944,7 +13939,7 @@ private void btnRecording_export_wav_from_slot_Click(object sender, EventArgs e)
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show("Failed to overwrite existing file.\n\n" + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error, MessageBoxDefaultButton.Button1, Common.MB_TOPMOST);
+                    MessageBox.Show("Failed to overwrite existing file.\n\n" + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error, MessageBoxDefaultButton.Button1, P24ThetisMeterCompat.MB_TOPMOST);
                     return;
                 }
             }
@@ -13955,7 +13950,7 @@ private void btnRecording_export_wav_from_slot_Click(object sender, EventArgs e)
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Failed to export WAV file from slot.\n\n" + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error, MessageBoxDefaultButton.Button1, Common.MB_TOPMOST);
+                MessageBox.Show("Failed to export WAV file from slot.\n\n" + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error, MessageBoxDefaultButton.Button1, P24ThetisMeterCompat.MB_TOPMOST);
                 return;
             }
         }
@@ -13980,7 +13975,7 @@ private void btnRecording_load_wav_to_slot_Click(object sender, EventArgs e)
 
             if (vrp.GetSlotLocked(_selected_voice_slot))
             {
-                MessageBox.Show("This slot is locked. Unlock it if you want to load a recording into it.", "Locked", MessageBoxButtons.OK, MessageBoxIcon.Information, MessageBoxDefaultButton.Button1, Common.MB_TOPMOST);
+                MessageBox.Show("This slot is locked. Unlock it if you want to load a recording into it.", "Locked", MessageBoxButtons.OK, MessageBoxIcon.Information, MessageBoxDefaultButton.Button1, P24ThetisMeterCompat.MB_TOPMOST);
                 return;
             }
 
@@ -13997,7 +13992,7 @@ private void btnRecording_load_wav_to_slot_Click(object sender, EventArgs e)
                 dlg.Multiselect = false;
                 dlg.DereferenceLinks = true;
 
-                dlg.InitialDirectory = console.ARP.AudioFolder;
+                dlg.InitialDirectory = P24ConsoleDynamic.WrapObject(console).ARP.AudioFolder;
 
                 DialogResult result = dlg.ShowDialog(this);
                 if (result != DialogResult.OK) return;
@@ -14007,23 +14002,23 @@ private void btnRecording_load_wav_to_slot_Click(object sender, EventArgs e)
             if (string.IsNullOrEmpty(load_filename)) return;
             if (!File.Exists(load_filename)) return;
 
-            if(!console.ARP.CanBePlayed(load_filename))
+            if(!P24ConsoleDynamic.WrapObject(console).ARP.CanBePlayed(load_filename))
             {
-                MessageBox.Show("The selected file can not be used. It may be an unsupported format, or it may be corrupted.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error, MessageBoxDefaultButton.Button1, Common.MB_TOPMOST);
+                MessageBox.Show("The selected file can not be used. It may be an unsupported format, or it may be corrupted.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error, MessageBoxDefaultButton.Button1, P24ThetisMeterCompat.MB_TOPMOST);
                 return;
             }
 
-            string fullPath = System.IO.Path.Combine(console.ARP.AudioFolder, vrp.UniqueID, "Slot_" + (_selected_voice_slot + 1).ToString() + ".wav");
+            string fullPath = System.IO.Path.Combine(P24ConsoleDynamic.WrapObject(console).ARP.AudioFolder, vrp.UniqueID, "Slot_" + (_selected_voice_slot + 1).ToString() + ".wav");
 
-            console.ARP.DeleteRecording(fullPath, out _);
+            P24ConsoleDynamic.WrapObject(console).ARP.DeleteRecording(fullPath, out _);
 
             if (File.Exists(fullPath))
             {
-                MessageBox.Show("A recording already exists that could not be removed.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error, MessageBoxDefaultButton.Button1, Common.MB_TOPMOST);
+                MessageBox.Show("A recording already exists that could not be removed.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error, MessageBoxDefaultButton.Button1, P24ThetisMeterCompat.MB_TOPMOST);
                 return; // unable to delete
             }
 
-            string folder = System.IO.Path.Combine(console.ARP.AudioFolder, vrp.UniqueID);
+            string folder = System.IO.Path.Combine(P24ConsoleDynamic.WrapObject(console).ARP.AudioFolder, vrp.UniqueID);
             try
             {
                 if (!Directory.Exists(folder))
@@ -14033,7 +14028,7 @@ private void btnRecording_load_wav_to_slot_Click(object sender, EventArgs e)
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Failed to load WAV file to slot.\n\n" + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error, MessageBoxDefaultButton.Button1, Common.MB_TOPMOST);
+                MessageBox.Show("Failed to load WAV file to slot.\n\n" + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error, MessageBoxDefaultButton.Button1, P24ThetisMeterCompat.MB_TOPMOST);
                 return;
             }
 
@@ -14043,7 +14038,7 @@ private void btnRecording_load_wav_to_slot_Click(object sender, EventArgs e)
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Failed to load WAV file to slot.\n\n" + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error, MessageBoxDefaultButton.Button1, Common.MB_TOPMOST);
+                MessageBox.Show("Failed to load WAV file to slot.\n\n" + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error, MessageBoxDefaultButton.Button1, P24ThetisMeterCompat.MB_TOPMOST);
                 return;
             }
         }
@@ -14059,7 +14054,7 @@ private void btnRecording_openStorageFolder_Click(object sender, EventArgs e)
             MeterManager.clsVoiceRecordPlay vrp = mi as MeterManager.clsVoiceRecordPlay;
             if (vrp == null) return;
 
-            string fullPath = System.IO.Path.Combine(console.ARP.AudioFolder, vrp.UniqueID);
+            string fullPath = System.IO.Path.Combine(P24ConsoleDynamic.WrapObject(console).ARP.AudioFolder, vrp.UniqueID);
 
             try
             {
@@ -14157,7 +14152,7 @@ private void btnWaveRecord_reset_layout_Click(object sender, EventArgs e)
 
 private void btnWebImage_bsdworld_visit_Click(object sender, EventArgs e)
         {
-            Common.OpenUri("https://bsdworld.org/help.html");
+            P24ThetisMeterCompat.OpenUri("https://bsdworld.org/help.html");
         }
 
 private void btnWebImage_goto_next_Click(object sender, EventArgs e)
@@ -14186,7 +14181,7 @@ private void btnWebImage_goto_next_Click(object sender, EventArgs e)
 
 private void btnWebImage_hamqsl_donate_Click(object sender, EventArgs e)
         {
-            Common.OpenUri("https://www.hamqsl.com/donate.html");
+            P24ThetisMeterCompat.OpenUri("https://www.hamqsl.com/donate.html");
         }
 
 private void chkBandButtons_band_inactive_use_CheckedChanged(object sender, EventArgs e)
@@ -14996,9 +14991,9 @@ private void handleAssignKeybind()
 
             if (_listening_for_recording_keycodes)
             {
-                _alt_pressed = Common.AltlKeyDown;
-                _shift_pressed = Common.ShiftKeyDown;
-                _ctrl_pressed = Common.CtrlKeyDown;
+                _alt_pressed = P24ThetisMeterCompat.AltlKeyDown;
+                _shift_pressed = P24ThetisMeterCompat.ShiftKeyDown;
+                _ctrl_pressed = P24ThetisMeterCompat.CtrlKeyDown;
 
                 _recording_keybind_timer.Start();
 
@@ -15039,7 +15034,7 @@ public bool isFontTrueType(Font f)
                     MessageBox.Show("This font is not a TrueType font and can not be used.",
                     "Font issue",
                     MessageBoxButtons.OK,
-                    MessageBoxIcon.Information, MessageBoxDefaultButton.Button1, Common.MB_TOPMOST);
+                    MessageBoxIcon.Information, MessageBoxDefaultButton.Button1, P24ThetisMeterCompat.MB_TOPMOST);
                     return false;
                 }
 
@@ -15496,7 +15491,7 @@ private void nudVoiceRecordingPlayback_slots_ValueChanged(object sender, EventAr
                     "Some recordings may be lost if you do this. Do you want to change the number of slots anyway?",
                     "Locked recording slots",
                     MessageBoxButtons.YesNo,
-                    MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2, Common.MB_TOPMOST);
+                    MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2, P24ThetisMeterCompat.MB_TOPMOST);
 
                 if (dr == DialogResult.No)
                 {
