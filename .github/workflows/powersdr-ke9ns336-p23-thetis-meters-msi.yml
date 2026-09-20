@@ -1,9 +1,6 @@
 name: Build PowerSDR FLEX5000 KE9NS 2.8.0.336 P23 Thetis Meters Gadgets 1to1 MSI
 
 on:
-  push:
-    branches:
-      - feature/flex5000-thetis-meters-gadgets-1to1
   workflow_dispatch:
 
 jobs:
