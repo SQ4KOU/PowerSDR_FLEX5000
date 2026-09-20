@@ -70,7 +70,7 @@ namespace PowerSDR
             return false;
         }
 
-        internal static (bool resized, bool relocated) ForceFormOnScreen(Form form, bool shrinkToFit)
+        internal static (bool resized, bool relocated) ForceFormOnScreen(Form form, bool shrinkToFit = false)
         {
             if (form == null) return (false, false);
             Rectangle before = form.Bounds;
