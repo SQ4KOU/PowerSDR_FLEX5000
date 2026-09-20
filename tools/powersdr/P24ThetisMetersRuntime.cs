@@ -34,7 +34,6 @@ namespace PowerSDR
             lock (Sync)
             {
                 if (_initialised) return;
-                _initialised = true;
                 _console = console;
             }
 
@@ -51,6 +50,12 @@ namespace PowerSDR
                 _diagPath = Path.Combine(root, "P24_MetersGadgets_DB.log");
 
                 MeterManager.Init(console, null);
+
+                lock (Sync)
+                {
+                    _initialised = true;
+                }
+
                 Log("Init OK; containers=" + MeterManager.TotalMeterContainers.ToString());
 
                 console.FormClosing += delegate
@@ -61,6 +66,10 @@ namespace PowerSDR
             }
             catch (Exception ex)
             {
+                lock (Sync)
+                {
+                    _initialised = false;
+                }
                 Log("Init ERROR: " + SafeException(ex));
                 Debug.WriteLine("P24 meter runtime init: " + SafeException(ex));
             }
