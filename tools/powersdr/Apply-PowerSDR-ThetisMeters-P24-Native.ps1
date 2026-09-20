@@ -267,39 +267,47 @@ if($project -notmatch '<Reference Include="Microsoft\.CSharp"'){
 [IO.File]::WriteAllText($projectCs,$project,$utf8Bom)
 
 # Bootstrap the original Thetis meter runtime and exact Meters/Gadgets setup page
-# from the native PowerSDR Setup constructor. Setup is created during normal
-# application startup, so meter containers restore without requiring the user to
-# first open the Setup window.
+# from the native PowerSDR Setup constructor.
 $setupCs=Join-Path $consoleDir 'setup.cs'
 $setupText=[IO.File]::ReadAllText($setupCs)
 $runtimeHook='P24ThetisMetersRuntime.Init(c);'
 $uiHook='P24InitNativeMetersGadgets();'
 
+# Runtime adapter is initialized only after the native static Setup.console
+# reference is assigned.
 if(!$setupText.Contains($runtimeHook)){
-    # Prefer the first constructor statement. This survives all SAFE overlays and
-    # does not depend on how CATParser/console assignment lines were reformatted.
-    $hookRx=[regex]'(?m)^(\s*)InitializeComponent\s*\(\s*\)\s*;.*$'
-    $matches=$hookRx.Matches($setupText)
-
-    if($matches.Count -ne 1){
-        # Fallback to the unique constructor console assignment.
-        $hookRx=[regex]'(?m)^(\s*)console\s*=\s*c\s*;.*$'
-        $matches=$hookRx.Matches($setupText)
+    $runtimeRx=[regex]'(?m)^(\s*)console\s*=\s*c\s*;.*
+    $runtimeMatches=$runtimeRx.Matches($setupText)
+    if($runtimeMatches.Count -ne 1){
+        throw "P24 runtime hook anchor invalid: count=$($runtimeMatches.Count)"
     }
 
-    if($matches.Count -ne 1){
-        throw "P24 Setup hook anchor invalid: count=$($matches.Count)"
-    }
-
-    $indent=$matches[0].Groups[1].Value
-    $insert=$matches[0].Value+$nl+
-        $indent+$runtimeHook+' // P24 native Thetis MeterManager'+$nl+
-        $indent+'this.Shown += delegate { '+$uiHook+' }; // P24 exact Thetis Meters/Gadgets UI'
-    $setupText=$hookRx.Replace($setupText,[System.Text.RegularExpressions.MatchEvaluator]{param($m)$insert},1)
-    [IO.File]::WriteAllText($setupCs,$setupText,$utf8Bom)
+    $indent=$runtimeMatches[0].Groups[1].Value
+    $insert=$runtimeMatches[0].Value+$nl+
+        $indent+$runtimeHook+' // P24 native Thetis MeterManager'
+    $setupText=$runtimeRx.Replace($setupText,[System.Text.RegularExpressions.MatchEvaluator]{param($m)$insert},1)
 }
+
+# Do not depend on Form.Shown. PowerSDR keeps Setup as a long-lived form and
+# can expose it through visibility/state paths that make Shown an unreliable
+# integration point. Initialize the Meters/Gadgets page once, at the very end
+# of the native Setup constructor, after all original controls/options exist.
+if(!$setupText.Contains($uiHook)){
+    $uiRx=[regex]'(?m)^(\s*)\}\s*//\s*setup\s*
+    $uiMatches=$uiRx.Matches($setupText)
+    if($uiMatches.Count -ne 1){
+        throw "P24 UI hook anchor invalid: count=$($uiMatches.Count)"
+    }
+
+    $indent=$uiMatches[0].Groups[1].Value
+    $replacement=$indent+'    '+$uiHook+' // P24 exact Thetis Meters/Gadgets UI'+$nl+$uiMatches[0].Value
+    $setupText=$uiRx.Replace($setupText,[System.Text.RegularExpressions.MatchEvaluator]{param($m)$replacement},1)
+}
+
+[IO.File]::WriteAllText($setupCs,$setupText,$utf8Bom)
 
 if(([regex]::Matches($setupText,[regex]::Escape($runtimeHook))).Count -ne 1){throw 'P24 runtime hook count invalid'}
 if(([regex]::Matches($setupText,[regex]::Escape($uiHook))).Count -ne 1){throw 'P24 setup UI hook count invalid'}
+if($setupText.Contains('this.Shown += delegate { '+$uiHook+' }')){throw 'P24 obsolete Shown hook still present'}
 
-Stage "Original Thetis MeterManager + exact Setup Meters/Gadgets staged; resources=$($icons.Count); runtime/setup hooks active"
+Stage "Original Thetis MeterManager + exact Setup Meters/Gadgets staged; resources=$($icons.Count); deterministic constructor hooks active"
