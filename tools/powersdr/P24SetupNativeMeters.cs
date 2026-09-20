@@ -9912,7 +9912,7 @@ namespace PowerSDR
             // 
             // p24_picButtonBoxInfo
             // 
-            this.p24_picButtonBoxInfo.Image = ((System.Drawing.Image)(resources.GetObject("p24_picButtonBoxInfo.Image")));
+            this.p24_picButtonBoxInfo.Image = null;
             this.p24_picButtonBoxInfo.Location = new System.Drawing.Point(114, 307);
             this.p24_picButtonBoxInfo.Name = "p24_picButtonBoxInfo";
             this.p24_picButtonBoxInfo.Size = new System.Drawing.Size(20, 20);
@@ -9922,7 +9922,7 @@ namespace PowerSDR
             // 
             // p24_picMultiMeterRotatorControlInfo
             // 
-            this.p24_picMultiMeterRotatorControlInfo.Image = ((System.Drawing.Image)(resources.GetObject("p24_picMultiMeterRotatorControlInfo.Image")));
+            this.p24_picMultiMeterRotatorControlInfo.Image = null;
             this.p24_picMultiMeterRotatorControlInfo.Location = new System.Drawing.Point(291, 247);
             this.p24_picMultiMeterRotatorControlInfo.Name = "p24_picMultiMeterRotatorControlInfo";
             this.p24_picMultiMeterRotatorControlInfo.Size = new System.Drawing.Size(20, 20);
@@ -13078,12 +13078,12 @@ namespace PowerSDR
 
         private void chkMaintainNFAdjustDeltaRX2_CheckedChanged(object sender, EventArgs e)
         {
-            console.MaintainNFAdjustDeltaRX2 = p24_chkMaintainNFAdjustDeltaRX2.Checked;
+            P24ConsoleDynamic.WrapObject(console).MaintainNFAdjustDeltaRX2 = p24_chkMaintainNFAdjustDeltaRX2.Checked;
         }
 
         private void chkMaintainNFAdjustDeltaRX1_CheckedChanged(object sender, EventArgs e)
         {
-            console.MaintainNFAdjustDeltaRX1 = p24_chkMaintainNFAdjustDeltaRX1.Checked;
+            P24ConsoleDynamic.WrapObject(console).MaintainNFAdjustDeltaRX1 = p24_chkMaintainNFAdjustDeltaRX1.Checked;
         }
 
         private void chkContainerBorder_CheckedChanged(object sender, EventArgs e)
@@ -13745,7 +13745,7 @@ private void btnContainer_load_Click(object sender, EventArgs e)
 
                         if (dr == DialogResult.Yes)
                         {
-                            DBMan.TakeBackup(Guid.Empty, "Before container import", false);
+                            P24ThetisMeterCompat.TryDatabaseBackup();
                         }
 
                         MeterManager.RunRendererDisplay(ucm.ID);
