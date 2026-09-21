@@ -27,7 +27,12 @@ namespace PowerSDR
                 console.EnsureFlexMetersWorkspaceManager();
 
             flexMetersEditorForm =
-                new FlexMeters.FlexMetersEditorForm(manager);
+                new FlexMeters.FlexMetersEditorForm(
+                    manager,
+                    delegate(System.Guid id)
+                    {
+                        console.RecoverFlexMetersContainer(id);
+                    });
             flexMetersEditorForm.TopLevel = false;
             flexMetersEditorForm.FormBorderStyle =
                 FormBorderStyle.None;
