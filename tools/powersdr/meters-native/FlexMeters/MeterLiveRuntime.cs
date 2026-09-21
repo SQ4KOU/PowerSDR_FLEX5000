@@ -259,10 +259,10 @@ namespace FlexMeters
 
         private static bool TryResolveReading(string itemType, out MeterReading reading)
         {
-            if (String.Equals(itemType, "SIGNAL_STRENGTH", StringComparison.Ordinal) ||
-                String.Equals(itemType, "SIGNAL_TEXT", StringComparison.Ordinal))
+            MeterItemDescriptor descriptor;
+            if (MeterItemCatalog.TryGet(itemType, out descriptor))
             {
-                reading = MeterReading.SignalStrength;
+                reading = descriptor.Reading;
                 return true;
             }
 
