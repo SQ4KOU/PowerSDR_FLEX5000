@@ -108,8 +108,10 @@ $bridge=@'
 $mm=$mm.Replace($anchor,$bridge+$anchor)
 
 $loopRx='(?m)^(\s*)while \(_meterThreadRunning\)\s*\{'
-if(-not [regex]::IsMatch($mm,$loopRx)){throw 'P25 MeterManager loop anchor missing'}
-$mm=[regex]::Replace($mm,$loopRx,{ param($m) $m.Value+$nl+$m.Groups[1].Value+'    P25RefreshPowerSDR();' },1)
+$loopMatch=[regex]::Match($mm,$loopRx)
+if(!$loopMatch.Success){throw 'P25 MeterManager loop anchor missing'}
+$loopInsert=$nl+$loopMatch.Groups[1].Value+'    P25RefreshPowerSDR();'
+$mm=$mm.Insert($loopMatch.Index+$loopMatch.Length,$loopInsert)
 
 # Remove only the Thetis event registration call in Init; direct polling above replaces it.
 $mm=$mm.Replace('            addDelegates();                       ','            addDelegates();')
@@ -232,7 +234,9 @@ foreach($r in $resourceNames)
     if($proj -notmatch ('Content Include="'+[regex]::Escape($rel)+'"'))
     {
         $item='    <Content Include="'+$rel+'">'+$nl+'      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>'+$nl+'    </Content>'
-        $proj=[regex]::Replace($proj,'</ItemGroup>',[System.Text.RegularExpressions.MatchEvaluator]{ param($m) $item+$nl+'  </ItemGroup>' },1)
+        $igPos=$proj.IndexOf('</ItemGroup>')
+        if($igPos -lt 0){throw 'P25 csproj ItemGroup close missing'}
+        $proj=$proj.Insert($igPos,$item+$nl)
     }
 }
 
