@@ -307,6 +307,8 @@ namespace FlexMeters
         private readonly bool _showWindows;
         private readonly Dictionary<Guid, MeterContainerForm> _windows =
             new Dictionary<Guid, MeterContainerForm>();
+        private readonly HashSet<Guid> _userHidden =
+            new HashSet<Guid>();
 
         private bool _suppressWindowEvents;
         private bool _disposed;
@@ -400,6 +402,42 @@ namespace FlexMeters
             }
 
             ExecuteOnUi(delegate { form.Close(); });
+            return true;
+        }
+
+        public bool RecoverWindow(Guid containerId)
+        {
+            ThrowIfDisposed();
+
+            MeterContainerForm form;
+            lock (_sync)
+            {
+                if (!_windows.TryGetValue(containerId, out form))
+                    return false;
+                _userHidden.Remove(containerId);
+            }
+
+            ExecuteOnUi(delegate
+            {
+                MeterWorkspaceSnapshot snapshot = _manager.Snapshot;
+                MeterContainerSnapshot container =
+                    FindContainer(snapshot, containerId);
+                if (container == null)
+                    return;
+
+                ApplyGeometry(form, container.Geometry);
+                MeterRadioStateSnapshot radio =
+                    _radioState == null ? null : _radioState.CaptureState();
+                if (_showWindows &&
+                    MeterWindowVisibility.ShouldShow(container, radio))
+                {
+                    if (_owner != null)
+                        form.Show(_owner);
+                    else
+                        form.Show();
+                }
+            });
+
             return true;
         }
 
@@ -642,7 +680,10 @@ namespace FlexMeters
                 }
 
                 for (int i = 0; i < close.Count; i++)
+                {
                     _windows.Remove(close[i].ContainerId);
+                    _userHidden.Remove(close[i].ContainerId);
+                }
             }
 
             _suppressWindowEvents = true;
@@ -728,9 +769,15 @@ namespace FlexMeters
 
                 if (_showWindows)
                 {
-                    bool shouldShow = MeterWindowVisibility.ShouldShow(
-                        container,
-                        radio);
+                    bool hiddenByUser;
+                    lock (_sync)
+                        hiddenByUser = _userHidden.Contains(container.Id);
+
+                    bool shouldShow =
+                        !hiddenByUser &&
+                        MeterWindowVisibility.ShouldShow(
+                            container,
+                            radio);
 
                     if (shouldShow && !form.Visible)
                     {
@@ -790,6 +837,9 @@ namespace FlexMeters
                     container.Geometry = CaptureGeometry(form);
                     _manager.ReplaceContainer(container);
                 }
+
+                lock (_sync)
+                    _userHidden.Add(form.ContainerId);
 
                 form.Hide();
                 e.Cancel = true;
