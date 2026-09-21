@@ -38,6 +38,7 @@
     <Compile Include="Model.cs" />
     <Compile Include="DataTableMeterStore.cs" />
     <Compile Include="Flex5000Rx1SignalCalibration.cs" />
+    <Compile Include="ThetisTxMeterMath.cs" />
     <Compile Include="MeterLiveRuntime.cs" />
     <Compile Include="MeterWorkspaceRuntimeHost.cs" />
     <Compile Include="MeterWorkspaceManager.cs" />
