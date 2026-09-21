@@ -25,6 +25,10 @@ namespace FlexMeters.Tests
             Run("Thetis TX stage clamp matches pinned rule", ThetisTxStageClampMatchesPinnedRule);
             Run("Thetis TX gain signs match pinned rules", ThetisTxGainSignsMatchPinnedRules);
             Run("Thetis TX ALC group combines peak and gain", ThetisTxAlcGroupCombinesPeakAndGain);
+            Run("meter catalog exposes complete RX1 plus TX set", MeterCatalogExposesCompleteRx1PlusTxSet);
+            Run("live runtime binds every TX meter type", LiveRuntimeBindsEveryTxMeterType);
+            Run("window host renders live TX power and SWR", WindowHostRendersLiveTxPowerAndSwr);
+            Run("TX renderer preserves unsupported state", TxRendererPreservesUnsupportedState);
             Run("live runtime propagates changing RX1 signal", LiveRuntimePropagatesChangingRx1Signal);
             Run("live runtime deduplicates identical telemetry requests", LiveRuntimeDeduplicatesIdenticalRequests);
             Run("live runtime preserves unsupported without zero", LiveRuntimePreservesUnsupportedWithoutZero);
@@ -59,7 +63,7 @@ namespace FlexMeters.Tests
             Run("editor does not expose unsupported RX2 creation", EditorDoesNotExposeUnsupportedRx2Creation);
             Run("window visibility follows RX/TX state", WindowVisibilityFollowsRxTxState);
 
-            Console.WriteLine("PASS " + _passed + "/45");
+            Console.WriteLine("PASS " + _passed + "/49");
             return 0;
         }
 
@@ -207,6 +211,122 @@ namespace FlexMeters.Tests
         private static void ThetisTxAlcGroupCombinesPeakAndGain()
         {
             Equal(-12.0, ThetisTxMeterMath.AlcGroup(18.0, -6.0), "ALC group");
+        }
+
+        private static void MeterCatalogExposesCompleteRx1PlusTxSet()
+        {
+            MeterItemDescriptor[] descriptors = MeterItemCatalog.All;
+            Equal(18, descriptors.Length, "catalog item count");
+
+            MeterItemDescriptor signal;
+            True(MeterItemCatalog.TryGet("SIGNAL_STRENGTH", out signal), "RX1 signal missing from catalog");
+            False(signal.TxOnly, "RX1 signal incorrectly marked TX-only");
+
+            MeterItemDescriptor fwd;
+            True(MeterItemCatalog.TryGet("FWD_PWR", out fwd), "forward power missing from catalog");
+            True(fwd.TxOnly, "forward power must be TX-only");
+            Equal(MeterReading.ForwardPower, fwd.Reading, "forward power reading mapping");
+
+            MeterItemDescriptor swr;
+            True(MeterItemCatalog.TryGet("SWR", out swr), "SWR missing from catalog");
+            Equal(MeterReading.Swr, swr.Reading, "SWR reading mapping");
+        }
+
+        private static void LiveRuntimeBindsEveryTxMeterType()
+        {
+            MeterWorkspaceSnapshot workspace = BuildTxWorkspace();
+            var fake = new FakeTelemetrySource();
+
+            MeterItemDescriptor[] descriptors = MeterItemCatalog.All;
+            int expectedTx = 0;
+            for (int i = 0; i < descriptors.Length; i++)
+            {
+                if (!descriptors[i].TxOnly)
+                    continue;
+
+                expectedTx++;
+                fake.Set(
+                    descriptors[i].Reading,
+                    MeterReceiver.Rx1,
+                    MeterReadingResult.Supported(i + 1.0));
+            }
+
+            using (var runtime = new MeterLiveRuntime(fake, workspace))
+            {
+                MeterLiveSnapshot snapshot = runtime.RefreshNow();
+                Equal(expectedTx, runtime.BindingCount, "TX binding count");
+                Equal(expectedTx, snapshot.Values.Count, "TX live value count");
+                Equal(expectedTx, fake.TotalReadCount, "TX source read count");
+            }
+        }
+
+        private static void WindowHostRendersLiveTxPowerAndSwr()
+        {
+            var table = NewTable();
+            var store = new DataTableMeterStore(table);
+            MeterWorkspaceSnapshot workspace = BuildTxWorkspace();
+            store.ReplaceAll(workspace);
+
+            var fake = new FakeTelemetrySource();
+            fake.Set(MeterReading.ForwardPower, MeterReadingResult.Supported(73.5));
+            fake.Set(MeterReading.ReversePower, MeterReadingResult.Supported(4.25));
+            fake.Set(MeterReading.Swr, MeterReadingResult.Supported(1.7));
+
+            MeterItemDescriptor[] descriptors = MeterItemCatalog.All;
+            for (int i = 0; i < descriptors.Length; i++)
+            {
+                if (!descriptors[i].TxOnly)
+                    continue;
+                if (descriptors[i].Reading == MeterReading.ForwardPower ||
+                    descriptors[i].Reading == MeterReading.ReversePower ||
+                    descriptors[i].Reading == MeterReading.Swr)
+                    continue;
+
+                fake.Set(descriptors[i].Reading, MeterReadingResult.Supported(-5.0));
+            }
+
+            using (var runtimeHost = new MeterWorkspaceRuntimeHost(store, fake))
+            {
+                runtimeHost.Start(TimeSpan.FromHours(1));
+                var manager = new MeterWorkspaceManager(runtimeHost, null);
+
+                using (var windows = new WinFormsMeterWindowHost(null, manager, runtimeHost, false))
+                {
+                    windows.RestoreWindows(manager.Snapshot);
+
+                    Guid fwdId = FindItemId(workspace, "FWD_PWR");
+                    Guid swrId = FindItemId(workspace, "SWR");
+
+                    string text;
+                    True(windows.TryGetDisplayedItemText(fwdId, out text), "forward power renderer missing");
+                    Equal("FWD_PWR: 73.5 W", text, "forward power renderer text");
+
+                    string kind;
+                    True(windows.TryGetRendererKind(fwdId, out kind), "forward power renderer kind missing");
+                    Equal("FLEX5000_LINEAR_FWD_PWR", kind, "forward power renderer kind");
+
+                    double position;
+                    True(windows.TryGetRenderedNormalizedPosition(fwdId, out position), "forward power position missing");
+                    True(position > 0.73 && position < 0.74, "forward power normalized position");
+
+                    True(windows.TryGetDisplayedItemText(swrId, out text), "SWR renderer missing");
+                    Equal("SWR: 1.7", text, "SWR renderer text");
+                }
+            }
+        }
+
+        private static void TxRendererPreservesUnsupportedState()
+        {
+            MeterItemDescriptor descriptor;
+            True(MeterItemCatalog.TryGet("MIC", out descriptor), "MIC descriptor missing");
+
+            using (var renderer = new FlexTxMeterControl(descriptor))
+            {
+                renderer.UpdateReading(MeterReadingResult.Unsupported("Not transmitting."));
+                True(renderer.DiagnosticText.Contains("UNSUPPORTED"), "TX unsupported marker missing");
+                True(renderer.DiagnosticText.Contains("Not transmitting."), "TX unsupported reason missing");
+                True(Double.IsNaN(renderer.NormalizedPosition), "unsupported TX meter fabricated position");
+            }
         }
 
         private static void LiveRuntimePropagatesChangingRx1Signal()
@@ -1004,9 +1124,12 @@ namespace FlexMeters.Tests
                 using (var editor = new FlexMetersEditorForm(manager))
                 {
                     Equal(0, editor.ContainerCount, "editor empty container count");
-                    Equal(2, editor.AvailableItemTypes.Length, "supported editor item count");
+                    Equal(18, editor.AvailableItemTypes.Length, "supported editor item count");
                     Equal("SIGNAL_STRENGTH", editor.AvailableItemTypes[0], "first supported item");
                     Equal("SIGNAL_TEXT", editor.AvailableItemTypes[1], "second supported item");
+                    True(Array.IndexOf(editor.AvailableItemTypes, "MIC") >= 0, "MIC not exposed by editor");
+                    True(Array.IndexOf(editor.AvailableItemTypes, "FWD_PWR") >= 0, "FWD power not exposed by editor");
+                    True(Array.IndexOf(editor.AvailableItemTypes, "SWR") >= 0, "SWR not exposed by editor");
                 }
             }
         }
@@ -1149,6 +1272,54 @@ namespace FlexMeters.Tests
             });
             workspace.Containers.Add(container);
             return workspace;
+        }
+
+        private static MeterWorkspaceSnapshot BuildTxWorkspace()
+        {
+            var workspace = new MeterWorkspaceSnapshot();
+            var container = new MeterContainerSnapshot
+            {
+                Id = Guid.Parse("33333333-3333-3333-3333-333333333333"),
+                Receiver = MeterReceiver.Rx1,
+                VisibleOnReceive = false,
+                VisibleOnTransmit = true,
+                Geometry = new MeterWindowGeometry { X = 50, Y = 60, Width = 480, Height = 360 }
+            };
+
+            MeterItemDescriptor[] descriptors = MeterItemCatalog.All;
+            int n = 1;
+            for (int i = 0; i < descriptors.Length; i++)
+            {
+                if (!descriptors[i].TxOnly)
+                    continue;
+
+                container.Items.Add(new MeterItemSnapshot
+                {
+                    Id = Guid.Parse("10000000-0000-0000-0000-" + n.ToString("000000000000")),
+                    Type = descriptors[i].Type
+                });
+                n++;
+            }
+
+            workspace.Containers.Add(container);
+            return workspace;
+        }
+
+        private static Guid FindItemId(MeterWorkspaceSnapshot workspace, string type)
+        {
+            for (int i = 0; i < workspace.Containers.Count; i++)
+            {
+                for (int j = 0; j < workspace.Containers[i].Items.Count; j++)
+                {
+                    if (String.Equals(
+                        workspace.Containers[i].Items[j].Type,
+                        type,
+                        StringComparison.Ordinal))
+                        return workspace.Containers[i].Items[j].Id;
+                }
+            }
+
+            throw new Exception("Item not found: " + type);
         }
 
         private static DataTable NewTable()
