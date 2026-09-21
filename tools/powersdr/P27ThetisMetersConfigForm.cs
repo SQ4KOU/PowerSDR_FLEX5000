@@ -739,7 +739,7 @@ namespace PowerSDR
                 SetNumeric(nudMeterItemAttackRate, (decimal)igs.AttackRatio);
                 SetNumeric(nudMeterItemDecayRate, (decimal)igs.DecayRatio);
                 chkMeterItemHistory.Checked = igs.ShowHistory;
-                tbMeterItemHistoryAlpha.Value = Math.Max(0, Math.Min(255, igs.HistoryColor.A));
+                tbMeterItemHistoryAlpha.Value = Math.Max(0, Math.Min(255, (int)igs.HistoryColor.A));
                 clrbtnMeterItemHistory.Color = Color.FromArgb(255, igs.HistoryColor);
                 SetNumeric(nudMeterItemHistoryDuration, igs.HistoryDuration);
                 chkMeterItemSegmented.Checked = igs.BarStyle == MeterManager.clsBarItem.BarStyle.Segments;
