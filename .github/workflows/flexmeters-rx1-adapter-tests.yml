@@ -1,4 +1,4 @@
-name: FlexMeters RX1 native adapter
+name: FlexMeters RX1 + TX native adapter
 
 on:
   push:
@@ -15,7 +15,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  rx1-native-adapter:
+  rx1-tx-native-adapter:
     runs-on: windows-latest
     steps:
       - name: Checkout
@@ -31,6 +31,6 @@ jobs:
             choco install nuget.commandline -y --no-progress
           }
 
-      - name: Run RX1 integration gate
+      - name: Run RX1 + TX integration gate
         shell: pwsh
         run: ./tools/powersdr/Test-PowerSDR-FlexMeters-RX1.ps1
