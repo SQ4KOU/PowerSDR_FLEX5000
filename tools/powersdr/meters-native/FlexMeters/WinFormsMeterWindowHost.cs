@@ -23,7 +23,11 @@ namespace FlexMeters
             {
                 ContainerId = container.Id;
                 StartPosition = FormStartPosition.Manual;
-                MinimumSize = new Size(220, 110);
+                AutoScaleMode = AutoScaleMode.Dpi;
+                MinimumSize = new Size(100, 32);
+                FormBorderStyle = FormBorderStyle.None;
+                MinimizeBox = false;
+                ShowIcon = false;
                 ShowInTaskbar = false;
 
                 _itemsPanel = new TableLayoutPanel();
@@ -218,12 +222,11 @@ namespace FlexMeters
                 BackColor = Color.FromArgb(container.BackgroundArgb);
                 _itemsPanel.BackColor = BackColor;
 
-                if (container.NoTitleBar)
-                    FormBorderStyle = FormBorderStyle.None;
-                else if (container.Locked)
-                    FormBorderStyle = FormBorderStyle.FixedSingle;
-                else
-                    FormBorderStyle = FormBorderStyle.Sizable;
+                // Pinned Thetis frmMeterDisplay.Designer.cs uses a
+                // permanently borderless floating Form.  "No title bar" maps
+                // to ucMeter.NoControls (internal hover controls), never to
+                // Windows Form chrome.
+                FormBorderStyle = FormBorderStyle.None;
 
                 if (container.Highlight)
                 {
