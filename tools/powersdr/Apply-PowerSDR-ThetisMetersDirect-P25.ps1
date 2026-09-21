@@ -42,7 +42,13 @@ foreach($f in $files){
 
     $c=[regex]::Replace($c,'global::PowerSDR\.Properties\.Resources\.[A-Za-z0-9_]+','null')
     $c=[regex]::Replace($c,'Properties\.Resources\.[A-Za-z0-9_]+','null')
-    $c=[regex]::Replace($c,'(?m)^\s*this\.[A-Za-z0-9_]+\.Selectable\s*=\s*(true|false);\s*
+
+    if($name -eq 'ucMeter.Designer.cs'){
+        $c=$c.Replace('            this.btnSettings.Selectable = false;','')
+        $c=$c.Replace('            this.btnPin.Selectable = false;','')
+        $c=$c.Replace('            this.btnAxis.Selectable = false;','')
+        $c=$c.Replace('            this.btnFloat.Selectable = false;','')
+    }
 
     if($name -eq 'MeterManager.cs'){
         $c=$c.Replace('_currentHPSDRmodel = _console.CurrentHPSDRModel;','_currentHPSDRmodel = HPSDRModel.UNKNOWN;')
@@ -177,7 +183,7 @@ if($common -notmatch 'public partial class Common'){
 $timerPath=Join-Path $consoleDir 'hiperftimer.cs'
 $ht=[IO.File]::ReadAllText($timerPath)
 $ht=$ht.Replace('private long startTime, stopTime;','private long startTime, stopTime, elapsedTime;')
-if($ht -notmatch 'public void Reset\\('){
+if($ht -notmatch 'public void Reset\('){
     $getFreq='        public long GetFreq()'
     $timerCompat=@'
         public double Elapsed
@@ -207,170 +213,6 @@ if($ht -notmatch 'public void Reset\\('){
     $ht=$ht.Replace($getFreq,$timerCompat+$getFreq)
 }
 [IO.File]::WriteAllText($timerPath,$ht,$utf8)
-
-$consolePath=Join-Path $consoleDir 'console.cs'
-$cc=[IO.File]::ReadAllText($consolePath)
-$hook='            InitializeComponent();'
-if(!$cc.Contains($hook)){throw 'P25 console InitializeComponent marker missing'}
-if(!$cc.Contains('P25ThetisMetersShown')){
-    $cc=$cc.Replace($hook,$hook+$nl+'            this.Shown += new EventHandler(P25ThetisMetersShown);'+$nl+'            this.FormClosing += new FormClosingEventHandler(P25ThetisMetersConsoleClosing);')
-}
-[IO.File]::WriteAllText($consolePath,$cc,$utf8)
-
-$proj=[IO.File]::ReadAllText($projPath)
-$compile=@(
- 'P25_MeterManager.cs',
- 'P25_ucMeter.cs',
- 'P25_ucMeter.Designer.cs',
- 'P25_frmMeterDisplay.cs',
- 'P25_frmMeterDisplay.Designer.cs',
- 'P25ThetisMetersDirectHost.cs'
-)
-$anchor='<Compile Include="Skin.cs" />'
-if(!$proj.Contains($anchor)){throw 'P25 csproj compile anchor missing'}
-foreach($name in $compile){
-    if($proj -notmatch ('Compile Include="'+[regex]::Escape($name)+'"')){
-        $proj=$proj.Replace($anchor,$anchor+$nl+'    <Compile Include="'+$name+'" />')
-    }
-}
-[IO.File]::WriteAllText($projPath,$proj,$utf8)
-
-Write-Host 'P25_DIRECT_THETIS_PORT=APPLIED'
-Write-Host ('P25_THETIS_COMMIT='+$thetisCommit)
-Write-Host 'P25_RX2=DISABLED'
-Write-Host 'P25_STORE=POWERSDR_DB'
-Write-Host 'P25_RENDERER=THETIS_SHARPDX_DIRECT2D'
-,'')
-
-    if($name -eq 'MeterManager.cs'){
-        $c=$c.Replace('_currentHPSDRmodel = _console.CurrentHPSDRModel;','_currentHPSDRmodel = HPSDRModel.UNKNOWN;')
-        $c=$c.Replace('_apolloPresent = _console.ApolloPresent;','_apolloPresent = false;')
-        $c=$c.Replace('_alexPresent = _console.AlexPresent;','_alexPresent = false;')
-
-        $add = @'
-        private static void addDelegates()
-        {
-            // PowerSDR host synchronization is performed at the single P25 data boundary.
-            _delegatesAdded = true;
-        }
-'@
-        $c=Replace-Between $c '        private static void addDelegates()' '        private static void removeDelegates()' $add
-
-        $rem = @'
-        private static void removeDelegates()
-        {
-            foreach (KeyValuePair<string, ucMeter> kvp in _lstUCMeters)
-                kvp.Value.RemoveDelegates();
-            _delegatesAdded = false;
-        }
-'@
-        $c=Replace-Between $c '        private static void removeDelegates()' '        private static void OnSplitChanged' $rem
-
-        $init = @'
-        private static void initConsoleData(int rx)
-        {
-            if (_console == null || rx != 1) return;
-
-            lock (_metersLock)
-            {
-                foreach (KeyValuePair<string, clsMeter> mkvp in _meters.Where(o => o.Value.RX == 1))
-                {
-                    clsMeter m = mkvp.Value;
-
-                    m.MOX = _console.MOX;
-                    m.Split = _console.VFOSplit;
-                    m.TXVFOb = _console.VFOBTX;
-                    m.RX2Enabled = false;
-                    m.MultiRxEnabled = false;
-
-                    m.VfoA = _console.VFOAFreq;
-                    m.ModeVfoA = _console.RX1DSPMode;
-                    m.BandVfoA = _console.RX1Band;
-                    m.FilterVfoA = _console.RX1Filter;
-                    m.FilterVfoAName = getFilterName(1);
-
-                    m.VfoB = _console.VFOBFreq;
-                    m.VfoSub = _console.VFOASubFreq;
-                    m.ModeVfoB = _console.RX1DSPMode;
-                    m.BandVfoB = _console.RX1Band;
-                    m.FilterVfoB = _console.RX1Filter;
-                    m.FilterVfoBName = getFilterName(1);
-
-                    m.TXEQEnabled = false;
-                    m.LevelerEnabled = false;
-                    m.CFCEnabled = false;
-                    m.CompandEnabled = false;
-                    m.QuickSplitEnabled = false;
-                }
-            }
-        }
-'@
-        $c=Replace-Between $c '        private static void initConsoleData(int rx)' '        private static string getFilterName' $init
-
-        $filter = @'
-        private static string getFilterName(int rx)
-        {
-            try
-            {
-                if (rx != 1) return "";
-                if (_console.RX1DSPMode == DSPMode.FIRST || _console.RX1DSPMode == DSPMode.LAST ||
-                    _console.RX1Filter == Filter.FIRST || _console.RX1Filter == Filter.LAST) return "";
-                return _console.rx1_filters[(int)_console.RX1DSPMode].GetName(_console.RX1Filter);
-            }
-            catch { return ""; }
-        }
-'@
-        $c=Replace-Between $c '        private static string getFilterName(int rx)' '        private static void OnPower' $filter
-
-        $refresh = @'
-        private static void P25RefreshPowerSDRHost()
-        {
-            if (_console == null) return;
-
-            initConsoleData(1);
-
-            Dictionary<Reading, float> readings = _console.P25GetMeterReadings();
-            OnMeterReadings(1, _console.MOX, ref readings);
-        }
-
-'@
-        $marker='        private static void UpdateMeters()'
-        $idx=$c.IndexOf($marker)
-        if($idx -lt 0){throw 'P25 UpdateMeters marker missing'}
-        $c=$c.Insert($idx,$refresh)
-
-        $loopMarker='while (_meterThreadRunning)'
-        $loopIndex=$c.IndexOf($loopMarker)
-        if($loopIndex -lt 0){throw 'P25 meter worker loop marker missing'}
-        $braceIndex=$c.IndexOf('{',$loopIndex+$loopMarker.Length)
-        if($braceIndex -lt 0){throw 'P25 meter worker opening brace missing'}
-        $c=$c.Insert($braceIndex+1,$nl+'                P25RefreshPowerSDRHost();')
-    }
-
-    if($name -eq 'ucMeter.cs'){
-        $addUc = @'
-        private void addDelegates()
-        {
-            // MOX/title state is synchronized by MeterManager from PowerSDR.
-        }
-        public void RemoveDelegates()
-        {
-        }
-'@
-        $c=Replace-Between $c '        private void addDelegates()' '        private void OnMoxChangeHandler' $addUc
-    }
-
-    $dst=Join-Path $consoleDir ('P25_'+$name)
-    [IO.File]::WriteAllText($dst,$c,$utf8)
-}
-
-Copy-Item (Join-Path $PSScriptRoot 'P25ThetisMetersDirectHost.cs') (Join-Path $consoleDir 'P25ThetisMetersDirectHost.cs') -Force
-
-$common=[IO.File]::ReadAllText($commonPath)
-if($common -notmatch 'public partial class Common'){
-    $common=$common.Replace('public class Common','public partial class Common')
-    [IO.File]::WriteAllText($commonPath,$common,$utf8)
-}
 
 $consolePath=Join-Path $consoleDir 'console.cs'
 $cc=[IO.File]::ReadAllText($consolePath)
