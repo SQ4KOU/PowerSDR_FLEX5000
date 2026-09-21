@@ -54,3 +54,4 @@ foreach($token in @('FlexMeters.dll','MeterLiveRuntime','MeterWorkspaceManager',
 
 Write-Host 'P22_VERIFY=PASS'
 Write-Host 'P22_PHYSICAL_VALIDATION=PENDING'
+# P22 workflow trigger: physical validation remains pending.
