@@ -49,7 +49,5 @@ if($c -notmatch '<Reference Include="SharpDX,'){
   if($i -lt 0){throw 'P24 csproj reference anchor missing'}
   $c=$c.Insert($i,$refs+$nl+'    ')
 }
-$c=$c.Replace('<DefineConstants>NO_WIDETX;NO_KE9NS;NO_DJ;</DefineConstants>',
-              '<DefineConstants>NO_WIDETX;NO_KE9NS;NO_DJ;</DefineConstants>'+$nl+'    <LangVersion>latest</LangVersion>')
 [IO.File]::WriteAllText($proj,$c,$utf8)
 Write-Host 'P25_DIRECT_DEPS=SHARPDX_4.2.0'
