@@ -10,6 +10,7 @@ namespace FlexMeters.Tests
     {
         private static int _passed;
 
+        [STAThread]
         private static int Main()
         {
             Run("empty store -> zero containers", EmptyStoreRestoresZeroContainers);
@@ -34,8 +35,13 @@ namespace FlexMeters.Tests
             Run("container manager replace updates container", ContainerManagerReplaceUpdatesContainer);
             Run("container manager rejects duplicate ID without mutation", ContainerManagerRejectsDuplicateIdWithoutMutation);
             Run("container manager reload follows store", ContainerManagerReloadFollowsStore);
+            Run("window host restores exactly persisted containers", WindowHostRestoresExactlyPersistedContainers);
+            Run("window host geometry persists through manager", WindowHostGeometryPersistsThroughManager);
+            Run("window host manager add/remove reconciles windows", WindowHostManagerAddRemoveReconcilesWindows);
+            Run("window host remove stays removed after XML restart", WindowHostRemoveStaysRemovedAfterXmlRestart);
+            Run("window host empty workspace creates zero windows", WindowHostEmptyWorkspaceCreatesZeroWindows);
 
-            Console.WriteLine("PASS " + _passed + "/22");
+            Console.WriteLine("PASS " + _passed + "/27");
             return 0;
         }
 
@@ -519,6 +525,173 @@ namespace FlexMeters.Tests
 
                 Equal(0, manager.ContainerCount, "manager reload count");
                 Equal(0, host.Runtime.BindingCount, "manager reload runtime binding count");
+            }
+        }
+
+        private static void WindowHostRestoresExactlyPersistedContainers()
+        {
+            var table = NewTable();
+            var store = new DataTableMeterStore(table);
+            MeterWorkspaceSnapshot expected = BuildTwoContainerSnapshot();
+            store.ReplaceAll(expected);
+
+            var fake = new FakeTelemetrySource();
+            fake.Set(MeterReading.SignalStrength, MeterReceiver.Rx1, MeterReadingResult.Supported(-89.0));
+            fake.Set(MeterReading.SignalStrength, MeterReceiver.Rx2, MeterReadingResult.Unsupported("RX2 not implemented."));
+
+            using (var runtimeHost = new MeterWorkspaceRuntimeHost(store, fake))
+            {
+                runtimeHost.Start(TimeSpan.FromHours(1));
+                var manager = new MeterWorkspaceManager(runtimeHost, null);
+
+                using (var windows = new WinFormsMeterWindowHost(null, manager, false))
+                {
+                    windows.RestoreWindows(manager.Snapshot);
+                    Equal(2, windows.OpenWindowCount, "restored WinForms window count");
+
+                    MeterWindowGeometry geometry;
+                    True(windows.TryCaptureGeometry(expected.Containers[0].Id, out geometry), "RX1 geometry missing");
+                    Equal(expected.Containers[0].Geometry.X, geometry.X, "restored geometry X");
+                    Equal(expected.Containers[0].Geometry.Y, geometry.Y, "restored geometry Y");
+                    Equal(expected.Containers[0].Geometry.Width, geometry.Width, "restored geometry width");
+                    Equal(expected.Containers[0].Geometry.Height, geometry.Height, "restored geometry height");
+                }
+            }
+        }
+
+        private static void WindowHostGeometryPersistsThroughManager()
+        {
+            var table = NewTable();
+            var store = new DataTableMeterStore(table);
+            MeterWorkspaceSnapshot initial = BuildLiveWorkspace();
+            store.ReplaceAll(initial);
+            Guid id = initial.Containers[0].Id;
+
+            var fake = new FakeTelemetrySource();
+            fake.Set(MeterReading.SignalStrength, MeterReadingResult.Supported(-90.0));
+
+            using (var runtimeHost = new MeterWorkspaceRuntimeHost(store, fake))
+            {
+                runtimeHost.Start(TimeSpan.FromHours(1));
+                int persistCount = 0;
+                var manager = new MeterWorkspaceManager(runtimeHost, delegate { persistCount++; });
+
+                using (var windows = new WinFormsMeterWindowHost(null, manager, false))
+                {
+                    windows.RestoreWindows(manager.Snapshot);
+
+                    var geometry = new MeterWindowGeometry
+                    {
+                        X = 321,
+                        Y = 222,
+                        Width = 640,
+                        Height = 240,
+                        Maximized = false
+                    };
+
+                    True(windows.SetWindowGeometry(id, geometry), "set window geometry returned false");
+                    Equal(1, persistCount, "geometry persist callback");
+
+                    MeterWorkspaceSnapshot loaded = store.Load();
+                    Equal(321, loaded.Containers[0].Geometry.X, "stored window X");
+                    Equal(222, loaded.Containers[0].Geometry.Y, "stored window Y");
+                    Equal(640, loaded.Containers[0].Geometry.Width, "stored window width");
+                    Equal(240, loaded.Containers[0].Geometry.Height, "stored window height");
+                }
+            }
+        }
+
+        private static void WindowHostManagerAddRemoveReconcilesWindows()
+        {
+            var table = NewTable();
+            var store = new DataTableMeterStore(table);
+            store.ReplaceAll(new MeterWorkspaceSnapshot());
+
+            var fake = new FakeTelemetrySource();
+            fake.Set(MeterReading.SignalStrength, MeterReadingResult.Supported(-91.0));
+
+            using (var runtimeHost = new MeterWorkspaceRuntimeHost(store, fake))
+            {
+                runtimeHost.Start(TimeSpan.FromHours(1));
+                var manager = new MeterWorkspaceManager(runtimeHost, null);
+
+                using (var windows = new WinFormsMeterWindowHost(null, manager, false))
+                {
+                    windows.RestoreWindows(manager.Snapshot);
+                    Equal(0, windows.OpenWindowCount, "initial empty WinForms count");
+
+                    MeterContainerSnapshot container = BuildLiveWorkspace().Containers[0];
+                    manager.AddContainer(container);
+                    Equal(1, windows.OpenWindowCount, "WinForms count after manager add");
+
+                    True(manager.RemoveContainer(container.Id), "manager remove failed");
+                    Equal(0, windows.OpenWindowCount, "WinForms count after manager remove");
+                }
+            }
+        }
+
+        private static void WindowHostRemoveStaysRemovedAfterXmlRestart()
+        {
+            var table = NewTable();
+            var store = new DataTableMeterStore(table);
+            MeterWorkspaceSnapshot initial = BuildTwoContainerSnapshot();
+            store.ReplaceAll(initial);
+            Guid removedId = initial.Containers[0].Id;
+
+            var fake = new FakeTelemetrySource();
+            fake.Set(MeterReading.SignalStrength, MeterReceiver.Rx1, MeterReadingResult.Supported(-92.0));
+            fake.Set(MeterReading.SignalStrength, MeterReceiver.Rx2, MeterReadingResult.Unsupported("RX2 not implemented."));
+
+            using (var runtimeHost = new MeterWorkspaceRuntimeHost(store, fake))
+            {
+                runtimeHost.Start(TimeSpan.FromHours(1));
+                var manager = new MeterWorkspaceManager(runtimeHost, null);
+
+                using (var windows = new WinFormsMeterWindowHost(null, manager, false))
+                {
+                    windows.RestoreWindows(manager.Snapshot);
+                    Equal(2, windows.OpenWindowCount, "pre-remove window count");
+                    True(windows.RemoveWindow(removedId), "window-host remove failed");
+                    Equal(1, windows.OpenWindowCount, "post-remove window count");
+                }
+            }
+
+            var ds = new DataSet("PowerSDR");
+            ds.Tables.Add(table.Copy());
+            string xml;
+            using (var writer = new StringWriter())
+            {
+                ds.WriteXml(writer, XmlWriteMode.WriteSchema);
+                xml = writer.ToString();
+            }
+
+            var restarted = new DataSet("PowerSDR");
+            using (var reader = new StringReader(xml))
+                restarted.ReadXml(reader, XmlReadMode.ReadSchema);
+
+            var restartedStore = new DataTableMeterStore(restarted.Tables["FlexMeters"]);
+            MeterWorkspaceSnapshot reloaded = restartedStore.Load();
+            Equal(1, reloaded.Containers.Count, "restart window count");
+            False(reloaded.Containers[0].Id == removedId, "removed WinForms container returned after restart");
+        }
+
+        private static void WindowHostEmptyWorkspaceCreatesZeroWindows()
+        {
+            var table = NewTable();
+            var store = new DataTableMeterStore(table);
+            store.ReplaceAll(new MeterWorkspaceSnapshot());
+
+            var fake = new FakeTelemetrySource();
+            using (var runtimeHost = new MeterWorkspaceRuntimeHost(store, fake))
+            {
+                runtimeHost.Start(TimeSpan.FromHours(1));
+                var manager = new MeterWorkspaceManager(runtimeHost, null);
+
+                using (var windows = new WinFormsMeterWindowHost(null, manager, false))
+                {
+                    windows.RestoreWindows(manager.Snapshot);
+                    Equal(0, windows.OpenWindowCount, "empty workspace fabricated a default window");
+                }
             }
         }
 

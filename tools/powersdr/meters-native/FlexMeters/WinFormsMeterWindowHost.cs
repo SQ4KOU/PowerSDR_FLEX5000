@@ -1,0 +1,440 @@
+using System;
+using System.Collections.Generic;
+using System.Drawing;
+using System.Windows.Forms;
+
+namespace FlexMeters
+{
+    public sealed class WinFormsMeterWindowHost : IMeterWindowHost, IDisposable
+    {
+        private sealed class MeterContainerForm : Form
+        {
+            private readonly Label _status;
+
+            public MeterContainerForm(MeterContainerSnapshot container)
+            {
+                ContainerId = container.Id;
+                StartPosition = FormStartPosition.Manual;
+                MinimumSize = new Size(180, 90);
+                ShowInTaskbar = false;
+                Text = BuildTitle(container);
+
+                _status = new Label();
+                _status.Dock = DockStyle.Fill;
+                _status.TextAlign = ContentAlignment.MiddleCenter;
+                _status.AutoSize = false;
+                _status.Text = BuildStatus(container);
+                Controls.Add(_status);
+            }
+
+            public Guid ContainerId { get; private set; }
+
+            public void UpdateDefinition(MeterContainerSnapshot container)
+            {
+                Text = BuildTitle(container);
+                _status.Text = BuildStatus(container);
+            }
+
+            private static string BuildTitle(MeterContainerSnapshot container)
+            {
+                return "FlexMeters " + container.Receiver + " [" +
+                    container.Id.ToString("D").Substring(0, 8) + "]";
+            }
+
+            private static string BuildStatus(MeterContainerSnapshot container)
+            {
+                return container.Receiver + " container" + Environment.NewLine +
+                    container.Items.Count + " item(s)" + Environment.NewLine +
+                    "renderer pending";
+            }
+        }
+
+        private readonly object _sync = new object();
+        private readonly Form _owner;
+        private readonly MeterWorkspaceManager _manager;
+        private readonly bool _showWindows;
+        private readonly Dictionary<Guid, MeterContainerForm> _windows =
+            new Dictionary<Guid, MeterContainerForm>();
+
+        private bool _suppressWindowEvents;
+        private bool _disposed;
+
+        public WinFormsMeterWindowHost(
+            Form owner,
+            MeterWorkspaceManager manager)
+            : this(owner, manager, true)
+        {
+        }
+
+        public WinFormsMeterWindowHost(
+            Form owner,
+            MeterWorkspaceManager manager,
+            bool showWindows)
+        {
+            if (manager == null)
+                throw new ArgumentNullException("manager");
+
+            _owner = owner;
+            _manager = manager;
+            _showWindows = showWindows;
+            _manager.WorkspaceChanged += ManagerWorkspaceChanged;
+        }
+
+        public int OpenWindowCount
+        {
+            get
+            {
+                lock (_sync)
+                    return _windows.Count;
+            }
+        }
+
+        public void RestoreWindows(MeterWorkspaceSnapshot snapshot)
+        {
+            if (snapshot == null)
+                throw new ArgumentNullException("snapshot");
+
+            MeterWorkspaceValidator.Validate(snapshot);
+            ExecuteOnUi(delegate { ReconcileWindows(snapshot); });
+        }
+
+        public void AddWindow(MeterContainerSnapshot container)
+        {
+            ThrowIfDisposed();
+            _manager.AddContainer(container);
+        }
+
+        public bool RemoveWindow(Guid containerId)
+        {
+            ThrowIfDisposed();
+            return _manager.RemoveContainer(containerId);
+        }
+
+        public bool CloseWindow(Guid containerId)
+        {
+            ThrowIfDisposed();
+
+            MeterContainerForm form = null;
+            lock (_sync)
+            {
+                if (!_windows.TryGetValue(containerId, out form))
+                    return false;
+            }
+
+            ExecuteOnUi(delegate { form.Close(); });
+            return true;
+        }
+
+        public bool SetWindowGeometry(Guid containerId, MeterWindowGeometry geometry)
+        {
+            ThrowIfDisposed();
+            ValidateGeometry(geometry);
+
+            MeterContainerForm form;
+            lock (_sync)
+            {
+                if (!_windows.TryGetValue(containerId, out form))
+                    return false;
+            }
+
+            ExecuteOnUi(delegate
+            {
+                _suppressWindowEvents = true;
+                try
+                {
+                    ApplyGeometry(form, geometry);
+                }
+                finally
+                {
+                    _suppressWindowEvents = false;
+                }
+            });
+
+            MeterWorkspaceSnapshot snapshot = _manager.Snapshot;
+            MeterContainerSnapshot container = FindContainer(snapshot, containerId);
+            if (container == null)
+                return false;
+
+            container.Geometry = CloneGeometry(geometry);
+            _manager.ReplaceContainer(container);
+            return true;
+        }
+
+        public bool TryCaptureGeometry(
+            Guid containerId,
+            out MeterWindowGeometry geometry)
+        {
+            ThrowIfDisposed();
+
+            MeterContainerForm form;
+            lock (_sync)
+            {
+                if (!_windows.TryGetValue(containerId, out form))
+                {
+                    geometry = null;
+                    return false;
+                }
+            }
+
+            MeterWindowGeometry captured = null;
+            ExecuteOnUi(delegate { captured = CaptureGeometry(form); });
+            geometry = captured;
+            return captured != null;
+        }
+
+        public void CloseAll()
+        {
+            if (_disposed)
+                return;
+
+            ExecuteOnUi(delegate
+            {
+                MeterContainerForm[] forms;
+                lock (_sync)
+                {
+                    forms = new MeterContainerForm[_windows.Count];
+                    _windows.Values.CopyTo(forms, 0);
+                    _windows.Clear();
+                }
+
+                _suppressWindowEvents = true;
+                try
+                {
+                    for (int i = 0; i < forms.Length; i++)
+                    {
+                        forms[i].FormClosing -= WindowFormClosing;
+                        forms[i].ResizeEnd -= WindowResizeEnd;
+                        forms[i].Close();
+                        forms[i].Dispose();
+                    }
+                }
+                finally
+                {
+                    _suppressWindowEvents = false;
+                }
+            });
+        }
+
+        public void Dispose()
+        {
+            if (_disposed)
+                return;
+
+            CloseAll();
+            _manager.WorkspaceChanged -= ManagerWorkspaceChanged;
+            _disposed = true;
+        }
+
+        private void ManagerWorkspaceChanged(
+            object sender,
+            MeterWorkspaceChangedEventArgs e)
+        {
+            if (_disposed)
+                return;
+
+            MeterWorkspaceSnapshot snapshot = e.Workspace;
+            ExecuteOnUi(delegate { ReconcileWindows(snapshot); });
+        }
+
+        private void ReconcileWindows(MeterWorkspaceSnapshot snapshot)
+        {
+            ThrowIfDisposed();
+
+            var wanted = new Dictionary<Guid, MeterContainerSnapshot>();
+            for (int i = 0; i < snapshot.Containers.Count; i++)
+                wanted.Add(snapshot.Containers[i].Id, snapshot.Containers[i]);
+
+            var close = new List<MeterContainerForm>();
+            lock (_sync)
+            {
+                foreach (KeyValuePair<Guid, MeterContainerForm> pair in _windows)
+                {
+                    if (!wanted.ContainsKey(pair.Key))
+                        close.Add(pair.Value);
+                }
+
+                for (int i = 0; i < close.Count; i++)
+                    _windows.Remove(close[i].ContainerId);
+            }
+
+            _suppressWindowEvents = true;
+            try
+            {
+                for (int i = 0; i < close.Count; i++)
+                {
+                    close[i].FormClosing -= WindowFormClosing;
+                    close[i].ResizeEnd -= WindowResizeEnd;
+                    close[i].Close();
+                    close[i].Dispose();
+                }
+
+                for (int i = 0; i < snapshot.Containers.Count; i++)
+                {
+                    MeterContainerSnapshot container = snapshot.Containers[i];
+                    MeterContainerForm form;
+
+                    lock (_sync)
+                        _windows.TryGetValue(container.Id, out form);
+
+                    if (form == null)
+                    {
+                        form = CreateWindow(container);
+                        lock (_sync)
+                            _windows.Add(container.Id, form);
+
+                        if (_showWindows)
+                        {
+                            if (_owner != null)
+                                form.Show(_owner);
+                            else
+                                form.Show();
+                        }
+                    }
+                    else
+                    {
+                        form.UpdateDefinition(container);
+                        ApplyGeometry(form, container.Geometry);
+                    }
+                }
+            }
+            finally
+            {
+                _suppressWindowEvents = false;
+            }
+        }
+
+        private MeterContainerForm CreateWindow(MeterContainerSnapshot container)
+        {
+            var form = new MeterContainerForm(container);
+            ApplyGeometry(form, container.Geometry);
+            form.FormClosing += WindowFormClosing;
+            form.ResizeEnd += WindowResizeEnd;
+            return form;
+        }
+
+        private void WindowFormClosing(object sender, FormClosingEventArgs e)
+        {
+            if (_suppressWindowEvents || _disposed)
+                return;
+
+            var form = sender as MeterContainerForm;
+            if (form == null)
+                return;
+
+            lock (_sync)
+                _windows.Remove(form.ContainerId);
+
+            _manager.RemoveContainer(form.ContainerId);
+        }
+
+        private void WindowResizeEnd(object sender, EventArgs e)
+        {
+            if (_suppressWindowEvents || _disposed)
+                return;
+
+            var form = sender as MeterContainerForm;
+            if (form == null)
+                return;
+
+            MeterWorkspaceSnapshot snapshot = _manager.Snapshot;
+            MeterContainerSnapshot container = FindContainer(
+                snapshot,
+                form.ContainerId);
+
+            if (container == null)
+                return;
+
+            container.Geometry = CaptureGeometry(form);
+            _manager.ReplaceContainer(container);
+        }
+
+        private static MeterContainerSnapshot FindContainer(
+            MeterWorkspaceSnapshot snapshot,
+            Guid containerId)
+        {
+            for (int i = 0; i < snapshot.Containers.Count; i++)
+            {
+                if (snapshot.Containers[i].Id == containerId)
+                    return snapshot.Containers[i];
+            }
+
+            return null;
+        }
+
+        private static void ApplyGeometry(
+            Form form,
+            MeterWindowGeometry geometry)
+        {
+            ValidateGeometry(geometry);
+
+            form.WindowState = FormWindowState.Normal;
+            form.Bounds = new Rectangle(
+                geometry.X,
+                geometry.Y,
+                geometry.Width,
+                geometry.Height);
+
+            if (geometry.Maximized)
+                form.WindowState = FormWindowState.Maximized;
+        }
+
+        private static MeterWindowGeometry CaptureGeometry(Form form)
+        {
+            Rectangle bounds =
+                form.WindowState == FormWindowState.Normal
+                ? form.Bounds
+                : form.RestoreBounds;
+
+            if (bounds.Width <= 0 || bounds.Height <= 0)
+                bounds = form.Bounds;
+
+            return new MeterWindowGeometry
+            {
+                X = bounds.X,
+                Y = bounds.Y,
+                Width = bounds.Width,
+                Height = bounds.Height,
+                Maximized = form.WindowState == FormWindowState.Maximized
+            };
+        }
+
+        private static MeterWindowGeometry CloneGeometry(
+            MeterWindowGeometry geometry)
+        {
+            return new MeterWindowGeometry
+            {
+                X = geometry.X,
+                Y = geometry.Y,
+                Width = geometry.Width,
+                Height = geometry.Height,
+                Maximized = geometry.Maximized
+            };
+        }
+
+        private static void ValidateGeometry(MeterWindowGeometry geometry)
+        {
+            if (geometry == null)
+                throw new ArgumentNullException("geometry");
+            if (geometry.Width <= 0 || geometry.Height <= 0)
+                throw new ArgumentOutOfRangeException(
+                    "geometry",
+                    "Meter window width and height must be positive.");
+        }
+
+        private void ExecuteOnUi(Action action)
+        {
+            ThrowIfDisposed();
+
+            if (_owner != null && _owner.InvokeRequired)
+                _owner.Invoke(action);
+            else
+                action();
+        }
+
+        private void ThrowIfDisposed()
+        {
+            if (_disposed)
+                throw new ObjectDisposedException("WinFormsMeterWindowHost");
+        }
+    }
+}

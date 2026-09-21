@@ -9,6 +9,7 @@ namespace PowerSDR
         private FlexMeters.DataTableMeterStore flexMetersStore;
         private FlexMeters.MeterWorkspaceRuntimeHost flexMetersWorkspaceHost;
         private FlexMeters.MeterWorkspaceManager flexMetersContainerManager;
+        private FlexMeters.WinFormsMeterWindowHost flexMetersWindowHost;
 
         private sealed class FlexMetersTelemetryAdapter : FlexMeters.IMeterTelemetrySource
         {
@@ -99,6 +100,22 @@ namespace PowerSDR
             flexMetersContainerManager = new FlexMeters.MeterWorkspaceManager(
                 flexMetersWorkspaceHost,
                 delegate { DB.Update(); });
+
+            this.Shown += FlexMetersConsoleShown;
+        }
+
+        private void FlexMetersConsoleShown(object sender, System.EventArgs e)
+        {
+            this.Shown -= FlexMetersConsoleShown;
+
+            if (flexMetersContainerManager == null || flexMetersWindowHost != null)
+                return;
+
+            flexMetersWindowHost = new FlexMeters.WinFormsMeterWindowHost(
+                this,
+                flexMetersContainerManager);
+            flexMetersWindowHost.RestoreWindows(
+                flexMetersContainerManager.Snapshot);
         }
 
         internal void ReplaceFlexMetersWorkspace(
@@ -131,6 +148,11 @@ namespace PowerSDR
             get { return flexMetersContainerManager; }
         }
 
+        internal FlexMeters.WinFormsMeterWindowHost FlexMetersWindowHost
+        {
+            get { return flexMetersWindowHost; }
+        }
+
         internal void AddFlexMetersContainer(FlexMeters.MeterContainerSnapshot container)
         {
             if (flexMetersContainerManager == null)
@@ -157,10 +179,18 @@ namespace PowerSDR
 
         private void ShutdownFlexMetersWorkspaceRuntime()
         {
+            this.Shown -= FlexMetersConsoleShown;
+
+            FlexMeters.WinFormsMeterWindowHost windowHost = flexMetersWindowHost;
             FlexMeters.MeterWorkspaceRuntimeHost host = flexMetersWorkspaceHost;
+
+            flexMetersWindowHost = null;
             flexMetersContainerManager = null;
             flexMetersWorkspaceHost = null;
             flexMetersStore = null;
+
+            if (windowHost != null)
+                windowHost.Dispose();
 
             if (host != null)
                 host.Dispose();
