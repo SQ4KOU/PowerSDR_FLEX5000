@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Globalization;
 using System.Windows.Forms;
 
 namespace FlexMeters
@@ -9,7 +10,9 @@ namespace FlexMeters
     {
         private sealed class MeterContainerForm : Form
         {
-            private readonly Label _status;
+            private readonly TableLayoutPanel _itemsPanel;
+            private readonly Dictionary<Guid, Label> _itemLabels =
+                new Dictionary<Guid, Label>();
 
             public MeterContainerForm(MeterContainerSnapshot container)
             {
@@ -17,14 +20,16 @@ namespace FlexMeters
                 StartPosition = FormStartPosition.Manual;
                 MinimumSize = new Size(180, 90);
                 ShowInTaskbar = false;
-                Text = BuildTitle(container);
 
-                _status = new Label();
-                _status.Dock = DockStyle.Fill;
-                _status.TextAlign = ContentAlignment.MiddleCenter;
-                _status.AutoSize = false;
-                _status.Text = BuildStatus(container);
-                Controls.Add(_status);
+                _itemsPanel = new TableLayoutPanel();
+                _itemsPanel.Dock = DockStyle.Fill;
+                _itemsPanel.AutoScroll = true;
+                _itemsPanel.ColumnCount = 1;
+                _itemsPanel.RowCount = 0;
+                _itemsPanel.GrowStyle = TableLayoutPanelGrowStyle.AddRows;
+                Controls.Add(_itemsPanel);
+
+                UpdateDefinition(container);
             }
 
             public Guid ContainerId { get; private set; }
@@ -32,7 +37,80 @@ namespace FlexMeters
             public void UpdateDefinition(MeterContainerSnapshot container)
             {
                 Text = BuildTitle(container);
-                _status.Text = BuildStatus(container);
+
+                _itemsPanel.SuspendLayout();
+                try
+                {
+                    _itemsPanel.Controls.Clear();
+                    _itemsPanel.RowStyles.Clear();
+                    _itemLabels.Clear();
+
+                    if (container.Items.Count == 0)
+                    {
+                        var empty = CreateItemLabel();
+                        empty.Text = "(no meter items)";
+                        _itemsPanel.Controls.Add(empty, 0, 0);
+                        return;
+                    }
+
+                    for (int i = 0; i < container.Items.Count; i++)
+                    {
+                        MeterItemSnapshot item = container.Items[i];
+                        var label = CreateItemLabel();
+                        label.Text = item.Type + ": pending";
+                        _itemLabels.Add(item.Id, label);
+                        _itemsPanel.Controls.Add(label, 0, i);
+                    }
+                }
+                finally
+                {
+                    _itemsPanel.ResumeLayout(true);
+                }
+            }
+
+            public void UpdateLive(
+                MeterContainerSnapshot container,
+                MeterLiveSnapshot live)
+            {
+                for (int i = 0; i < container.Items.Count; i++)
+                {
+                    MeterItemSnapshot item = container.Items[i];
+                    Label label;
+                    if (!_itemLabels.TryGetValue(item.Id, out label))
+                        continue;
+
+                    MeterLiveValue value;
+                    if (live == null || !live.TryGetValue(item.Id, out value))
+                    {
+                        label.Text = item.Type + ": pending";
+                        continue;
+                    }
+
+                    label.Text = FormatItem(item, value.Result);
+                }
+            }
+
+            public bool TryGetItemText(Guid itemId, out string text)
+            {
+                Label label;
+                if (_itemLabels.TryGetValue(itemId, out label))
+                {
+                    text = label.Text;
+                    return true;
+                }
+
+                text = null;
+                return false;
+            }
+
+            private static Label CreateItemLabel()
+            {
+                var label = new Label();
+                label.Dock = DockStyle.Top;
+                label.AutoSize = true;
+                label.Padding = new Padding(8, 6, 8, 6);
+                label.TextAlign = ContentAlignment.MiddleLeft;
+                return label;
             }
 
             private static string BuildTitle(MeterContainerSnapshot container)
@@ -41,17 +119,33 @@ namespace FlexMeters
                     container.Id.ToString("D").Substring(0, 8) + "]";
             }
 
-            private static string BuildStatus(MeterContainerSnapshot container)
+            private static string FormatItem(
+                MeterItemSnapshot item,
+                MeterReadingResult result)
             {
-                return container.Receiver + " container" + Environment.NewLine +
-                    container.Items.Count + " item(s)" + Environment.NewLine +
-                    "renderer pending";
+                if (!result.IsSupported)
+                    return item.Type + ": UNSUPPORTED - " + result.Reason;
+
+                if (!result.Value.HasValue)
+                    return item.Type + ": INVALID";
+
+                if (String.Equals(item.Type, "SIGNAL_STRENGTH", StringComparison.Ordinal) ||
+                    String.Equals(item.Type, "SIGNAL_TEXT", StringComparison.Ordinal))
+                {
+                    return item.Type + ": " +
+                        result.Value.Value.ToString("0.0", CultureInfo.InvariantCulture) +
+                        " dBm";
+                }
+
+                return item.Type + ": " +
+                    result.Value.Value.ToString("0.###", CultureInfo.InvariantCulture);
             }
         }
 
         private readonly object _sync = new object();
         private readonly Form _owner;
         private readonly MeterWorkspaceManager _manager;
+        private readonly MeterWorkspaceRuntimeHost _runtimeHost;
         private readonly bool _showWindows;
         private readonly Dictionary<Guid, MeterContainerForm> _windows =
             new Dictionary<Guid, MeterContainerForm>();
@@ -61,23 +155,33 @@ namespace FlexMeters
 
         public WinFormsMeterWindowHost(
             Form owner,
-            MeterWorkspaceManager manager)
-            : this(owner, manager, true)
+            MeterWorkspaceManager manager,
+            MeterWorkspaceRuntimeHost runtimeHost)
+            : this(owner, manager, runtimeHost, true)
         {
         }
 
         public WinFormsMeterWindowHost(
             Form owner,
             MeterWorkspaceManager manager,
+            MeterWorkspaceRuntimeHost runtimeHost,
             bool showWindows)
         {
             if (manager == null)
                 throw new ArgumentNullException("manager");
+            if (runtimeHost == null)
+                throw new ArgumentNullException("runtimeHost");
+            if (!runtimeHost.IsStarted)
+                throw new InvalidOperationException(
+                    "WinForms meter windows require a started runtime host.");
 
             _owner = owner;
             _manager = manager;
+            _runtimeHost = runtimeHost;
             _showWindows = showWindows;
+
             _manager.WorkspaceChanged += ManagerWorkspaceChanged;
+            _runtimeHost.Updated += RuntimeUpdated;
         }
 
         public int OpenWindowCount
@@ -95,7 +199,12 @@ namespace FlexMeters
                 throw new ArgumentNullException("snapshot");
 
             MeterWorkspaceValidator.Validate(snapshot);
-            ExecuteOnUi(delegate { ReconcileWindows(snapshot); });
+            MeterLiveSnapshot live = _runtimeHost.Current;
+            ExecuteOnUi(delegate
+            {
+                ReconcileWindows(snapshot);
+                ApplyLiveSnapshot(snapshot, live);
+            });
         }
 
         public void AddWindow(MeterContainerSnapshot container)
@@ -182,6 +291,36 @@ namespace FlexMeters
             return captured != null;
         }
 
+        public bool TryGetDisplayedItemText(Guid itemId, out string text)
+        {
+            ThrowIfDisposed();
+
+            string captured = null;
+            bool found = false;
+
+            ExecuteOnUi(delegate
+            {
+                MeterContainerForm[] forms;
+                lock (_sync)
+                {
+                    forms = new MeterContainerForm[_windows.Count];
+                    _windows.Values.CopyTo(forms, 0);
+                }
+
+                for (int i = 0; i < forms.Length; i++)
+                {
+                    if (forms[i].TryGetItemText(itemId, out captured))
+                    {
+                        found = true;
+                        return;
+                    }
+                }
+            });
+
+            text = captured;
+            return found;
+        }
+
         public void CloseAll()
         {
             if (_disposed)
@@ -220,8 +359,9 @@ namespace FlexMeters
             if (_disposed)
                 return;
 
-            CloseAll();
+            _runtimeHost.Updated -= RuntimeUpdated;
             _manager.WorkspaceChanged -= ManagerWorkspaceChanged;
+            CloseAll();
             _disposed = true;
         }
 
@@ -233,7 +373,24 @@ namespace FlexMeters
                 return;
 
             MeterWorkspaceSnapshot snapshot = e.Workspace;
-            ExecuteOnUi(delegate { ReconcileWindows(snapshot); });
+            MeterLiveSnapshot live = _runtimeHost.Current;
+            ExecuteOnUi(delegate
+            {
+                ReconcileWindows(snapshot);
+                ApplyLiveSnapshot(snapshot, live);
+            });
+        }
+
+        private void RuntimeUpdated(
+            object sender,
+            MeterLiveSnapshotEventArgs e)
+        {
+            if (_disposed)
+                return;
+
+            MeterWorkspaceSnapshot workspace = _manager.Snapshot;
+            MeterLiveSnapshot live = e.Snapshot;
+            ExecuteOnUi(delegate { ApplyLiveSnapshot(workspace, live); });
         }
 
         private void ReconcileWindows(MeterWorkspaceSnapshot snapshot)
@@ -300,6 +457,26 @@ namespace FlexMeters
             finally
             {
                 _suppressWindowEvents = false;
+            }
+        }
+
+        private void ApplyLiveSnapshot(
+            MeterWorkspaceSnapshot workspace,
+            MeterLiveSnapshot live)
+        {
+            if (workspace == null)
+                return;
+
+            for (int i = 0; i < workspace.Containers.Count; i++)
+            {
+                MeterContainerSnapshot container = workspace.Containers[i];
+                MeterContainerForm form;
+
+                lock (_sync)
+                    _windows.TryGetValue(container.Id, out form);
+
+                if (form != null)
+                    form.UpdateLive(container, live);
             }
         }
 

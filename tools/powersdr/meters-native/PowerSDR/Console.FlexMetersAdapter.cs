@@ -113,7 +113,8 @@ namespace PowerSDR
 
             flexMetersWindowHost = new FlexMeters.WinFormsMeterWindowHost(
                 this,
-                flexMetersContainerManager);
+                flexMetersContainerManager,
+                flexMetersWorkspaceHost);
             flexMetersWindowHost.RestoreWindows(
                 flexMetersContainerManager.Snapshot);
         }

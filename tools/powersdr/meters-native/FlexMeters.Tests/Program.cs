@@ -40,8 +40,11 @@ namespace FlexMeters.Tests
             Run("window host manager add/remove reconciles windows", WindowHostManagerAddRemoveReconcilesWindows);
             Run("window host remove stays removed after XML restart", WindowHostRemoveStaysRemovedAfterXmlRestart);
             Run("window host empty workspace creates zero windows", WindowHostEmptyWorkspaceCreatesZeroWindows);
+            Run("window host displays live RX1 signal by item ID", WindowHostDisplaysLiveRx1SignalByItemId);
+            Run("window host updates same item after refresh", WindowHostUpdatesSameItemAfterRefresh);
+            Run("window host preserves unsupported text without zero", WindowHostPreservesUnsupportedTextWithoutZero);
 
-            Console.WriteLine("PASS " + _passed + "/27");
+            Console.WriteLine("PASS " + _passed + "/30");
             return 0;
         }
 
@@ -544,7 +547,7 @@ namespace FlexMeters.Tests
                 runtimeHost.Start(TimeSpan.FromHours(1));
                 var manager = new MeterWorkspaceManager(runtimeHost, null);
 
-                using (var windows = new WinFormsMeterWindowHost(null, manager, false))
+                using (var windows = new WinFormsMeterWindowHost(null, manager, runtimeHost, false))
                 {
                     windows.RestoreWindows(manager.Snapshot);
                     Equal(2, windows.OpenWindowCount, "restored WinForms window count");
@@ -691,6 +694,110 @@ namespace FlexMeters.Tests
                 {
                     windows.RestoreWindows(manager.Snapshot);
                     Equal(0, windows.OpenWindowCount, "empty workspace fabricated a default window");
+                }
+            }
+        }
+
+        private static void WindowHostDisplaysLiveRx1SignalByItemId()
+        {
+            var table = NewTable();
+            var store = new DataTableMeterStore(table);
+            store.ReplaceAll(BuildLiveWorkspace());
+
+            var fake = new FakeTelemetrySource();
+            fake.Set(MeterReading.SignalStrength, MeterReadingResult.Supported(-104.5));
+
+            using (var runtimeHost = new MeterWorkspaceRuntimeHost(store, fake))
+            {
+                runtimeHost.Start(TimeSpan.FromHours(1));
+                var manager = new MeterWorkspaceManager(runtimeHost, null);
+
+                using (var windows = new WinFormsMeterWindowHost(null, manager, runtimeHost, false))
+                {
+                    windows.RestoreWindows(manager.Snapshot);
+
+                    string text;
+                    True(
+                        windows.TryGetDisplayedItemText(
+                            Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"),
+                            out text),
+                        "RX1 signal item label missing");
+                    Equal("SIGNAL_STRENGTH: -104.5 dBm", text, "RX1 diagnostic label text");
+
+                    string secondText;
+                    True(
+                        windows.TryGetDisplayedItemText(
+                            Guid.Parse("dddddddd-dddd-dddd-dddd-dddddddddddd"),
+                            out secondText),
+                        "RX1 signal text item label missing");
+                    Equal("SIGNAL_TEXT: -104.5 dBm", secondText, "RX1 signal-text diagnostic label");
+                }
+            }
+        }
+
+        private static void WindowHostUpdatesSameItemAfterRefresh()
+        {
+            var table = NewTable();
+            var store = new DataTableMeterStore(table);
+            store.ReplaceAll(BuildLiveWorkspace());
+
+            var fake = new FakeTelemetrySource();
+            fake.Set(MeterReading.SignalStrength, MeterReadingResult.Supported(-111.0));
+
+            using (var runtimeHost = new MeterWorkspaceRuntimeHost(store, fake))
+            {
+                runtimeHost.Start(TimeSpan.FromHours(1));
+                var manager = new MeterWorkspaceManager(runtimeHost, null);
+
+                using (var windows = new WinFormsMeterWindowHost(null, manager, runtimeHost, false))
+                {
+                    windows.RestoreWindows(manager.Snapshot);
+                    Guid itemId = Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
+
+                    string before;
+                    True(windows.TryGetDisplayedItemText(itemId, out before), "live item missing before refresh");
+                    Equal("SIGNAL_STRENGTH: -111.0 dBm", before, "live item before refresh");
+
+                    fake.Set(MeterReading.SignalStrength, MeterReadingResult.Supported(-73.25));
+                    runtimeHost.RefreshNow();
+
+                    string after;
+                    True(windows.TryGetDisplayedItemText(itemId, out after), "live item missing after refresh");
+                    Equal("SIGNAL_STRENGTH: -73.3 dBm", after, "live item after refresh");
+                    False(before == after, "live item text did not change");
+                }
+            }
+        }
+
+        private static void WindowHostPreservesUnsupportedTextWithoutZero()
+        {
+            var table = NewTable();
+            var store = new DataTableMeterStore(table);
+            store.ReplaceAll(BuildLiveWorkspace());
+
+            var fake = new FakeTelemetrySource();
+            fake.Set(
+                MeterReading.SignalStrength,
+                MeterReadingResult.Unsupported("Radio off."));
+
+            using (var runtimeHost = new MeterWorkspaceRuntimeHost(store, fake))
+            {
+                runtimeHost.Start(TimeSpan.FromHours(1));
+                var manager = new MeterWorkspaceManager(runtimeHost, null);
+
+                using (var windows = new WinFormsMeterWindowHost(null, manager, runtimeHost, false))
+                {
+                    windows.RestoreWindows(manager.Snapshot);
+
+                    string text;
+                    True(
+                        windows.TryGetDisplayedItemText(
+                            Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"),
+                            out text),
+                        "unsupported item label missing");
+                    True(text.Contains("UNSUPPORTED"), "unsupported status is not visible");
+                    True(text.Contains("Radio off."), "unsupported reason is not visible");
+                    False(text.Contains("0.0 dBm"), "unsupported value was fabricated as zero");
                 }
             }
         }

@@ -66,7 +66,8 @@ $adapterTokens=@(
     'WinFormsMeterWindowHost',
     'this.Shown += FlexMetersConsoleShown',
     'RestoreWindows(',
-    'windowHost.Dispose()'
+    'windowHost.Dispose()',
+    'flexMetersWorkspaceHost);'
 )
 foreach($token in $adapterTokens){
     if(!$a.Contains($token)){throw "FlexMeters RX1 adapter gate missing: $token"}
