@@ -104,7 +104,7 @@ namespace FlexMeters
             Text = "Meters/Gadgets";
             StartPosition = FormStartPosition.CenterParent;
             ClientSize = new Size(726, 411);
-            MinimumSize = new Size(742, 450);
+            MinimumSize = new Size(726, 411);
             MaximizeBox = true;
             MinimizeBox = false;
             FormBorderStyle = FormBorderStyle.Sizable;
