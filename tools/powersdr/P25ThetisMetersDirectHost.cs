@@ -56,11 +56,87 @@ namespace PowerSDR
             if (!Int32.TryParse(p[3], out b)) return Color.Empty;
             return Color.FromArgb(a, r, g, b);
         }
+
+        public static MessageBoxOptions MB_TOPMOST = (MessageBoxOptions)0x00040000L;
+
+        public static int FiveDigitHash(string str)
+        {
+            if (String.IsNullOrEmpty(str)) return 0;
+            uint hash = 0;
+            foreach (byte b in System.Text.Encoding.Unicode.GetBytes(str))
+            {
+                hash += b;
+                hash += (hash << 10);
+                hash ^= (hash >> 6);
+            }
+            hash += (hash << 3);
+            hash ^= (hash >> 11);
+            hash += (hash << 15);
+            return (int)(hash % 99999);
+        }
+
+        public static double UVfromDBM(double dbm)
+        {
+            return Math.Sqrt(Math.Pow(10, dbm / 10.0) * 50.0 * 1e-3) * 1e6;
+        }
+
+        public static void SMeterFromDBM2(double dbm, bool above30, out int s, out int over9)
+        {
+            double floor = above30 ? -144.0 : -124.0;
+            double s9 = above30 ? -90.0 : -70.0;
+            if (dbm <= floor) { s = 0; over9 = 0; return; }
+            if (dbm <= s9)
+            {
+                s = (int)Math.Ceiling((dbm - floor) / 6.0);
+                if (s < 1) s = 1;
+                if (s > 9) s = 9;
+                over9 = 0;
+                return;
+            }
+            s = 9;
+            double d = dbm - s9;
+            if (d <= 4) over9 = 5;
+            else if (d <= 10) over9 = 10;
+            else if (d <= 14) over9 = 15;
+            else if (d <= 24) over9 = 20;
+            else if (d <= 34) over9 = 30;
+            else if (d <= 44) over9 = 40;
+            else if (d <= 54) over9 = 50;
+            else over9 = 60;
+        }
+
+        public static string SMeterFromDBM(double dbm, bool above30)
+        {
+            int s, over;
+            SMeterFromDBM2(dbm, above30, out s, out over);
+            string v = over > 0 ? "S 9 + " + over.ToString() : "S " + s.ToString();
+            return "    " + v;
+        }
+
+        public static void FadeIn(Form form, int msTimeToFade)
+        {
+            if (form != null) form.Opacity = 1.0;
+        }
+    }
+
+    public static class BandStackManager
+    {
+        public static string BandToString(Band b)
+        {
+            string s = b.ToString();
+            if (s.StartsWith("B", StringComparison.Ordinal) && s.Length > 1)
+                return s.Substring(1);
+            return s;
+        }
     }
 
     sealed unsafe public partial class Console
     {
         private bool p25_meters_started = false;
+
+        public bool VFOASubInUse { get { return false; } }
+        public bool IsSetupFormNull { get { return setupForm == null; } }
+        public Setup SetupForm { get { return setupForm; } }
 
         internal Dictionary<Reading, float> P25GetMeterReadings()
         {
