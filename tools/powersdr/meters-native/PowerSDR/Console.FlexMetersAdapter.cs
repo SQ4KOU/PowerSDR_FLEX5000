@@ -2,6 +2,13 @@ namespace PowerSDR
 {
     sealed unsafe public partial class Console
     {
+        private const string FlexMetersDatabaseTableName = "FlexMeters";
+        private static readonly System.TimeSpan FlexMetersLiveInterval =
+            System.TimeSpan.FromMilliseconds(100.0);
+
+        private FlexMeters.DataTableMeterStore flexMetersStore;
+        private FlexMeters.MeterWorkspaceRuntimeHost flexMetersWorkspaceHost;
+
         private sealed class FlexMetersTelemetryAdapter : FlexMeters.IMeterTelemetrySource
         {
             private readonly Console _console;
@@ -61,6 +68,72 @@ namespace PowerSDR
             return new FlexMeters.MeterLiveRuntime(
                 CreateFlexMetersTelemetrySource(),
                 workspace);
+        }
+
+        private void InitializeFlexMetersWorkspaceRuntime()
+        {
+            if (flexMetersWorkspaceHost != null)
+                return;
+
+            if (DB.ds == null)
+                throw new System.InvalidOperationException(
+                    "FlexMeters workspace cannot start before DB.Init.");
+
+            System.Data.DataTable table;
+            if (DB.ds.Tables.Contains(FlexMetersDatabaseTableName))
+            {
+                table = DB.ds.Tables[FlexMetersDatabaseTableName];
+            }
+            else
+            {
+                table = new System.Data.DataTable(FlexMetersDatabaseTableName);
+                DB.ds.Tables.Add(table);
+            }
+
+            flexMetersStore = new FlexMeters.DataTableMeterStore(table);
+            flexMetersWorkspaceHost = new FlexMeters.MeterWorkspaceRuntimeHost(
+                flexMetersStore,
+                CreateFlexMetersTelemetrySource());
+            flexMetersWorkspaceHost.Start(FlexMetersLiveInterval);
+        }
+
+        internal void ReplaceFlexMetersWorkspace(
+            FlexMeters.MeterWorkspaceSnapshot workspace)
+        {
+            if (workspace == null)
+                throw new System.ArgumentNullException("workspace");
+
+            if (flexMetersWorkspaceHost == null)
+                InitializeFlexMetersWorkspaceRuntime();
+
+            flexMetersWorkspaceHost.ReplaceWorkspace(workspace);
+
+            // ReplaceAll mutates the dedicated DataSet table atomically.
+            // Explicit configuration saves are persisted immediately to disk.
+            DB.Update();
+        }
+
+        internal void ReloadFlexMetersWorkspaceRuntime()
+        {
+            if (flexMetersWorkspaceHost == null)
+                InitializeFlexMetersWorkspaceRuntime();
+            else
+                flexMetersWorkspaceHost.ReloadFromStore();
+        }
+
+        internal FlexMeters.MeterWorkspaceRuntimeHost FlexMetersWorkspaceHost
+        {
+            get { return flexMetersWorkspaceHost; }
+        }
+
+        private void ShutdownFlexMetersWorkspaceRuntime()
+        {
+            FlexMeters.MeterWorkspaceRuntimeHost host = flexMetersWorkspaceHost;
+            flexMetersWorkspaceHost = null;
+            flexMetersStore = null;
+
+            if (host != null)
+                host.Dispose();
         }
     }
 }

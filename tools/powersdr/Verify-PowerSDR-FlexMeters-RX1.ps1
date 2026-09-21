@@ -7,15 +7,17 @@ $SourceRoot=(Resolve-Path $SourceRoot).Path
 $adapter=Join-Path $SourceRoot 'Console\Console.FlexMetersAdapter.cs'
 $csproj=Join-Path $SourceRoot 'Console\PowerSDR.csproj'
 $cat=Join-Path $SourceRoot 'Console\CAT\CATCommands.cs'
+$consoleCs=Join-Path $SourceRoot 'Console\console.cs'
 $dll=Join-Path $SourceRoot 'bin\Release\FlexMeters.dll'
 
-foreach($required in @($adapter,$csproj,$cat,$dll)){
+foreach($required in @($adapter,$csproj,$cat,$consoleCs,$dll)){
     if(!(Test-Path $required)){throw "FlexMeters RX1 verification input missing: $required"}
 }
 
 $a=[IO.File]::ReadAllText($adapter)
 $p=[IO.File]::ReadAllText($csproj)
 $c=[IO.File]::ReadAllText($cat)
+$console=[IO.File]::ReadAllText($consoleCs)
 
 if($a -match '\bdynamic\b'){throw 'dynamic is forbidden in Console.FlexMetersAdapter.cs'}
 if(([regex]::Matches($p,'<Reference Include="FlexMeters">')).Count -ne 1){throw 'FlexMeters reference count is not exactly one'}
@@ -48,10 +50,35 @@ $adapterTokens=@(
     'Flex5000Rx1SignalCalibration.Apply',
     'MeterReadingResult.Unsupported',
     'CreateFlexMetersLiveRuntime',
-    'new FlexMeters.MeterLiveRuntime'
+    'new FlexMeters.MeterLiveRuntime',
+    'MeterWorkspaceRuntimeHost',
+    'DataTableMeterStore',
+    'DB.ds.Tables.Contains(FlexMetersDatabaseTableName)',
+    'ReplaceFlexMetersWorkspace',
+    'ReloadFlexMetersWorkspaceRuntime',
+    'DB.Update()',
+    'ShutdownFlexMetersWorkspaceRuntime'
 )
 foreach($token in $adapterTokens){
     if(!$a.Contains($token)){throw "FlexMeters RX1 adapter gate missing: $token"}
+}
+
+$lifecycleTokens=@(
+    'InitializeFlexMetersWorkspaceRuntime();',
+    'ShutdownFlexMetersWorkspaceRuntime();'
+)
+foreach($token in $lifecycleTokens){
+    if(!$console.Contains($token)){throw "FlexMeters lifecycle hook missing from console.cs: $token"}
+}
+if(([regex]::Matches($console,'InitializeFlexMetersWorkspaceRuntime\(\);')).Count -ne 1){
+    throw 'FlexMeters startup hook count is not exactly one'
+}
+if(([regex]::Matches($console,'ShutdownFlexMetersWorkspaceRuntime\(\);')).Count -ne 2){
+    throw 'FlexMeters shutdown hook count is not exactly two'
+}
+if($console.IndexOf('InitializeFlexMetersWorkspaceRuntime();',[StringComparison]::Ordinal) -lt
+   $console.IndexOf('DB_Exists = DB.Init(',[StringComparison]::Ordinal)){
+    throw 'FlexMeters workspace starts before DB.Init'
 }
 
 foreach($setupName in @('setup.cs','setup.Designer.cs')){

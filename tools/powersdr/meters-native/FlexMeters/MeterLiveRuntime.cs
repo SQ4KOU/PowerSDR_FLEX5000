@@ -141,7 +141,7 @@ namespace FlexMeters
                 if (_timer != null)
                     throw new InvalidOperationException("Meter live runtime is already started.");
 
-                _timer = new Timer(TimerTick, null, TimeSpan.Zero, interval);
+                _timer = new Timer(TimerTick, null, interval, interval);
             }
         }
 

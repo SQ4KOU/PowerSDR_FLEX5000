@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.IO;
 using FlexMeters;
 
 namespace FlexMeters.Tests
@@ -23,8 +24,13 @@ namespace FlexMeters.Tests
             Run("live runtime deduplicates identical telemetry requests", LiveRuntimeDeduplicatesIdenticalRequests);
             Run("live runtime preserves unsupported without zero", LiveRuntimePreservesUnsupportedWithoutZero);
             Run("live runtime ignores unbound item types", LiveRuntimeIgnoresUnboundItemTypes);
+            Run("store survives DataSet XML restart", StoreSurvivesDataSetXmlRestart);
+            Run("workspace host starts from replace-all store", WorkspaceHostStartsFromStore);
+            Run("workspace host replace-all reloads runtime", WorkspaceHostReplaceAllReloadsRuntime);
+            Run("workspace host reload sees external store change", WorkspaceHostReloadSeesExternalStoreChange);
+            Run("workspace host stop disposes runtime", WorkspaceHostStopDisposesRuntime);
 
-            Console.WriteLine("PASS " + _passed + "/12");
+            Console.WriteLine("PASS " + _passed + "/17");
             return 0;
         }
 
@@ -234,6 +240,133 @@ namespace FlexMeters.Tests
             }
         }
 
+        private static void StoreSurvivesDataSetXmlRestart()
+        {
+            var first = new DataSet("PowerSDR");
+            DataTable table = NewTable();
+            first.Tables.Add(table);
+            var store = new DataTableMeterStore(table);
+            MeterWorkspaceSnapshot expected = BuildTwoContainerSnapshot();
+            store.ReplaceAll(expected);
+
+            string xml;
+            using (var writer = new StringWriter())
+            {
+                first.WriteXml(writer, XmlWriteMode.WriteSchema);
+                xml = writer.ToString();
+            }
+
+            var restarted = new DataSet("PowerSDR");
+            using (var reader = new StringReader(xml))
+                restarted.ReadXml(reader, XmlReadMode.ReadSchema);
+
+            True(restarted.Tables.Contains("FlexMeters"), "FlexMeters table missing after XML restart");
+            var restartedStore = new DataTableMeterStore(restarted.Tables["FlexMeters"]);
+            MeterWorkspaceSnapshot actual = restartedStore.Load();
+            AssertWorkspaceEqual(expected, actual);
+        }
+
+        private static void WorkspaceHostStartsFromStore()
+        {
+            var table = NewTable();
+            var store = new DataTableMeterStore(table);
+            store.ReplaceAll(BuildLiveWorkspace());
+
+            var fake = new FakeTelemetrySource();
+            fake.Set(MeterReading.SignalStrength, MeterReadingResult.Supported(-101.25));
+
+            using (var host = new MeterWorkspaceRuntimeHost(store, fake))
+            {
+                host.Start(TimeSpan.FromHours(1));
+                True(host.IsStarted, "workspace host did not start");
+                Equal(1, host.Workspace.Containers.Count, "workspace host container count");
+                Equal(2, host.Runtime.BindingCount, "workspace host binding count");
+                Equal(1, fake.ReadCount(MeterReading.SignalStrength, MeterReceiver.Rx1), "initial host RX1 source reads");
+
+                MeterLiveValue value;
+                True(host.Current.TryGetValue(Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"), out value), "initial host live value missing");
+                Equal(-101.25, RequireValue(value.Result), "initial host live signal");
+            }
+        }
+
+        private static void WorkspaceHostReplaceAllReloadsRuntime()
+        {
+            var table = NewTable();
+            var store = new DataTableMeterStore(table);
+            MeterWorkspaceSnapshot initial = BuildTwoContainerSnapshot();
+            store.ReplaceAll(initial);
+            Guid deletedId = initial.Containers[1].Id;
+
+            var fake = new FakeTelemetrySource();
+            fake.Set(MeterReading.SignalStrength, MeterReceiver.Rx1, MeterReadingResult.Supported(-99.0));
+            fake.Set(MeterReading.SignalStrength, MeterReceiver.Rx2, MeterReadingResult.Unsupported("RX2 not implemented."));
+
+            using (var host = new MeterWorkspaceRuntimeHost(store, fake))
+            {
+                host.Start(TimeSpan.FromHours(1));
+                MeterLiveRuntime firstRuntime = host.Runtime;
+
+                MeterWorkspaceSnapshot replacement = BuildLiveWorkspace();
+                host.ReplaceWorkspace(replacement);
+
+                False(Object.ReferenceEquals(firstRuntime, host.Runtime), "workspace host did not replace runtime");
+                Equal(1, host.Workspace.Containers.Count, "replacement workspace container count");
+                Equal(2, host.Runtime.BindingCount, "replacement workspace binding count");
+                RawTableDoesNotContain(table, deletedId.ToString("D"));
+
+                Throws<ObjectDisposedException>(
+                    delegate { firstRuntime.RefreshNow(); },
+                    "replaced runtime was not disposed");
+            }
+        }
+
+        private static void WorkspaceHostReloadSeesExternalStoreChange()
+        {
+            var table = NewTable();
+            var store = new DataTableMeterStore(table);
+            store.ReplaceAll(BuildLiveWorkspace());
+
+            var fake = new FakeTelemetrySource();
+            fake.Set(MeterReading.SignalStrength, MeterReadingResult.Supported(-90.0));
+
+            using (var host = new MeterWorkspaceRuntimeHost(store, fake))
+            {
+                host.Start(TimeSpan.FromHours(1));
+                Equal(1, host.Workspace.Containers.Count, "pre-reload workspace count");
+
+                store.ReplaceAll(new MeterWorkspaceSnapshot());
+                host.ReloadFromStore();
+
+                Equal(0, host.Workspace.Containers.Count, "external store reload workspace count");
+                Equal(0, host.Runtime.BindingCount, "external store reload binding count");
+                Equal(0, host.Current.Values.Count, "external store reload live value count");
+            }
+        }
+
+        private static void WorkspaceHostStopDisposesRuntime()
+        {
+            var table = NewTable();
+            var store = new DataTableMeterStore(table);
+            store.ReplaceAll(BuildLiveWorkspace());
+
+            var fake = new FakeTelemetrySource();
+            fake.Set(MeterReading.SignalStrength, MeterReadingResult.Supported(-95.0));
+
+            var host = new MeterWorkspaceRuntimeHost(store, fake);
+            host.Start(TimeSpan.FromHours(1));
+            MeterLiveRuntime runtime = host.Runtime;
+
+            host.Stop();
+            False(host.IsStarted, "workspace host remained started after Stop");
+            True(host.Runtime == null, "workspace host retained runtime after Stop");
+
+            Throws<ObjectDisposedException>(
+                delegate { runtime.RefreshNow(); },
+                "stopped runtime was not disposed");
+
+            host.Dispose();
+        }
+
         private static MeterWorkspaceSnapshot BuildLiveWorkspace()
         {
             var workspace = new MeterWorkspaceSnapshot();
@@ -403,6 +536,20 @@ namespace FlexMeters.Tests
         {
             if (!EqualityComparer<T>.Default.Equals(expected, actual))
                 throw new Exception(message + ": expected=" + expected + " actual=" + actual);
+        }
+
+        private static void Throws<T>(Action action, string message) where T : Exception
+        {
+            try
+            {
+                action();
+            }
+            catch (T)
+            {
+                return;
+            }
+
+            throw new Exception(message + ": expected exception " + typeof(T).Name);
         }
 
         private sealed class FakeTelemetrySource : IMeterTelemetrySource
