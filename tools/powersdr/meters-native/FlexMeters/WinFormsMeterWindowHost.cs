@@ -16,6 +16,8 @@ namespace FlexMeters
                 new Dictionary<Guid, string>();
             private readonly Dictionary<Guid, ThetisSignalMeterControl> _renderers =
                 new Dictionary<Guid, ThetisSignalMeterControl>();
+            private readonly Dictionary<Guid, FlexTxMeterControl> _txRenderers =
+                new Dictionary<Guid, FlexTxMeterControl>();
 
             public MeterContainerForm(MeterContainerSnapshot container)
             {
@@ -52,6 +54,7 @@ namespace FlexMeters
                     _itemControls.Clear();
                     _itemTypes.Clear();
                     _renderers.Clear();
+                    _txRenderers.Clear();
 
                     if (container.Items.Count == 0)
                     {
@@ -83,20 +86,28 @@ namespace FlexMeters
                 for (int i = 0; i < container.Items.Count; i++)
                 {
                     MeterItemSnapshot item = container.Items[i];
-                    ThetisSignalMeterControl renderer;
-                    if (!_renderers.TryGetValue(item.Id, out renderer))
-                        continue;
-
                     MeterLiveValue value;
-                    if (live == null || !live.TryGetValue(item.Id, out value))
+                    bool hasValue = live != null && live.TryGetValue(item.Id, out value);
+
+                    ThetisSignalMeterControl signalRenderer;
+                    if (_renderers.TryGetValue(item.Id, out signalRenderer))
                     {
-                        renderer.UpdateReading(
-                            MeterReadingResult.Unsupported("No live reading is available."),
+                        signalRenderer.UpdateReading(
+                            hasValue
+                                ? value.Result
+                                : MeterReadingResult.Unsupported("No live reading is available."),
                             aboveS9Frequency);
                         continue;
                     }
 
-                    renderer.UpdateReading(value.Result, aboveS9Frequency);
+                    FlexTxMeterControl txRenderer;
+                    if (_txRenderers.TryGetValue(item.Id, out txRenderer))
+                    {
+                        txRenderer.UpdateReading(
+                            hasValue
+                                ? value.Result
+                                : MeterReadingResult.Unsupported("No live reading is available."));
+                    }
                 }
             }
 
@@ -106,6 +117,13 @@ namespace FlexMeters
                 if (_renderers.TryGetValue(itemId, out renderer))
                 {
                     text = renderer.DiagnosticText;
+                    return true;
+                }
+
+                FlexTxMeterControl txRenderer;
+                if (_txRenderers.TryGetValue(itemId, out txRenderer))
+                {
+                    text = txRenderer.DiagnosticText;
                     return true;
                 }
 
@@ -129,6 +147,13 @@ namespace FlexMeters
                     return true;
                 }
 
+                FlexTxMeterControl txRenderer;
+                if (_txRenderers.TryGetValue(itemId, out txRenderer))
+                {
+                    kind = txRenderer.RendererKind;
+                    return true;
+                }
+
                 kind = null;
                 return false;
             }
@@ -139,6 +164,13 @@ namespace FlexMeters
                 if (_renderers.TryGetValue(itemId, out renderer))
                 {
                     position = renderer.NormalizedPosition;
+                    return true;
+                }
+
+                FlexTxMeterControl txRenderer;
+                if (_txRenderers.TryGetValue(itemId, out txRenderer))
+                {
+                    position = txRenderer.NormalizedPosition;
                     return true;
                 }
 
@@ -179,11 +211,22 @@ namespace FlexMeters
 
             private Control CreateItemControl(MeterItemSnapshot item)
             {
-                if (String.Equals(item.Type, "SIGNAL_STRENGTH", StringComparison.Ordinal) ||
-                    String.Equals(item.Type, "SIGNAL_TEXT", StringComparison.Ordinal))
+                MeterItemDescriptor descriptor;
+                if (!MeterItemCatalog.TryGet(item.Type, out descriptor))
+                    return CreateFallbackLabel(item.Type + ": renderer not implemented");
+
+                if (descriptor.RendererKind == MeterItemRendererKind.SignalBar ||
+                    descriptor.RendererKind == MeterItemRendererKind.SignalText)
                 {
                     var renderer = new ThetisSignalMeterControl(item.Type);
                     _renderers.Add(item.Id, renderer);
+                    return renderer;
+                }
+
+                if (descriptor.RendererKind == MeterItemRendererKind.Linear)
+                {
+                    var renderer = new FlexTxMeterControl(descriptor);
+                    _txRenderers.Add(item.Id, renderer);
                     return renderer;
                 }
 
