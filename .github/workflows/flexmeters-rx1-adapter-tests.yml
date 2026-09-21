@@ -94,7 +94,7 @@ jobs:
       <HintPath>..\bin\Release\PowerMate.dll</HintPath>
       <Private>True</Private>
     </Reference>
-"@
+          "@
           $cs=$rx.Replace($cs,[Environment]::NewLine+$pmRef,1)
           [IO.File]::WriteAllText($csproj,$cs,[Text.UTF8Encoding]::new($false))
 
