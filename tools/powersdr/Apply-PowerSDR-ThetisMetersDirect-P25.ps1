@@ -102,9 +102,9 @@ $bridge=@'
 '@
 $mm=$mm.Replace($anchor,$bridge+$anchor)
 
-$loop='            while (_meterThreadRunning)'+$nl+'            {'+$nl
-if(!$mm.Contains($loop)){throw 'P25 MeterManager loop anchor missing'}
-$mm=$mm.Replace($loop,$loop+'                P25RefreshPowerSDR();'+$nl)
+$loopRx='(?m)^(\s*)while \(_meterThreadRunning\)\s*\{'
+if(-not [regex]::IsMatch($mm,$loopRx)){throw 'P25 MeterManager loop anchor missing'}
+$mm=[regex]::Replace($mm,$loopRx,{ param($m) $m.Value+$nl+$m.Groups[1].Value+'    P25RefreshPowerSDR();' },1)
 
 # Remove only the Thetis event registration call in Init; direct polling above replaces it.
 $mm=$mm.Replace('            addDelegates();                       ','            addDelegates();')
