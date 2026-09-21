@@ -21,12 +21,34 @@ namespace FlexMeters
             Items = new List<MeterItemSnapshot>();
             VisibleOnReceive = true;
             VisibleOnTransmit = true;
+            Border = true;
+            Highlight = false;
+            Locked = false;
+            NoTitleBar = false;
+            AutoHeight = false;
+            Minimises = true;
+            HideWhenReceiverNotUsed = true;
+            BackgroundArgb = unchecked((int)0xFF202020);
+            Notes = "";
         }
 
         public Guid Id { get; set; }
         public MeterReceiver Receiver { get; set; }
         public bool VisibleOnReceive { get; set; }
         public bool VisibleOnTransmit { get; set; }
+
+        // Thetis ucMeter container state. These deliberately mirror the
+        // container options exposed by Setup -> Appearance -> Meters/Gadgets.
+        public bool Border { get; set; }
+        public bool Highlight { get; set; }
+        public bool Locked { get; set; }
+        public bool NoTitleBar { get; set; }
+        public bool AutoHeight { get; set; }
+        public bool Minimises { get; set; }
+        public bool HideWhenReceiverNotUsed { get; set; }
+        public int BackgroundArgb { get; set; }
+        public string Notes { get; set; }
+
         public MeterWindowGeometry Geometry { get; set; }
         public IList<MeterItemSnapshot> Items { get; private set; }
     }
