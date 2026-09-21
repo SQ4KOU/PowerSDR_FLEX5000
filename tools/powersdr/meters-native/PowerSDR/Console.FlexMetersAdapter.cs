@@ -2,11 +2,10 @@ namespace PowerSDR
 {
     sealed unsafe public partial class Console
     {
-        private const string FlexMetersDatabaseTableName = "FlexMeters";
         private static readonly System.TimeSpan FlexMetersLiveInterval =
             System.TimeSpan.FromMilliseconds(100.0);
 
-        private FlexMeters.DataTableMeterStore flexMetersStore;
+        private FlexMeters.ThetisOptionsMeterStore flexMetersStore;
         private FlexMeters.MeterWorkspaceRuntimeHost flexMetersWorkspaceHost;
         private FlexMeters.MeterWorkspaceManager flexMetersContainerManager;
         private FlexMeters.WinFormsMeterWindowHost flexMetersWindowHost;
@@ -250,18 +249,25 @@ namespace PowerSDR
                 throw new System.InvalidOperationException(
                     "FlexMeters workspace cannot start before DB.Init.");
 
+            // Thetis stores MultiMeter state in the native Options key/value
+            // table (meterContData_*, meterData_*, meterIGData_* and
+            // meterIGSettings_2_*). Do the same here instead of maintaining a
+            // separate custom DataTable that sits outside Setup's normal
+            // options lifecycle.
             System.Data.DataTable table;
-            if (DB.ds.Tables.Contains(FlexMetersDatabaseTableName))
+            if (DB.ds.Tables.Contains("Options"))
             {
-                table = DB.ds.Tables[FlexMetersDatabaseTableName];
+                table = DB.ds.Tables["Options"];
             }
             else
             {
-                table = new System.Data.DataTable(FlexMetersDatabaseTableName);
+                table = new System.Data.DataTable("Options");
+                table.Columns.Add("Key", typeof(string));
+                table.Columns.Add("Value", typeof(string));
                 DB.ds.Tables.Add(table);
             }
 
-            flexMetersStore = new FlexMeters.DataTableMeterStore(table);
+            flexMetersStore = new FlexMeters.ThetisOptionsMeterStore(table);
             flexMetersWorkspaceHost = new FlexMeters.MeterWorkspaceRuntimeHost(
                 flexMetersStore,
                 CreateFlexMetersTelemetrySource());
