@@ -39,6 +39,7 @@ namespace FlexMeters
             BuildSupportedTypes();
 
         private readonly MeterWorkspaceManager _manager;
+        private readonly Action<Guid> _recoverWindow;
         private bool _refreshing;
         private bool _disposedSubscription;
 
@@ -95,11 +96,19 @@ namespace FlexMeters
         private Dictionary<string, string> _copiedSettings;
 
         public FlexMetersEditorForm(MeterWorkspaceManager manager)
+            : this(manager, null)
+        {
+        }
+
+        public FlexMetersEditorForm(
+            MeterWorkspaceManager manager,
+            Action<Guid> recoverWindow)
         {
             if (manager == null)
                 throw new ArgumentNullException("manager");
 
             _manager = manager;
+            _recoverWindow = recoverWindow;
 
             Text = "Meters/Gadgets";
             StartPosition = FormStartPosition.CenterParent;
@@ -989,6 +998,8 @@ namespace FlexMeters
             container.VisibleOnReceive = true;
             container.VisibleOnTransmit = true;
             _manager.ReplaceContainer(container);
+            if (_recoverWindow != null)
+                _recoverWindow(container.Id);
             RefreshFromWorkspace(container.Id);
         }
 
