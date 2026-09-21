@@ -76,3 +76,5 @@ jobs:
             artifacts/powersdr/POWERSDR_BUILD_MANIFEST.txt
             artifacts/powersdr/logs/**
           if-no-files-found: error
+
+# P24_NATIVE_REBUILD_TRIGGER
