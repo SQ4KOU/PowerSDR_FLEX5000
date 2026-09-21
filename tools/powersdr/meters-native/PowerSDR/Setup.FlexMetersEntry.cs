@@ -99,7 +99,7 @@ namespace PowerSDR
             flexMetersAppearanceStatus.Text =
                 "Containers: " + manager.ContainerCount.ToString() +
                 "\r\n" +
-                "Implemented native items: Signal Peak, Signal Text (RX1)";
+                "Native: RX1 Signal Peak/Text; TX MIC/EQ/Leveler/COMP/ALC/FWD/REV/SWR";
         }
     }
 }
