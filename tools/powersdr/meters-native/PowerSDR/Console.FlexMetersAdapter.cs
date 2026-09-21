@@ -340,6 +340,12 @@ namespace PowerSDR
             get { return flexMetersWindowHost; }
         }
 
+        internal bool RecoverFlexMetersContainer(System.Guid containerId)
+        {
+            return flexMetersWindowHost != null &&
+                flexMetersWindowHost.RecoverWindow(containerId);
+        }
+
         internal void AddFlexMetersContainer(FlexMeters.MeterContainerSnapshot container)
         {
             if (flexMetersContainerManager == null)
