@@ -74,6 +74,14 @@ foreach($f in $files){
 '@
         $c=Replace-Between $c '        private static void removeDelegates()' '        private static void OnSplitChanged' $rem
 
+        $settingsClick = @'
+        private static void ucMeter_SettingsClicked(object sender, EventArgs e)
+        {
+            // Setup integration is applied separately; the native meter remains operational.
+        }
+'@
+        $c=Replace-Between $c '        private static void ucMeter_SettingsClicked(object sender, EventArgs e)' '        private static void ucMeter_FloatingDockedClicked' $settingsClick
+
         $init = @'
         private static void initConsoleData(int rx)
         {
@@ -156,6 +164,7 @@ foreach($f in $files){
     }
 
     if($name -eq 'ucMeter.cs'){
+        $c=$c.Replace('btnPin.BackgroundImage = _pinOnTop ? null : null;','btnPin.BackgroundImage = null;')
         $addUc = @'
         private void addDelegates()
         {
