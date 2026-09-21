@@ -113,50 +113,21 @@ namespace PowerSDR
 
         internal float P22ReadFlex5000Rx1SignalDbm()
         {
-            // Copied from the native MeterRXMode.SIGNAL_STRENGTH FLEX5000 branch
-            // in pinned KE9NS console.cs. No new calibration constants.
+            // Exact FLEX5000 branch from the native MeterRXMode.SIGNAL_STRENGTH
+            // path in pinned KE9NS console.cs. This adapter intentionally has
+            // no fallback for other radio models.
+            if (current_model != Model.FLEX5000)
+                throw new InvalidOperationException("P22 RX1 telemetry adapter supports FLEX5000 only.");
+
             float num = DttSP.CalculateRXMeter(0, 0, DttSP.MeterType.SIGNAL_STRENGTH);
 
-            if (fwc_init || hid_init)
-            {
-                switch (current_model)
-                {
-                    case Model.SDRX:
-                        num = num +
-                            rx1_meter_cal_offset +
-                            meter_offset +
-                            rx1_filter_size_cal_offset +
-                            rx1_xvtr_gain_offset;
-                        break;
-
-                    case Model.FLEX5000:
-                    case Model.FLEX3000:
-                        num = num +
-                            rx1_meter_cal_offset +
-                            rx1_preamp_offset[(int)rx1_preamp_mode] +
-                            rx1_filter_size_cal_offset +
-                            rx1_path_offset +
-                            rx1_xvtr_gain_offset +
-                            rx1_loop_offset;
-                        break;
-
-                    case Model.FLEX1500:
-                        num = num +
-                            rx1_meter_cal_offset +
-                            rx1_preamp_offset[(int)rx1_preamp_mode] +
-                            rx1_filter_size_cal_offset +
-                            rx1_xvtr_gain_offset;
-                        break;
-                }
-            }
-            else
-            {
-                num = num +
-                    rx1_meter_cal_offset +
-                    rx1_preamp_offset[(int)rx1_preamp_mode] +
-                    rx1_filter_size_cal_offset +
-                    rx1_xvtr_gain_offset;
-            }
+            num = num +
+                rx1_meter_cal_offset +
+                rx1_preamp_offset[(int)rx1_preamp_mode] +
+                rx1_filter_size_cal_offset +
+                rx1_path_offset +
+                rx1_xvtr_gain_offset +
+                rx1_loop_offset;
 
             return num;
         }
