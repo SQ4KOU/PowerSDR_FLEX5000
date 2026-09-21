@@ -140,10 +140,12 @@ foreach($f in $files){
         if($idx -lt 0){throw 'P25 UpdateMeters marker missing'}
         $c=$c.Insert($idx,$refresh)
 
-        $old='            while (_meterThreadRunning)' + $nl + '            {'
-        if(!$c.Contains($old)){throw 'P25 meter worker loop marker missing'}
-        $new=$old+$nl+'                P25RefreshPowerSDRHost();'
-        $c=$c.Replace($old,$new)
+        $loopMarker='while (_meterThreadRunning)'
+        $loopIndex=$c.IndexOf($loopMarker)
+        if($loopIndex -lt 0){throw 'P25 meter worker loop marker missing'}
+        $braceIndex=$c.IndexOf('{',$loopIndex+$loopMarker.Length)
+        if($braceIndex -lt 0){throw 'P25 meter worker opening brace missing'}
+        $c=$c.Insert($braceIndex+1,$nl+'                P25RefreshPowerSDRHost();')
     }
 
     if($name -eq 'ucMeter.cs'){
