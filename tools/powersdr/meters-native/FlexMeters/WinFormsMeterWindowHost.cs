@@ -86,7 +86,7 @@ namespace FlexMeters
                 for (int i = 0; i < container.Items.Count; i++)
                 {
                     MeterItemSnapshot item = container.Items[i];
-                    MeterLiveValue value;
+                    MeterLiveValue value = null;
                     bool hasValue = live != null && live.TryGetValue(item.Id, out value);
 
                     ThetisSignalMeterControl signalRenderer;
