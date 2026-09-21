@@ -11,9 +11,11 @@ $consoleCs=Join-Path $SourceRoot 'Console\console.cs'
 $setupCs=Join-Path $SourceRoot 'Console\setup.cs'
 $setupDesigner=Join-Path $SourceRoot 'Console\setup.Designer.cs'
 $setupEntry=Join-Path $SourceRoot 'Console\Setup.FlexMetersEntry.cs'
+$dspCs=Join-Path $SourceRoot 'Console\dsp.cs'
+$txMath=Join-Path $PSScriptRoot 'meters-native\FlexMeters\ThetisTxMeterMath.cs'
 $dll=Join-Path $SourceRoot 'bin\Release\FlexMeters.dll'
 
-foreach($required in @($adapter,$csproj,$cat,$consoleCs,$setupCs,$setupDesigner,$setupEntry,$dll)){
+foreach($required in @($adapter,$csproj,$cat,$consoleCs,$setupCs,$setupDesigner,$setupEntry,$dspCs,$txMath,$dll)){
     if(!(Test-Path $required)){throw "FlexMeters RX1 verification input missing: $required"}
 }
 
@@ -24,6 +26,8 @@ $console=[IO.File]::ReadAllText($consoleCs)
 $setup=[IO.File]::ReadAllText($setupCs)
 $setupDesignerText=[IO.File]::ReadAllText($setupDesigner)
 $entry=[IO.File]::ReadAllText($setupEntry)
+$dsp=[IO.File]::ReadAllText($dspCs)
+$txMathText=[IO.File]::ReadAllText($txMath)
 
 if($a -match '\bdynamic\b'){throw 'dynamic is forbidden in Console.FlexMetersAdapter.cs'}
 if(([regex]::Matches($p,'<Reference Include="FlexMeters">')).Count -ne 1){throw 'FlexMeters reference count is not exactly one'}
@@ -42,6 +46,25 @@ $nativeTokens=@(
 )
 foreach($token in $nativeTokens){
     if(!$c.Contains($token)){throw "Pinned KE9NS native RX1 evidence missing: $token"}
+}
+
+$txNativeTokens=@(
+    'dsp_tx[0] = new DSPTX(1);',
+    'DttSP.SetThreadProcessingMode(1, 1);'
+)
+foreach($token in $txNativeTokens){
+    if(!$dsp.Contains($token)){throw "Pinned KE9NS native TX-thread evidence missing: $token"}
+}
+
+$txMathTokens=@(
+    'Math.Max(-195.0, -raw)',
+    'Math.Max(-30.0, -raw)',
+    'Math.Max(0.0, raw)',
+    'Math.Max(0.0, -raw)',
+    'return Stage(alcPeakRaw) + AlcGain(alcGainRaw);'
+)
+foreach($token in $txMathTokens){
+    if(!$txMathText.Contains($token)){throw "Pinned Thetis TX normalization gate missing: $token"}
 }
 
 $adapterTokens=@(
@@ -81,7 +104,30 @@ $adapterTokens=@(
     'CreateFlexMetersRadioState(),',
     'Mox = _console.MOX',
     'Tune = _console.TUN',
-    'EnsureFlexMetersWorkspaceManager'
+    'EnsureFlexMetersWorkspaceManager',
+    'DttSP.CalculateTXMeter(1, meterType)',
+    'DttSP.MeterType.MIC',
+    'DttSP.MeterType.MIC_PK',
+    'DttSP.MeterType.EQ',
+    'DttSP.MeterType.EQ_PK',
+    'DttSP.MeterType.LEVELER',
+    'DttSP.MeterType.LEVELER_PK',
+    'DttSP.MeterType.LVL_G',
+    'DttSP.MeterType.COMP',
+    'DttSP.MeterType.COMP_PK',
+    'DttSP.MeterType.ALC',
+    'DttSP.MeterType.ALC_PK',
+    'DttSP.MeterType.ALC_G',
+    'FlexMeters.ThetisTxMeterMath.Mic',
+    'FlexMeters.ThetisTxMeterMath.Stage',
+    'FlexMeters.ThetisTxMeterMath.LevelerGain',
+    'FlexMeters.ThetisTxMeterMath.AlcGain',
+    'FlexMeters.ThetisTxMeterMath.AlcGroup',
+    '_console.FWCPAPower(_console.pa_fwd_power)',
+    '_console.FWCPAPower(_console.pa_rev_power)',
+    '_console.swr_table[(int)_console.TXBand]',
+    '_console.FWCSWR(',
+    '"TX meter reading is unavailable while the radio is not transmitting."'
 )
 foreach($token in $adapterTokens){
     if(!$a.Contains($token)){throw "FlexMeters RX1 adapter gate missing: $token"}
@@ -131,3 +177,4 @@ foreach($token in $entryTokens){
 
 Write-Host 'FLEXMETERS_SETUP_ENTRY=PASS'
 Write-Host 'FLEXMETERS_RX1_SOURCE_GATE=PASS'
+Write-Host 'FLEXMETERS_TX_FWC_SOURCE_GATE=PASS'
