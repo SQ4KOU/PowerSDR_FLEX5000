@@ -2,11 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Globalization;
-using System.IO;
 
 namespace FlexMeters
 {
-    public sealed class MeterStoreFormatException : InvalidDataException
+    public sealed class MeterStoreFormatException : FormatException
     {
         public MeterStoreFormatException(string message) : base(message) { }
         public MeterStoreFormatException(string message, Exception innerException) : base(message, innerException) { }
