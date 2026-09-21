@@ -19,8 +19,12 @@ namespace FlexMeters.Tests
             Run("fake telemetry signal changes are observable", FakeTelemetrySignalChangesAreObservable);
             Run("FLEX-5000 RX1 calibration matches native KE9NS sum", Flex5000Rx1CalibrationMatchesNativeSum);
             Run("FLEX-5000 RX1 loop gain is conditional", Flex5000Rx1LoopGainIsConditional);
+            Run("live runtime propagates changing RX1 signal", LiveRuntimePropagatesChangingRx1Signal);
+            Run("live runtime deduplicates identical telemetry requests", LiveRuntimeDeduplicatesIdenticalRequests);
+            Run("live runtime preserves unsupported without zero", LiveRuntimePreservesUnsupportedWithoutZero);
+            Run("live runtime ignores unbound item types", LiveRuntimeIgnoresUnboundItemTypes);
 
-            Console.WriteLine("PASS " + _passed + "/8");
+            Console.WriteLine("PASS " + _passed + "/12");
             return 0;
         }
 
@@ -143,6 +147,114 @@ namespace FlexMeters.Tests
 
             Equal(-91.0, withoutLoop, "RX1 value without loop");
             Equal(-87.25, withLoop, "RX1 value with loop");
+        }
+
+        private static void LiveRuntimePropagatesChangingRx1Signal()
+        {
+            var fake = new FakeTelemetrySource();
+            MeterWorkspaceSnapshot workspace = BuildLiveWorkspace();
+
+            fake.Set(MeterReading.SignalStrength, MeterReadingResult.Supported(-112.5));
+            using (var runtime = new MeterLiveRuntime(fake, workspace))
+            {
+                int events = 0;
+                runtime.Updated += delegate { events++; };
+
+                MeterLiveSnapshot first = runtime.RefreshNow();
+                MeterLiveValue firstValue;
+                True(first.TryGetValue(Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"), out firstValue), "first live value missing");
+                Equal(-112.5, RequireValue(firstValue.Result), "first live RX1 signal");
+
+                fake.Set(MeterReading.SignalStrength, MeterReadingResult.Supported(-84.75));
+                MeterLiveSnapshot second = runtime.RefreshNow();
+                MeterLiveValue secondValue;
+                True(second.TryGetValue(Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"), out secondValue), "second live value missing");
+                Equal(-84.75, RequireValue(secondValue.Result), "second live RX1 signal");
+                Equal(1L, first.Sequence, "first live sequence");
+                Equal(2L, second.Sequence, "second live sequence");
+                Equal(2, events, "live update event count");
+            }
+        }
+
+        private static void LiveRuntimeDeduplicatesIdenticalRequests()
+        {
+            var fake = new FakeTelemetrySource();
+            MeterWorkspaceSnapshot workspace = BuildLiveWorkspace();
+            fake.Set(MeterReading.SignalStrength, MeterReadingResult.Supported(-93.0));
+
+            using (var runtime = new MeterLiveRuntime(fake, workspace))
+            {
+                MeterLiveSnapshot snapshot = runtime.RefreshNow();
+                Equal(2, runtime.BindingCount, "bound live item count");
+                Equal(1, fake.ReadCount(MeterReading.SignalStrength, MeterReceiver.Rx1), "RX1 signal source read count");
+                Equal(2, snapshot.Values.Count, "live values count");
+            }
+        }
+
+        private static void LiveRuntimePreservesUnsupportedWithoutZero()
+        {
+            var fake = new FakeTelemetrySource();
+            MeterWorkspaceSnapshot workspace = BuildLiveWorkspace();
+            fake.Set(MeterReading.SignalStrength, MeterReadingResult.Unsupported("Radio off."));
+
+            using (var runtime = new MeterLiveRuntime(fake, workspace))
+            {
+                MeterLiveSnapshot snapshot = runtime.RefreshNow();
+                MeterLiveValue value;
+                True(snapshot.TryGetValue(Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"), out value), "unsupported live value missing");
+                False(value.Result.IsSupported, "unsupported live status");
+                False(value.Result.Value.HasValue, "unsupported live value must stay null");
+                Equal("Radio off.", value.Result.Reason, "unsupported live reason");
+            }
+        }
+
+        private static void LiveRuntimeIgnoresUnboundItemTypes()
+        {
+            var fake = new FakeTelemetrySource();
+            var workspace = new MeterWorkspaceSnapshot();
+            var container = new MeterContainerSnapshot
+            {
+                Id = Guid.Parse("33333333-3333-3333-3333-333333333333"),
+                Receiver = MeterReceiver.Rx1,
+                Geometry = new MeterWindowGeometry { X = 1, Y = 2, Width = 100, Height = 80 }
+            };
+            container.Items.Add(new MeterItemSnapshot
+            {
+                Id = Guid.Parse("cccccccc-cccc-cccc-cccc-cccccccccccc"),
+                Type = "NOT_IMPLEMENTED"
+            });
+            workspace.Containers.Add(container);
+
+            using (var runtime = new MeterLiveRuntime(fake, workspace))
+            {
+                MeterLiveSnapshot snapshot = runtime.RefreshNow();
+                Equal(0, runtime.BindingCount, "unbound item binding count");
+                Equal(0, snapshot.Values.Count, "unbound item live values count");
+                Equal(0, fake.TotalReadCount, "unbound item telemetry calls");
+            }
+        }
+
+        private static MeterWorkspaceSnapshot BuildLiveWorkspace()
+        {
+            var workspace = new MeterWorkspaceSnapshot();
+            var container = new MeterContainerSnapshot
+            {
+                Id = Guid.Parse("11111111-1111-1111-1111-111111111111"),
+                Receiver = MeterReceiver.Rx1,
+                Geometry = new MeterWindowGeometry { X = 10, Y = 20, Width = 320, Height = 160 }
+            };
+            container.Items.Add(new MeterItemSnapshot
+            {
+                Id = Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"),
+                Type = "SIGNAL_STRENGTH"
+            });
+            container.Items.Add(new MeterItemSnapshot
+            {
+                Id = Guid.Parse("dddddddd-dddd-dddd-dddd-dddddddddddd"),
+                Type = "SIGNAL_TEXT"
+            });
+            workspace.Containers.Add(container);
+            return workspace;
         }
 
         private static DataTable NewTable()
@@ -295,21 +407,47 @@ namespace FlexMeters.Tests
 
         private sealed class FakeTelemetrySource : IMeterTelemetrySource
         {
-            private readonly Dictionary<MeterReading, MeterReadingResult> _values =
-                new Dictionary<MeterReading, MeterReadingResult>();
+            private readonly Dictionary<string, MeterReadingResult> _values =
+                new Dictionary<string, MeterReadingResult>();
+            private readonly Dictionary<string, int> _reads =
+                new Dictionary<string, int>();
+
+            public int TotalReadCount { get; private set; }
 
             public void Set(MeterReading reading, MeterReadingResult result)
             {
-                _values[reading] = result;
+                Set(reading, MeterReceiver.Rx1, result);
+            }
+
+            public void Set(MeterReading reading, MeterReceiver receiver, MeterReadingResult result)
+            {
+                _values[Key(reading, receiver)] = result;
+            }
+
+            public int ReadCount(MeterReading reading, MeterReceiver receiver)
+            {
+                int count;
+                return _reads.TryGetValue(Key(reading, receiver), out count) ? count : 0;
             }
 
             public MeterReadingResult Read(MeterReading reading, MeterReceiver receiver)
             {
+                string key = Key(reading, receiver);
+                int count;
+                _reads.TryGetValue(key, out count);
+                _reads[key] = count + 1;
+                TotalReadCount++;
+
                 MeterReadingResult result;
-                if (_values.TryGetValue(reading, out result))
+                if (_values.TryGetValue(key, out result))
                     return result;
 
-                return MeterReadingResult.Unsupported("Fake source has no configured value for " + reading + ".");
+                return MeterReadingResult.Unsupported("Fake source has no configured value for " + reading + " on " + receiver + ".");
+            }
+
+            private static string Key(MeterReading reading, MeterReceiver receiver)
+            {
+                return ((int)receiver).ToString() + ":" + ((int)reading).ToString();
             }
         }
     }

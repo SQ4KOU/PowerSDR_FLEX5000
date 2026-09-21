@@ -54,5 +54,13 @@ namespace PowerSDR
         {
             return new FlexMetersTelemetryAdapter(this);
         }
+
+        internal FlexMeters.MeterLiveRuntime CreateFlexMetersLiveRuntime(
+            FlexMeters.MeterWorkspaceSnapshot workspace)
+        {
+            return new FlexMeters.MeterLiveRuntime(
+                CreateFlexMetersTelemetrySource(),
+                workspace);
+        }
     }
 }

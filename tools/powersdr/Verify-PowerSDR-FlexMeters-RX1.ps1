@@ -46,7 +46,9 @@ $adapterTokens=@(
     '_console.RX1Loop',
     '_console.LoopGain',
     'Flex5000Rx1SignalCalibration.Apply',
-    'MeterReadingResult.Unsupported'
+    'MeterReadingResult.Unsupported',
+    'CreateFlexMetersLiveRuntime',
+    'new FlexMeters.MeterLiveRuntime'
 )
 foreach($token in $adapterTokens){
     if(!$a.Contains($token)){throw "FlexMeters RX1 adapter gate missing: $token"}
