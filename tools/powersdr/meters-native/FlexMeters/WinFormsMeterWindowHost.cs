@@ -41,10 +41,13 @@ namespace FlexMeters
 
             public void UpdateDefinition(MeterContainerSnapshot container)
             {
-                Text = BuildTitle(container);
+                ApplyContainerAppearance(container);
 
                 if (DefinitionMatches(container))
+                {
+                    ApplyRendererSettings(container);
                     return;
+                }
 
                 _itemsPanel.SuspendLayout();
                 try
@@ -209,6 +212,51 @@ namespace FlexMeters
                 return true;
             }
 
+            private void ApplyContainerAppearance(MeterContainerSnapshot container)
+            {
+                Text = BuildTitle(container);
+                BackColor = Color.FromArgb(container.BackgroundArgb);
+                _itemsPanel.BackColor = BackColor;
+
+                if (container.NoTitleBar)
+                    FormBorderStyle = FormBorderStyle.None;
+                else if (container.Locked)
+                    FormBorderStyle = FormBorderStyle.FixedSingle;
+                else
+                    FormBorderStyle = FormBorderStyle.Sizable;
+
+                if (container.Highlight)
+                {
+                    _itemsPanel.Padding = new Padding(2);
+                    _itemsPanel.CellBorderStyle =
+                        TableLayoutPanelCellBorderStyle.Single;
+                }
+                else
+                {
+                    _itemsPanel.Padding = Padding.Empty;
+                    _itemsPanel.CellBorderStyle =
+                        container.Border
+                        ? TableLayoutPanelCellBorderStyle.Single
+                        : TableLayoutPanelCellBorderStyle.None;
+                }
+            }
+
+            private void ApplyRendererSettings(MeterContainerSnapshot container)
+            {
+                for (int i = 0; i < container.Items.Count; i++)
+                {
+                    MeterItemSnapshot item = container.Items[i];
+
+                    ThetisSignalMeterControl signalRenderer;
+                    if (_renderers.TryGetValue(item.Id, out signalRenderer))
+                        signalRenderer.ApplySettings(item);
+
+                    FlexTxMeterControl txRenderer;
+                    if (_txRenderers.TryGetValue(item.Id, out txRenderer))
+                        txRenderer.ApplySettings(item);
+                }
+            }
+
             private Control CreateItemControl(MeterItemSnapshot item)
             {
                 MeterItemDescriptor descriptor;
@@ -218,14 +266,14 @@ namespace FlexMeters
                 if (descriptor.RendererKind == MeterItemRendererKind.SignalBar ||
                     descriptor.RendererKind == MeterItemRendererKind.SignalText)
                 {
-                    var renderer = new ThetisSignalMeterControl(item.Type);
+                    var renderer = new ThetisSignalMeterControl(item);
                     _renderers.Add(item.Id, renderer);
                     return renderer;
                 }
 
                 if (descriptor.RendererKind == MeterItemRendererKind.Linear)
                 {
-                    var renderer = new FlexTxMeterControl(descriptor);
+                    var renderer = new FlexTxMeterControl(descriptor, item);
                     _txRenderers.Add(item.Id, renderer);
                     return renderer;
                 }
@@ -729,10 +777,27 @@ namespace FlexMeters
             if (form == null)
                 return;
 
-            lock (_sync)
-                _windows.Remove(form.ContainerId);
+            // Thetis frmMeterDisplay semantics: clicking X hides a meter
+            // container; it does NOT delete the container definition.  Removal
+            // is an explicit Setup -> Remove Container operation.
+            if (e.CloseReason == CloseReason.UserClosing)
+            {
+                MeterWorkspaceSnapshot snapshot = _manager.Snapshot;
+                MeterContainerSnapshot container =
+                    FindContainer(snapshot, form.ContainerId);
+                if (container != null)
+                {
+                    container.Geometry = CaptureGeometry(form);
+                    _manager.ReplaceContainer(container);
+                }
 
-            _manager.RemoveContainer(form.ContainerId);
+                form.Hide();
+                e.Cancel = true;
+                return;
+            }
+
+            // Application/owner shutdown must never mutate the authoritative
+            // container list.  Geometry is already persisted on ResizeEnd.
         }
 
         private void WindowResizeEnd(object sender, EventArgs e)
