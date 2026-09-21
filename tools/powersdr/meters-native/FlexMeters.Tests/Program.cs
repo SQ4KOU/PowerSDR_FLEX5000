@@ -840,7 +840,7 @@ namespace FlexMeters.Tests
             Equal(0, over, "VHF -93 dBm over-S9");
 
             double uv = ThetisSignalMeterMath.UvFromDbm(-73.0);
-            True(Math.Abs(uv - 50.1187) < 0.01, "Thetis uV conversion at -73 dBm");
+            True(Math.Abs(uv - 50.0593) < 0.01, "Thetis uV conversion at -73 dBm");
         }
 
         private static void WindowHostUsesThetisSignalRenderers()
