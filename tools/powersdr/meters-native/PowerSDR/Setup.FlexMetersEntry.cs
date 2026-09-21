@@ -34,8 +34,8 @@ namespace PowerSDR
             flexMetersEditorForm.StartPosition =
                 FormStartPosition.Manual;
             flexMetersEditorForm.Location = new Point(0, 0);
-            flexMetersEditorForm.Size = new Size(726, 411);
             flexMetersEditorForm.MinimumSize = new Size(726, 411);
+            flexMetersEditorForm.Size = new Size(726, 411);
 
             flexMetersAppearancePage.Controls.Add(
                 flexMetersEditorForm);
