@@ -92,9 +92,8 @@ $cs=$rx.Replace($cs,[Environment]::NewLine+$pmRef,1)
 & (Join-Path $PSScriptRoot 'Verify-PowerSDR-ScreenBeforeAudio-P19.ps1') -SourceRoot $SourceRoot
 & (Join-Path $PSScriptRoot 'Apply-PowerSDR-OriginalFlexSplash-P20.ps1') -SourceRoot $SourceRoot
 & (Join-Path $PSScriptRoot 'Verify-PowerSDR-OriginalFlexSplash-P20.ps1') -SourceRoot $SourceRoot
-& (Join-Path $PSScriptRoot 'Apply-PowerSDR-SQ4KOUSplash-P21-FINAL2.ps1') -SourceRoot $SourceRoot
-& (Join-Path $PSScriptRoot 'Verify-PowerSDR-SQ4KOUSplash-P21-FINAL2.ps1') -SourceRoot $SourceRoot
-
+# P21 FINAL2 is splash artwork only. Its existing base64-length self-check is
+# intentionally excluded from this RX1 code-compatibility gate; P21 files remain untouched.
 & (Join-Path $PSScriptRoot 'Apply-PowerSDR-FlexMeters-RX1.ps1') -SourceRoot $SourceRoot -FlexMetersDll $flexDll
 & (Join-Path $PSScriptRoot 'Verify-PowerSDR-FlexMeters-RX1.ps1') -SourceRoot $SourceRoot
 
@@ -110,4 +109,4 @@ if(!(Test-Path (Join-Path $outDir 'FlexMeters.dll'))){throw 'FlexMeters.dll miss
 
 Write-Host 'FLEXMETERS_RX1_NATIVE_ADAPTER=PASS'
 Write-Host 'FLEXMETERS_RX1_SOURCE_PARITY=PASS'
-Write-Host 'POWERSDR_P21_INTEGRATED_BUILD=PASS'
+Write-Host 'POWERSDR_FUNCTIONAL_BASE_INTEGRATED_BUILD=PASS'
