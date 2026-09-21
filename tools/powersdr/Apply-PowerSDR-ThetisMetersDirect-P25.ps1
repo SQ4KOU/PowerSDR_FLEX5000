@@ -227,7 +227,7 @@ foreach($r in $resourceNames)
     if($proj -notmatch ('Content Include="'+[regex]::Escape($rel)+'"'))
     {
         $item='    <Content Include="'+$rel+'">'+$nl+'      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>'+$nl+'    </Content>'
-        $proj=$proj.Replace('</ItemGroup>',$item+$nl+'  </ItemGroup>',1)
+        $proj=[regex]::Replace($proj,'</ItemGroup>',[System.Text.RegularExpressions.MatchEvaluator]{ param($m) $item+$nl+'  </ItemGroup>' },1)
     }
 }
 
