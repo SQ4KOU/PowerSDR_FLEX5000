@@ -115,17 +115,26 @@ namespace FlexMeters
         private double _value;
         private bool _hasValue;
         private bool _aboveS9Frequency;
+        private ThetisMeterItemSettings _settings;
 
         public ThetisSignalMeterControl(string itemType)
+            : this(CreateDefaultItem(itemType))
         {
-            if (String.IsNullOrWhiteSpace(itemType))
-                throw new ArgumentException("Meter item type is required.", "itemType");
+        }
 
-            _itemType = itemType;
+        public ThetisSignalMeterControl(MeterItemSnapshot item)
+        {
+            if (item == null)
+                throw new ArgumentNullException("item");
+            if (String.IsNullOrWhiteSpace(item.Type))
+                throw new ArgumentException("Meter item type is required.", "item");
+
+            _itemType = item.Type;
             DoubleBuffered = true;
             ResizeRedraw = true;
-            BackColor = Color.FromArgb(32, 32, 32);
-            ForeColor = Color.Yellow;
+            _settings = ThetisMeterItemSettings.FromItem(item);
+            BackColor = _settings.BackgroundColor;
+            ForeColor = _settings.LowColor;
             MinimumSize = new Size(180, 72);
             Height = IsSignalText ? 112 : 92;
             Dock = DockStyle.Top;
@@ -136,6 +145,33 @@ namespace FlexMeters
                 ControlStyles.OptimizedDoubleBuffer |
                 ControlStyles.ResizeRedraw,
                 true);
+        }
+
+        private static MeterItemSnapshot CreateDefaultItem(string itemType)
+        {
+            if (String.IsNullOrWhiteSpace(itemType))
+                throw new ArgumentException("Meter item type is required.", "itemType");
+
+            var item = new MeterItemSnapshot
+            {
+                Id = Guid.NewGuid(),
+                Type = itemType
+            };
+            ThetisMeterItemSettings.ApplyDefaults(item);
+            return item;
+        }
+
+        public void ApplySettings(MeterItemSnapshot item)
+        {
+            if (item == null)
+                throw new ArgumentNullException("item");
+            if (!String.Equals(item.Type, _itemType, StringComparison.Ordinal))
+                throw new ArgumentException("Meter item type mismatch.", "item");
+
+            _settings = ThetisMeterItemSettings.FromItem(item);
+            BackColor = _settings.BackgroundColor;
+            ForeColor = _settings.LowColor;
+            Invalidate();
         }
 
         public string RendererKind
@@ -212,9 +248,11 @@ namespace FlexMeters
 
             double reading = result.Value.Value;
             if (reading > _value)
-                _value = (reading * AttackRatio) + (_value * (1.0 - AttackRatio));
+                _value = (reading * _settings.Attack) +
+                    (_value * (1.0 - _settings.Attack));
             else
-                _value = (reading * DecayRatio) + (_value * (1.0 - DecayRatio));
+                _value = (reading * _settings.Decay) +
+                    (_value * (1.0 - _settings.Decay));
 
             DateTime now = DateTime.UtcNow;
             _history.Add(new HistoryPoint { TimeUtc = now, Value = _value });
@@ -278,25 +316,29 @@ namespace FlexMeters
             float baseY = top + (h * 0.85f);
 
             using (var titleFont = new Font("Trebuchet MS", Math.Max(7.0f, width / 52.0f), FontStyle.Regular))
-            using (var titleBrush = new SolidBrush(Color.DarkGray))
-            using (var yellow = new SolidBrush(Color.Yellow))
-            using (var red = new SolidBrush(Color.Red))
+            using (var titleBrush = new SolidBrush(_settings.TitleColor))
+            using (var yellow = new SolidBrush(_settings.LowColor))
+            using (var red = new SolidBrush(_settings.HighColor))
             using (var valueFont = new Font("Trebuchet MS", Math.Max(7.0f, width / 58.0f), FontStyle.Regular))
             {
-                DrawCentered(g, "Signal Peak", titleFont, titleBrush, new RectangleF(x, 1.0f, w, top * 0.45f));
+                if (_settings.ShowType)
+                    DrawCentered(g, "Signal Peak", titleFont, titleBrush, new RectangleF(x, 1.0f, w, top * 0.45f));
 
                 string currentText = _value.ToString("0.0", CultureInfo.InvariantCulture) + "dBm";
                 g.DrawString(currentText, valueFont, yellow, x, Math.Max(0.0f, top - valueFont.Height - (h * 0.1f)));
 
                 double peak = HistoryMax();
-                string peakText = peak.ToString("0.0", CultureInfo.InvariantCulture) + "dBm";
-                SizeF peakSize = g.MeasureString(peakText, valueFont);
-                g.DrawString(
-                    peakText,
-                    valueFont,
-                    red,
-                    Math.Max(x, x + w - peakSize.Width),
-                    Math.Max(0.0f, top - valueFont.Height - (h * 0.1f)));
+                if (_settings.PeakValue)
+                {
+                    string peakText = peak.ToString("0.0", CultureInfo.InvariantCulture) + "dBm";
+                    SizeF peakSize = g.MeasureString(peakText, valueFont);
+                    g.DrawString(
+                        peakText,
+                        valueFont,
+                        red,
+                        Math.Max(x, x + w - peakSize.Width),
+                        Math.Max(0.0f, top - valueFont.Height - (h * 0.1f)));
+                }
             }
 
             float minX = x + (float)(ThetisSignalMeterMath.MapSignalDbmToPosition(
@@ -313,20 +355,23 @@ namespace FlexMeters
                 maxX = tmp;
             }
 
-            using (var historyBrush = new SolidBrush(Color.FromArgb(128, Color.Red)))
+            if (_settings.ShowHistory)
             {
-                g.FillRectangle(
-                    historyBrush,
-                    minX,
-                    top,
-                    Math.Max(0.0f, maxX - minX),
-                    h * 0.85f);
+                using (var historyBrush = new SolidBrush(_settings.HistoryColor))
+                {
+                    g.FillRectangle(
+                        historyBrush,
+                        minX,
+                        top,
+                        Math.Max(0.0f, maxX - minX),
+                        h * 0.85f);
+                }
             }
 
             DrawSignalScale(g, x, top, w, h, baseY);
 
             float markerX = x + (float)(NormalizedPosition * w);
-            using (var markerPen = new Pen(Color.Yellow, 3.0f))
+            using (var markerPen = new Pen(_settings.LowColor, 3.0f))
                 g.DrawLine(markerPen, markerX, top, markerX, top + h);
         }
 
@@ -443,9 +488,9 @@ namespace FlexMeters
             using (var mainFont = new Font("Trebuchet MS", Math.Max(11.0f, w / 15.0f), FontStyle.Regular))
             using (var smallFont = new Font("Trebuchet MS", Math.Max(7.0f, w / 34.0f), FontStyle.Regular))
             using (var peakFont = new Font("Trebuchet MS", Math.Max(8.0f, w / 26.0f), FontStyle.Regular))
-            using (var yellow = new SolidBrush(Color.Yellow))
-            using (var gray = new SolidBrush(Color.Gray))
-            using (var red = new SolidBrush(Color.Red))
+            using (var yellow = new SolidBrush(_settings.LowColor))
+            using (var gray = new SolidBrush(_settings.TitleColor))
+            using (var red = new SolidBrush(_settings.HighColor))
             {
                 string main = "S " + s.ToString(CultureInfo.InvariantCulture);
                 DrawCentered(g, main, mainFont, yellow, new RectangleF(0, 0, w, h * 0.46f));
