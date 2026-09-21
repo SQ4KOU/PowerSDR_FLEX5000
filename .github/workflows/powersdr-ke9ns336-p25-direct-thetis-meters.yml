@@ -1,4 +1,4 @@
-name: Build PowerSDR FLEX5000 P25 Direct Thetis Meters MSI
+name: Build PowerSDR FLEX5000 P26 Direct Thetis Meters Config MSI
 
 on:
   push:
@@ -37,24 +37,26 @@ jobs:
           $path = Split-Path $candle.Source -Parent
           "WIXBIN=$path" | Out-File -FilePath $env:GITHUB_ENV -Append
 
-      - name: Build P25 MSI
+      - name: Build P26 MSI
         shell: pwsh
         run: |
-          ./tools/powersdr/Build-PowerSDR-MSI-P25-DIRECT-THETIS-METERS.ps1 -WixBin "$env:WIXBIN"
+          ./tools/powersdr/Build-PowerSDR-MSI-P26-DIRECT-THETIS-METERS-CONFIG.ps1 -WixBin "$env:WIXBIN"
 
-      - name: Verify P25 MSI
+      - name: Verify P26 MSI
         shell: pwsh
         run: |
-          $msi = Get-ChildItem ./artifacts/powersdr -Filter '*P25-DIRECT-THETIS-METERS*.msi' -File | Select-Object -First 1
-          if (!$msi) { throw 'P25 MSI artifact missing' }
+          $msi = Get-ChildItem ./artifacts/powersdr -Filter '*P26-DIRECT-THETIS-METERS-CONFIG*.msi' -File | Select-Object -First 1
+          if (!$msi) { throw 'P26 MSI artifact missing' }
           $manifest = Join-Path $msi.Directory.FullName 'POWERSDR_BUILD_MANIFEST.txt'
-          if (!(Test-Path $manifest)) { throw 'P25 manifest missing' }
+          if (!(Test-Path $manifest)) { throw 'P26 manifest missing' }
           $m = Get-Content $manifest -Raw
           foreach($required in @(
             'FLEX5000_BACKEND=POWERSDR_NATIVE_PAL_FWC_FIREWIRE_ASIO',
             'METERS_GADGETS=THETIS_DIRECT_2023_02_26',
             'THETIS_METER_RENDERER=SHARPDX_NATIVE',
             'THETIS_METER_CONTAINER=NATIVE_UCMETER_FRMMETERDISPLAY',
+            'THETIS_METER_CONFIG=STANDALONE_NATIVE_API_2023_02_26_1TO1',
+            'P25_METER_CORE=UNCHANGED',
             'RX2_METER=NOT_EXPOSED',
             'FLEXMETERS_HELPER_DLL=ABSENT'
           )) {
@@ -63,12 +65,12 @@ jobs:
           $sha = (Get-FileHash -Algorithm SHA256 $msi.FullName).Hash.ToLowerInvariant()
           "MSI=$($msi.Name)" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
           "SHA256=$sha" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
-          "P25=direct Thetis 2023 meter core + PowerSDR FLEX5000 RX1 boundary" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+          "P26=P25 direct Thetis core unchanged + native MeterManager configuration UI" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
 
-      - name: Upload P25 artifact
+      - name: Upload P26 artifact
         uses: actions/upload-artifact@v4
         with:
-          name: PowerSDR-FLEX5000-P25-DIRECT-THETIS-METERS
+          name: PowerSDR-FLEX5000-P26-DIRECT-THETIS-METERS-CONFIG
           path: |
             artifacts/powersdr/*.msi
             artifacts/powersdr/*.sha256
