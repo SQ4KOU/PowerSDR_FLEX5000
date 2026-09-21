@@ -62,8 +62,12 @@ namespace FlexMeters.Tests
             Run("editor visibility persists through replace-all store", EditorVisibilityPersistsThroughStore);
             Run("editor does not expose unsupported RX2 creation", EditorDoesNotExposeUnsupportedRx2Creation);
             Run("window visibility follows RX/TX state", WindowVisibilityFollowsRxTxState);
+            Run("Thetis Options store round-trips full container state", ThetisOptionsStoreRoundTripsFullContainerState);
+            Run("Thetis Options replace-all preserves unrelated options", ThetisOptionsStorePreservesUnrelatedOptions);
+            Run("Thetis Options store survives DataSet XML restart", ThetisOptionsStoreSurvivesDataSetXmlRestart);
+            Run("Thetis item settings round-trip through model", ThetisItemSettingsRoundTrip);
 
-            Console.WriteLine("PASS " + _passed + "/49");
+            Console.WriteLine("PASS " + _passed + "/53");
             return 0;
         }
 
@@ -1322,6 +1326,164 @@ namespace FlexMeters.Tests
             throw new Exception("Item not found: " + type);
         }
 
+        private static void ThetisOptionsStoreRoundTripsFullContainerState()
+        {
+            var table = NewOptionsTable();
+            var store = new ThetisOptionsMeterStore(table);
+            MeterWorkspaceSnapshot source = BuildTwoContainerSnapshot();
+
+            MeterContainerSnapshot c0 = source.Containers[0];
+            c0.Highlight = true;
+            c0.Border = false;
+            c0.Locked = true;
+            c0.NoTitleBar = true;
+            c0.AutoHeight = true;
+            c0.Minimises = false;
+            c0.HideWhenReceiverNotUsed = false;
+            c0.BackgroundArgb = unchecked((int)0xFF102030);
+            c0.Notes = "RX1 main\nThetis parity";
+
+            ThetisMeterItemSettings settings =
+                ThetisMeterItemSettings.FromItem(c0.Items[0]);
+            settings.UpdateIntervalMs = 75;
+            settings.Attack = 0.65;
+            settings.Decay = 0.15;
+            settings.DarkMode = false;
+            settings.ApplyTo(c0.Items[0]);
+
+            store.ReplaceAll(source);
+            MeterWorkspaceSnapshot loaded = store.Load();
+
+            AssertWorkspaceEqual(source, loaded);
+            True(HasOptionKeyPrefix(table, "meterContData_"), "meterContData key missing");
+            True(HasOptionKeyPrefix(table, "meterData_"), "meterData key missing");
+            True(HasOptionKeyPrefix(table, "meterIGData_"), "meterIGData key missing");
+            True(HasOptionKeyPrefix(table, "meterIGSettings_2_"), "meterIGSettings_2 key missing");
+        }
+
+        private static void ThetisOptionsStorePreservesUnrelatedOptions()
+        {
+            var table = NewOptionsTable();
+            table.Rows.Add("console_top", "123");
+            table.Rows.Add("unrelated_setting", "keep-me");
+
+            var store = new ThetisOptionsMeterStore(table);
+            store.ReplaceAll(BuildTwoContainerSnapshot());
+            store.ReplaceAll(new MeterWorkspaceSnapshot());
+
+            Equal("123", FindOptionValue(table, "console_top"), "console option was modified");
+            Equal("keep-me", FindOptionValue(table, "unrelated_setting"), "unrelated option was modified");
+            False(HasOptionKeyPrefix(table, "meterContData_"), "stale meterContData key remains");
+            False(HasOptionKeyPrefix(table, "meterData_"), "stale meterData key remains");
+            False(HasOptionKeyPrefix(table, "meterIGData_"), "stale meterIGData key remains");
+            False(HasOptionKeyPrefix(table, "meterIGSettings_2_"), "stale meterIGSettings key remains");
+        }
+
+        private static void ThetisOptionsStoreSurvivesDataSetXmlRestart()
+        {
+            var ds = new DataSet("Data");
+            DataTable table = NewOptionsTable();
+            ds.Tables.Add(table);
+
+            var store = new ThetisOptionsMeterStore(table);
+            MeterWorkspaceSnapshot expected = BuildTwoContainerSnapshot();
+            expected.Containers[0].Notes = "restart-proof";
+            expected.Containers[0].Highlight = true;
+            store.ReplaceAll(expected);
+
+            string xml;
+            using (var writer = new StringWriter())
+            {
+                ds.WriteXml(writer, XmlWriteMode.WriteSchema);
+                xml = writer.ToString();
+            }
+
+            var restarted = new DataSet("Data");
+            using (var reader = new StringReader(xml))
+                restarted.ReadXml(reader, XmlReadMode.ReadSchema);
+
+            var restartedStore =
+                new ThetisOptionsMeterStore(restarted.Tables["Options"]);
+            MeterWorkspaceSnapshot actual = restartedStore.Load();
+
+            AssertWorkspaceEqual(expected, actual);
+        }
+
+        private static void ThetisItemSettingsRoundTrip()
+        {
+            var item = new MeterItemSnapshot
+            {
+                Id = Guid.NewGuid(),
+                Type = "FWD_PWR"
+            };
+
+            var expected = new ThetisMeterItemSettings();
+            expected.UpdateIntervalMs = 80;
+            expected.Attack = 0.71;
+            expected.Decay = 0.19;
+            expected.Shadow = true;
+            expected.ShowHistory = false;
+            expected.PeakHold = false;
+            expected.FadeOnRx = true;
+            expected.FadeOnTx = false;
+            expected.ShowType = false;
+            expected.PeakValue = false;
+            expected.DarkMode = false;
+            expected.Segmented = true;
+            expected.Solid = false;
+            expected.ApplyTo(item);
+
+            ThetisMeterItemSettings actual =
+                ThetisMeterItemSettings.FromItem(item);
+
+            Equal(expected.UpdateIntervalMs, actual.UpdateIntervalMs, "settings update interval");
+            Equal(expected.Attack, actual.Attack, "settings attack");
+            Equal(expected.Decay, actual.Decay, "settings decay");
+            Equal(expected.Shadow, actual.Shadow, "settings shadow");
+            Equal(expected.ShowHistory, actual.ShowHistory, "settings history");
+            Equal(expected.PeakHold, actual.PeakHold, "settings peak hold");
+            Equal(expected.FadeOnRx, actual.FadeOnRx, "settings fade RX");
+            Equal(expected.FadeOnTx, actual.FadeOnTx, "settings fade TX");
+            Equal(expected.ShowType, actual.ShowType, "settings title");
+            Equal(expected.PeakValue, actual.PeakValue, "settings peak value");
+            Equal(expected.DarkMode, actual.DarkMode, "settings dark mode");
+            Equal(expected.Segmented, actual.Segmented, "settings segmented");
+            Equal(expected.Solid, actual.Solid, "settings solid");
+        }
+
+        private static DataTable NewOptionsTable()
+        {
+            var table = new DataTable("Options");
+            table.Columns.Add("Key", typeof(string));
+            table.Columns.Add("Value", typeof(string));
+            return table;
+        }
+
+        private static bool HasOptionKeyPrefix(DataTable table, string prefix)
+        {
+            foreach (DataRow row in table.Rows)
+            {
+                if (row.RowState == DataRowState.Deleted)
+                    continue;
+                string key = Convert.ToString(row["Key"]);
+                if (key.StartsWith(prefix, StringComparison.Ordinal))
+                    return true;
+            }
+            return false;
+        }
+
+        private static string FindOptionValue(DataTable table, string key)
+        {
+            foreach (DataRow row in table.Rows)
+            {
+                if (row.RowState == DataRowState.Deleted)
+                    continue;
+                if (String.Equals(Convert.ToString(row["Key"]), key, StringComparison.Ordinal))
+                    return Convert.ToString(row["Value"]);
+            }
+            return null;
+        }
+
         private static DataTable NewTable()
         {
             return new DataTable("FlexMeters");
@@ -1378,6 +1540,15 @@ namespace FlexMeters.Tests
                 Receiver = source.Receiver,
                 VisibleOnReceive = source.VisibleOnReceive,
                 VisibleOnTransmit = source.VisibleOnTransmit,
+                Border = source.Border,
+                Highlight = source.Highlight,
+                Locked = source.Locked,
+                NoTitleBar = source.NoTitleBar,
+                AutoHeight = source.AutoHeight,
+                Minimises = source.Minimises,
+                HideWhenReceiverNotUsed = source.HideWhenReceiverNotUsed,
+                BackgroundArgb = source.BackgroundArgb,
+                Notes = source.Notes,
                 Geometry = new MeterWindowGeometry
                 {
                     X = source.Geometry.X,
@@ -1412,6 +1583,15 @@ namespace FlexMeters.Tests
                 Equal(e.Receiver, a.Receiver, "receiver " + i);
                 Equal(e.VisibleOnReceive, a.VisibleOnReceive, "RX visibility " + i);
                 Equal(e.VisibleOnTransmit, a.VisibleOnTransmit, "TX visibility " + i);
+                Equal(e.Border, a.Border, "container border " + i);
+                Equal(e.Highlight, a.Highlight, "container highlight " + i);
+                Equal(e.Locked, a.Locked, "container lock " + i);
+                Equal(e.NoTitleBar, a.NoTitleBar, "container no-title " + i);
+                Equal(e.AutoHeight, a.AutoHeight, "container auto-height " + i);
+                Equal(e.Minimises, a.Minimises, "container minimises " + i);
+                Equal(e.HideWhenReceiverNotUsed, a.HideWhenReceiverNotUsed, "container hide-unused " + i);
+                Equal(e.BackgroundArgb, a.BackgroundArgb, "container background " + i);
+                Equal(e.Notes, a.Notes, "container notes " + i);
                 Equal(e.Geometry.X, a.Geometry.X, "geometry X " + i);
                 Equal(e.Geometry.Y, a.Geometry.Y, "geometry Y " + i);
                 Equal(e.Geometry.Width, a.Geometry.Width, "geometry width " + i);
