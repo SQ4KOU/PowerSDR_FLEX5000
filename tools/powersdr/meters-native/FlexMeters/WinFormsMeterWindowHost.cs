@@ -294,8 +294,28 @@ namespace FlexMeters
 
             private static string BuildTitle(MeterContainerSnapshot container)
             {
-                return "FlexMeters " + container.Receiver + " [" +
-                    container.Id.ToString("D").Substring(0, 8) + "]";
+                return "PowerSDR Meter [" +
+                    FiveDigitHash(container.Id.ToString("D")).ToString("00000") +
+                    "]";
+            }
+
+            private static int FiveDigitHash(string text)
+            {
+                if (String.IsNullOrEmpty(text))
+                    return 0;
+
+                uint hash = 0;
+                byte[] bytes = System.Text.Encoding.Unicode.GetBytes(text);
+                for (int i = 0; i < bytes.Length; i++)
+                {
+                    hash += bytes[i];
+                    hash += (hash << 10);
+                    hash ^= (hash >> 6);
+                }
+                hash += (hash << 3);
+                hash ^= (hash >> 11);
+                hash += (hash << 15);
+                return (int)(hash % 99999);
             }
         }
 
