@@ -18,9 +18,10 @@ $runtime=Join-Path $PSScriptRoot 'meters-native\FlexMeters\MeterLiveRuntime.cs'
 $txRenderer=Join-Path $PSScriptRoot 'meters-native\FlexMeters\FlexTxMeterRenderer.cs'
 $editor=Join-Path $PSScriptRoot 'meters-native\FlexMeters\FlexMetersEditorForm.cs'
 $windowHost=Join-Path $PSScriptRoot 'meters-native\FlexMeters\WinFormsMeterWindowHost.cs'
+$thetisStore=Join-Path $PSScriptRoot 'meters-native\FlexMeters\ThetisOptionsMeterStore.cs'
 $dll=Join-Path $SourceRoot 'bin\Release\FlexMeters.dll'
 
-foreach($required in @($adapter,$csproj,$cat,$consoleCs,$setupCs,$setupDesigner,$setupEntry,$dspCs,$txMath,$catalog,$runtime,$txRenderer,$editor,$windowHost,$dll)){
+foreach($required in @($adapter,$csproj,$cat,$consoleCs,$setupCs,$setupDesigner,$setupEntry,$dspCs,$txMath,$catalog,$runtime,$txRenderer,$editor,$windowHost,$thetisStore,$dll)){
     if(!(Test-Path $required)){throw "FlexMeters RX1 verification input missing: $required"}
 }
 
@@ -38,6 +39,7 @@ $runtimeText=[IO.File]::ReadAllText($runtime)
 $txRendererText=[IO.File]::ReadAllText($txRenderer)
 $editorText=[IO.File]::ReadAllText($editor)
 $windowHostText=[IO.File]::ReadAllText($windowHost)
+$thetisStoreText=[IO.File]::ReadAllText($thetisStore)
 
 if($a -match '\bdynamic\b'){throw 'dynamic is forbidden in Console.FlexMetersAdapter.cs'}
 if(([regex]::Matches($p,'<Reference Include="FlexMeters">')).Count -ne 1){throw 'FlexMeters reference count is not exactly one'}
@@ -99,8 +101,13 @@ if(!$runtimeText.Contains('MeterItemCatalog.TryGet(itemType, out descriptor)')){
 if(!$editorText.Contains('BuildSupportedTypes()')){
     throw 'Meters/Gadgets editor is not populated from the shared meter catalog'
 }
-if(!$windowHostText.Contains('new FlexTxMeterControl(descriptor)')){
-    throw 'WinForms meter host does not create the live TX renderer'
+if(!$windowHostText.Contains('new FlexTxMeterControl(descriptor, item)')){
+    throw 'WinForms meter host does not create the live TX renderer with item settings'
+}
+if(!$windowHostText.Contains('e.CloseReason == CloseReason.UserClosing') -or
+   !$windowHostText.Contains('form.Hide();') -or
+   !$windowHostText.Contains('e.Cancel = true;')){
+    throw 'Thetis meter close semantics are not implemented'
 }
 if(!$txRendererText.Contains('FLEX5000_LINEAR_')){
     throw 'TX renderer identity gate missing'
@@ -121,8 +128,8 @@ $adapterTokens=@(
     'CreateFlexMetersLiveRuntime',
     'new FlexMeters.MeterLiveRuntime',
     'MeterWorkspaceRuntimeHost',
-    'DataTableMeterStore',
-    'DB.ds.Tables.Contains(FlexMetersDatabaseTableName)',
+    'ThetisOptionsMeterStore',
+    'DB.ds.Tables.Contains("Options")',
     'ReplaceFlexMetersWorkspace',
     'ReloadFlexMetersWorkspaceRuntime',
     'DB.Update()',
@@ -208,12 +215,53 @@ $entryTokens=@(
     'flexMetersAppearancePage.Text = "Meters/Gadgets"',
     'new FlexMeters.FlexMetersEditorForm(manager)',
     'console.EnsureFlexMetersWorkspaceManager()',
-    'flexMetersEditorForm.Show(console)'
+    'flexMetersAppearancePage.AutoScroll = true',
+    'flexMetersEditorForm.TopLevel = false',
+    'flexMetersAppearancePage.Controls.Add(',
+    'flexMetersEditorForm.Show()'
 )
 foreach($token in $entryTokens){
     if(!$entry.Contains($token)){throw "FlexMeters Setup entry gate missing: $token"}
 }
 
+$thetisPersistenceTokens=@(
+    'meterContData_',
+    'meterData_',
+    'meterIGData_',
+    'meterIGSettings_2_',
+    'PurgeMeterRows()'
+)
+foreach($token in $thetisPersistenceTokens){
+    if(!$thetisStoreText.Contains($token)){throw "Thetis persistence gate missing: $token"}
+}
+
+$thetisUiTokens=@(
+    'grpMultiMeterHolder',
+    'new Size(710, 395)',
+    'chkContainerHighlight',
+    'chkContainerBorder',
+    'chkContainerNoTitle',
+    'chkContainerShowRX',
+    'chkContainerShowTX',
+    'chkMultiMeter_auto_container_height',
+    'chkLockContainer',
+    'chkContainer_hidewhennotused',
+    'chkContainerMinimises',
+    'btnRecoverContainer',
+    'btnContainerDelete',
+    'btnContainer_dupe',
+    'btnContainer_load',
+    'btnContainer_save',
+    'btnMeterCopySettings',
+    'btnMeterPasteSettings',
+    'grpMeterItemSettings'
+)
+foreach($token in $thetisUiTokens){
+    if(!$editorText.Contains($token)){throw "Thetis Meters/Gadgets UI gate missing: $token"}
+}
+
+Write-Host 'FLEXMETERS_THETIS_PERSISTENCE=PASS'
+Write-Host 'FLEXMETERS_THETIS_UI=PASS'
 Write-Host 'FLEXMETERS_SETUP_ENTRY=PASS'
 Write-Host 'FLEXMETERS_RX1_SOURCE_GATE=PASS'
 Write-Host 'FLEXMETERS_TX_FWC_SOURCE_GATE=PASS'
