@@ -184,28 +184,28 @@ namespace PowerSDR
             lstMetersInUse.DoubleClick += lstMetersInUse_DoubleClick;
             groupBoxTS28.Controls.Add(lstMetersInUse);
 
-            btnAddMeterItem = NewImageButton("btnAddMeterItem", P25MeterResources.arrow_right, ">", 164, 115);
+            btnAddMeterItem = NewImageButton("btnAddMeterItem", P25MeterResources.arrow_right_black, ">", 164, 115);
             btnAddMeterItem.Click += btnAddMeterItem_Click;
             groupBoxTS28.Controls.Add(btnAddMeterItem);
 
-            btnRemoveMeterItem = NewImageButton("btnRemoveMeterItem", P25MeterResources.arrow_left, "<", 164, 162);
+            btnRemoveMeterItem = NewImageButton("btnRemoveMeterItem", P25MeterResources.arrow_left_black, "<", 164, 162);
             btnRemoveMeterItem.Click += btnRemoveMeterItem_Click;
             groupBoxTS28.Controls.Add(btnRemoveMeterItem);
 
-            btnMeterUp = NewImageButton("btnMeterUp", P25MeterResources.arrow_up, "↑", 348, 115);
+            btnMeterUp = NewImageButton("btnMeterUp", P25MeterResources.arrow_up_black, "↑", 348, 115);
             btnMeterUp.Click += btnMeterUp_Click;
             groupBoxTS28.Controls.Add(btnMeterUp);
 
-            btnMeterDown = NewImageButton("btnMeterDown", P25MeterResources.down, "↓", 348, 162);
+            btnMeterDown = NewImageButton("btnMeterDown", P25MeterResources.down_black, "↓", 348, 162);
             btnMeterDown.Click += btnMeterDown_Click;
             groupBoxTS28.Controls.Add(btnMeterDown);
 
-            btnMeterCopySettings = NewImageButton("btnMeterCopySettings", null, "C", 336, 293);
+            btnMeterCopySettings = NewImageButton("btnMeterCopySettings", P25MeterResources.pipette32, "C", 336, 293);
             toolTip1.SetToolTip(btnMeterCopySettings, "Copy settings and colours");
             btnMeterCopySettings.Click += btnMeterCopySettings_Click;
             groupBoxTS28.Controls.Add(btnMeterCopySettings);
 
-            btnMeterPasteSettings = NewImageButton("btnMeterPasteSettings", null, "P", 336, 340);
+            btnMeterPasteSettings = NewImageButton("btnMeterPasteSettings", P25MeterResources.brush32, "P", 336, 340);
             toolTip1.SetToolTip(btnMeterPasteSettings, "Paste settings and colours into suitable meter item");
             btnMeterPasteSettings.Click += btnMeterPasteSettings_Click;
             groupBoxTS28.Controls.Add(btnMeterPasteSettings);
