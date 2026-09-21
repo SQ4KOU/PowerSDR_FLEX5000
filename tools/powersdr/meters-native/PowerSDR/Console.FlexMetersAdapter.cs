@@ -48,11 +48,7 @@ namespace PowerSDR
             {
                 if (receiver != FlexMeters.MeterReceiver.Rx1)
                     return FlexMeters.MeterReadingResult.Unsupported(
-                        "RX2 telemetry is not implemented in the RX1 contract stage.");
-
-                if (reading != FlexMeters.MeterReading.SignalStrength)
-                    return FlexMeters.MeterReadingResult.Unsupported(
-                        "Only FLEX-5000 RX1 SIGNAL_STRENGTH is implemented in this stage.");
+                        "RX2 telemetry is not implemented yet.");
 
                 if (_console.CurrentModel != Model.FLEX5000)
                     return FlexMeters.MeterReadingResult.Unsupported(
@@ -60,24 +56,170 @@ namespace PowerSDR
 
                 if (!_console.PowerOn)
                     return FlexMeters.MeterReadingResult.Unsupported(
-                        "RX1 SIGNAL_STRENGTH is unavailable while the radio is powered off.");
+                        "FlexMeters telemetry is unavailable while the radio is powered off.");
 
-                float raw = DttSP.CalculateRXMeter(
-                    0,
-                    0,
-                    DttSP.MeterType.SIGNAL_STRENGTH);
+                if (reading == FlexMeters.MeterReading.SignalStrength)
+                {
+                    float raw = DttSP.CalculateRXMeter(
+                        0,
+                        0,
+                        DttSP.MeterType.SIGNAL_STRENGTH);
 
-                double calibrated = FlexMeters.Flex5000Rx1SignalCalibration.Apply(
-                    raw,
-                    _console.MultiMeterCalOffset,
-                    Display.RX1PreampOffset,
-                    _console.RX1FilterSizeCalOffset,
-                    _console.RX1PathOffset,
-                    _console.RX1XVTRGainOffset,
-                    _console.RX1Loop,
-                    _console.LoopGain);
+                    double calibrated = FlexMeters.Flex5000Rx1SignalCalibration.Apply(
+                        raw,
+                        _console.MultiMeterCalOffset,
+                        Display.RX1PreampOffset,
+                        _console.RX1FilterSizeCalOffset,
+                        _console.RX1PathOffset,
+                        _console.RX1XVTRGainOffset,
+                        _console.RX1Loop,
+                        _console.LoopGain);
 
-                return FlexMeters.MeterReadingResult.Supported(calibrated);
+                    return FlexMeters.MeterReadingResult.Supported(calibrated);
+                }
+
+                if (!IsFlexMetersTxReading(reading))
+                    return FlexMeters.MeterReadingResult.Unsupported(
+                        "This FLEX-5000 meter reading is not implemented yet.");
+
+                if (!_console.MOX && !_console.TUN)
+                    return FlexMeters.MeterReadingResult.Unsupported(
+                        "TX meter reading is unavailable while the radio is not transmitting.");
+
+                switch (reading)
+                {
+                    case FlexMeters.MeterReading.Mic:
+                        return ReadTxDsp(
+                            DttSP.MeterType.MIC,
+                            FlexMeters.ThetisTxMeterMath.Mic);
+
+                    case FlexMeters.MeterReading.MicPeak:
+                        return ReadTxDsp(
+                            DttSP.MeterType.MIC_PK,
+                            FlexMeters.ThetisTxMeterMath.Mic);
+
+                    case FlexMeters.MeterReading.Eq:
+                        return ReadTxDsp(
+                            DttSP.MeterType.EQ,
+                            FlexMeters.ThetisTxMeterMath.Stage);
+
+                    case FlexMeters.MeterReading.EqPeak:
+                        return ReadTxDsp(
+                            DttSP.MeterType.EQ_PK,
+                            FlexMeters.ThetisTxMeterMath.Stage);
+
+                    case FlexMeters.MeterReading.Leveler:
+                        return ReadTxDsp(
+                            DttSP.MeterType.LEVELER,
+                            FlexMeters.ThetisTxMeterMath.Stage);
+
+                    case FlexMeters.MeterReading.LevelerPeak:
+                        return ReadTxDsp(
+                            DttSP.MeterType.LEVELER_PK,
+                            FlexMeters.ThetisTxMeterMath.Stage);
+
+                    case FlexMeters.MeterReading.LevelerGain:
+                        return ReadTxDsp(
+                            DttSP.MeterType.LVL_G,
+                            FlexMeters.ThetisTxMeterMath.LevelerGain);
+
+                    case FlexMeters.MeterReading.Compressor:
+                        return ReadTxDsp(
+                            DttSP.MeterType.COMP,
+                            FlexMeters.ThetisTxMeterMath.Stage);
+
+                    case FlexMeters.MeterReading.CompressorPeak:
+                        return ReadTxDsp(
+                            DttSP.MeterType.COMP_PK,
+                            FlexMeters.ThetisTxMeterMath.Stage);
+
+                    case FlexMeters.MeterReading.Alc:
+                        return ReadTxDsp(
+                            DttSP.MeterType.ALC,
+                            FlexMeters.ThetisTxMeterMath.Stage);
+
+                    case FlexMeters.MeterReading.AlcPeak:
+                        return ReadTxDsp(
+                            DttSP.MeterType.ALC_PK,
+                            FlexMeters.ThetisTxMeterMath.Stage);
+
+                    case FlexMeters.MeterReading.AlcGain:
+                        return ReadTxDsp(
+                            DttSP.MeterType.ALC_G,
+                            FlexMeters.ThetisTxMeterMath.AlcGain);
+
+                    case FlexMeters.MeterReading.AlcGroup:
+                    {
+                        float alcPeak = DttSP.CalculateTXMeter(
+                            1,
+                            DttSP.MeterType.ALC_PK);
+                        float alcGain = DttSP.CalculateTXMeter(
+                            1,
+                            DttSP.MeterType.ALC_G);
+
+                        return FlexMeters.MeterReadingResult.Supported(
+                            FlexMeters.ThetisTxMeterMath.AlcGroup(
+                                alcPeak,
+                                alcGain));
+                    }
+
+                    case FlexMeters.MeterReading.ForwardPower:
+                        return FlexMeters.MeterReadingResult.Supported(
+                            _console.FWCPAPower(_console.pa_fwd_power));
+
+                    case FlexMeters.MeterReading.ReversePower:
+                        return FlexMeters.MeterReadingResult.Supported(
+                            _console.FWCPAPower(_console.pa_rev_power) *
+                            _console.swr_table[(int)_console.TXBand]);
+
+                    case FlexMeters.MeterReading.Swr:
+                        return FlexMeters.MeterReadingResult.Supported(
+                            _console.FWCSWR(
+                                _console.pa_fwd_power,
+                                _console.pa_rev_power));
+
+                    default:
+                        return FlexMeters.MeterReadingResult.Unsupported(
+                            "This FLEX-5000 TX meter reading is not implemented yet.");
+                }
+            }
+
+            private delegate double TxMeterTransform(double raw);
+
+            private FlexMeters.MeterReadingResult ReadTxDsp(
+                DttSP.MeterType meterType,
+                TxMeterTransform transform)
+            {
+                float raw = DttSP.CalculateTXMeter(1, meterType);
+                return FlexMeters.MeterReadingResult.Supported(transform(raw));
+            }
+
+            private static bool IsFlexMetersTxReading(
+                FlexMeters.MeterReading reading)
+            {
+                switch (reading)
+                {
+                    case FlexMeters.MeterReading.Mic:
+                    case FlexMeters.MeterReading.MicPeak:
+                    case FlexMeters.MeterReading.Eq:
+                    case FlexMeters.MeterReading.EqPeak:
+                    case FlexMeters.MeterReading.Leveler:
+                    case FlexMeters.MeterReading.LevelerPeak:
+                    case FlexMeters.MeterReading.LevelerGain:
+                    case FlexMeters.MeterReading.Compressor:
+                    case FlexMeters.MeterReading.CompressorPeak:
+                    case FlexMeters.MeterReading.Alc:
+                    case FlexMeters.MeterReading.AlcPeak:
+                    case FlexMeters.MeterReading.AlcGain:
+                    case FlexMeters.MeterReading.AlcGroup:
+                    case FlexMeters.MeterReading.ForwardPower:
+                    case FlexMeters.MeterReading.ReversePower:
+                    case FlexMeters.MeterReading.Swr:
+                        return true;
+
+                    default:
+                        return false;
+                }
             }
         }
 
