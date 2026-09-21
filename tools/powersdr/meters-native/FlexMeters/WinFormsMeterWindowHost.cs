@@ -579,13 +579,8 @@ namespace FlexMeters
                         lock (_sync)
                             _windows.Add(container.Id, form);
 
-                        if (_showWindows)
-                        {
-                            if (_owner != null)
-                                form.Show(_owner);
-                            else
-                                form.Show();
-                        }
+                        // Visibility is applied from live radio state in ApplyLiveSnapshot.
+                        // Do not show here; this avoids an RX/TX visibility flash.
                     }
                     else
                     {
@@ -637,6 +632,25 @@ namespace FlexMeters
                             radio.Rx2Enabled &&
                             radio.VfoBHertz >=
                             ThetisSignalMeterMath.S9FrequencyThresholdHertz;
+                    }
+                }
+
+                if (_showWindows)
+                {
+                    bool shouldShow = MeterWindowVisibility.ShouldShow(
+                        container,
+                        radio);
+
+                    if (shouldShow && !form.Visible)
+                    {
+                        if (_owner != null)
+                            form.Show(_owner);
+                        else
+                            form.Show();
+                    }
+                    else if (!shouldShow && form.Visible)
+                    {
+                        form.Hide();
                     }
                 }
 

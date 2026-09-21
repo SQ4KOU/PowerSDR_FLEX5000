@@ -43,6 +43,8 @@
     <Compile Include="MeterWorkspaceManager.cs" />
     <Compile Include="WinFormsMeterWindowHost.cs" />
     <Compile Include="ThetisSignalMeterRenderer.cs" />
+    <Compile Include="MeterWindowVisibility.cs" />
+    <Compile Include="FlexMetersEditorForm.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

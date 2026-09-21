@@ -26,6 +26,8 @@ namespace PowerSDR
                 {
                     VfoAHertz = (long)System.Math.Round(_console.VFOAFreq * 1000000.0),
                     VfoBHertz = (long)System.Math.Round(_console.VFOBFreq * 1000000.0),
+                    Mox = _console.MOX,
+                    Tune = _console.TUN,
                     Rx2Enabled = _console.RX2Enabled
                 };
             }
@@ -164,6 +166,15 @@ namespace PowerSDR
                 InitializeFlexMetersWorkspaceRuntime();
             else
                 flexMetersContainerManager.ReloadFromStore();
+        }
+
+        internal FlexMeters.MeterWorkspaceManager EnsureFlexMetersWorkspaceManager()
+        {
+            if (flexMetersWorkspaceHost == null ||
+                flexMetersContainerManager == null)
+                InitializeFlexMetersWorkspaceRuntime();
+
+            return flexMetersContainerManager;
         }
 
         internal FlexMeters.MeterWorkspaceRuntimeHost FlexMetersWorkspaceHost

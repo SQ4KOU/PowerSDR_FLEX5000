@@ -49,8 +49,13 @@ namespace FlexMeters.Tests
             Run("window host uses Thetis signal renderers", WindowHostUsesThetisSignalRenderers);
             Run("Thetis renderer position changes with live RX1", ThetisRendererPositionChangesWithLiveRx1);
             Run("Thetis renderer switches reference at 30 MHz", ThetisRendererSwitchesReferenceAt30Mhz);
+            Run("editor starts empty without phantom container", EditorStartsEmptyWithoutPhantomContainer);
+            Run("editor add reorder remove persists authoritative workspace", EditorAddReorderRemovePersistsWorkspace);
+            Run("editor visibility persists through replace-all store", EditorVisibilityPersistsThroughStore);
+            Run("editor does not expose unsupported RX2 creation", EditorDoesNotExposeUnsupportedRx2Creation);
+            Run("window visibility follows RX/TX state", WindowVisibilityFollowsRxTxState);
 
-            Console.WriteLine("PASS " + _passed + "/36");
+            Console.WriteLine("PASS " + _passed + "/41");
             return 0;
         }
 
@@ -954,6 +959,144 @@ namespace FlexMeters.Tests
                     True(position > 0.3 && position < 0.6, "VHF marker did not use shifted Thetis scale");
                 }
             }
+        }
+
+        private static void EditorStartsEmptyWithoutPhantomContainer()
+        {
+            var table = NewTable();
+            var store = new DataTableMeterStore(table);
+            var fake = new FakeTelemetrySource();
+
+            using (var runtimeHost = new MeterWorkspaceRuntimeHost(store, fake))
+            {
+                runtimeHost.Start(TimeSpan.FromHours(1));
+                var manager = new MeterWorkspaceManager(runtimeHost, null);
+
+                using (var editor = new FlexMetersEditorForm(manager))
+                {
+                    Equal(0, editor.ContainerCount, "editor empty container count");
+                    Equal(2, editor.AvailableItemTypes.Length, "supported editor item count");
+                    Equal("SIGNAL_STRENGTH", editor.AvailableItemTypes[0], "first supported item");
+                    Equal("SIGNAL_TEXT", editor.AvailableItemTypes[1], "second supported item");
+                }
+            }
+        }
+
+        private static void EditorAddReorderRemovePersistsWorkspace()
+        {
+            var table = NewTable();
+            var store = new DataTableMeterStore(table);
+            var fake = new FakeTelemetrySource();
+            fake.Set(MeterReading.SignalStrength, MeterReadingResult.Supported(-95.0));
+
+            using (var runtimeHost = new MeterWorkspaceRuntimeHost(store, fake))
+            {
+                runtimeHost.Start(TimeSpan.FromHours(1));
+                var manager = new MeterWorkspaceManager(runtimeHost, null);
+
+                using (var editor = new FlexMetersEditorForm(manager))
+                {
+                    Guid id = editor.AddContainer(MeterReceiver.Rx1);
+                    True(id != Guid.Empty, "editor failed to add RX1 container");
+                    True(editor.SelectContainer(id), "editor failed to select added container");
+
+                    True(editor.AddItemToSelectedContainer("SIGNAL_STRENGTH"), "failed to add signal bar");
+                    True(editor.AddItemToSelectedContainer("SIGNAL_TEXT"), "failed to add signal text");
+
+                    MeterWorkspaceSnapshot snapshot = manager.Snapshot;
+                    Equal(2, snapshot.Containers[0].Items.Count, "item count after add");
+                    Equal("SIGNAL_STRENGTH", snapshot.Containers[0].Items[0].Type, "initial first item");
+                    Equal("SIGNAL_TEXT", snapshot.Containers[0].Items[1].Type, "initial second item");
+
+                    True(editor.SelectItem(1), "failed to select second item");
+                    True(editor.MoveSelectedItem(-1), "failed to move item up");
+
+                    snapshot = manager.Snapshot;
+                    Equal("SIGNAL_TEXT", snapshot.Containers[0].Items[0].Type, "reordered first item");
+                    Equal("SIGNAL_STRENGTH", snapshot.Containers[0].Items[1].Type, "reordered second item");
+
+                    True(editor.RemoveSelectedItem(), "failed to remove selected item");
+                    snapshot = store.Load();
+                    Equal(1, snapshot.Containers.Count, "persisted editor container count");
+                    Equal(1, snapshot.Containers[0].Items.Count, "persisted editor item count");
+                    Equal("SIGNAL_STRENGTH", snapshot.Containers[0].Items[0].Type, "remaining item after remove");
+                }
+            }
+        }
+
+        private static void EditorVisibilityPersistsThroughStore()
+        {
+            var table = NewTable();
+            var store = new DataTableMeterStore(table);
+            var fake = new FakeTelemetrySource();
+
+            using (var runtimeHost = new MeterWorkspaceRuntimeHost(store, fake))
+            {
+                runtimeHost.Start(TimeSpan.FromHours(1));
+                var manager = new MeterWorkspaceManager(runtimeHost, null);
+
+                using (var editor = new FlexMetersEditorForm(manager))
+                {
+                    Guid id = editor.AddContainer(MeterReceiver.Rx1);
+                    True(editor.SelectContainer(id), "visibility container selection");
+                    True(editor.SetSelectedContainerVisibility(false, true), "visibility update failed");
+
+                    MeterWorkspaceSnapshot loaded = store.Load();
+                    False(loaded.Containers[0].VisibleOnReceive, "RX visibility not persisted");
+                    True(loaded.Containers[0].VisibleOnTransmit, "TX visibility not persisted");
+                }
+            }
+        }
+
+        private static void EditorDoesNotExposeUnsupportedRx2Creation()
+        {
+            var table = NewTable();
+            var store = new DataTableMeterStore(table);
+            var fake = new FakeTelemetrySource();
+
+            using (var runtimeHost = new MeterWorkspaceRuntimeHost(store, fake))
+            {
+                runtimeHost.Start(TimeSpan.FromHours(1));
+                var manager = new MeterWorkspaceManager(runtimeHost, null);
+
+                using (var editor = new FlexMetersEditorForm(manager))
+                {
+                    Guid id = editor.AddContainer(MeterReceiver.Rx2);
+                    Equal(Guid.Empty, id, "unsupported RX2 container must not be created");
+                    Equal(0, manager.ContainerCount, "RX2 rejection mutated workspace");
+                }
+            }
+        }
+
+        private static void WindowVisibilityFollowsRxTxState()
+        {
+            var container = new MeterContainerSnapshot
+            {
+                Id = Guid.NewGuid(),
+                Receiver = MeterReceiver.Rx1,
+                VisibleOnReceive = true,
+                VisibleOnTransmit = false,
+                Geometry = new MeterWindowGeometry
+                {
+                    X = 0,
+                    Y = 0,
+                    Width = 320,
+                    Height = 160
+                }
+            };
+            var radio = new MeterRadioStateSnapshot { Mox = false };
+
+            True(MeterWindowVisibility.ShouldShow(container, radio), "RX visible container hidden on RX");
+
+            radio.Mox = true;
+            False(MeterWindowVisibility.ShouldShow(container, radio), "RX-only container visible on TX");
+
+            container.VisibleOnReceive = false;
+            container.VisibleOnTransmit = true;
+            True(MeterWindowVisibility.ShouldShow(container, radio), "TX visible container hidden on TX");
+
+            radio.Mox = false;
+            False(MeterWindowVisibility.ShouldShow(container, radio), "TX-only container visible on RX");
         }
 
         private static MeterWorkspaceSnapshot BuildLiveWorkspace()

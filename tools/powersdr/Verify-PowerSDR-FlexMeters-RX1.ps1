@@ -8,9 +8,12 @@ $adapter=Join-Path $SourceRoot 'Console\Console.FlexMetersAdapter.cs'
 $csproj=Join-Path $SourceRoot 'Console\PowerSDR.csproj'
 $cat=Join-Path $SourceRoot 'Console\CAT\CATCommands.cs'
 $consoleCs=Join-Path $SourceRoot 'Console\console.cs'
+$setupCs=Join-Path $SourceRoot 'Console\setup.cs'
+$setupDesigner=Join-Path $SourceRoot 'Console\setup.Designer.cs'
+$setupEntry=Join-Path $SourceRoot 'Console\Setup.FlexMetersEntry.cs'
 $dll=Join-Path $SourceRoot 'bin\Release\FlexMeters.dll'
 
-foreach($required in @($adapter,$csproj,$cat,$consoleCs,$dll)){
+foreach($required in @($adapter,$csproj,$cat,$consoleCs,$setupCs,$setupDesigner,$setupEntry,$dll)){
     if(!(Test-Path $required)){throw "FlexMeters RX1 verification input missing: $required"}
 }
 
@@ -18,10 +21,14 @@ $a=[IO.File]::ReadAllText($adapter)
 $p=[IO.File]::ReadAllText($csproj)
 $c=[IO.File]::ReadAllText($cat)
 $console=[IO.File]::ReadAllText($consoleCs)
+$setup=[IO.File]::ReadAllText($setupCs)
+$setupDesignerText=[IO.File]::ReadAllText($setupDesigner)
+$entry=[IO.File]::ReadAllText($setupEntry)
 
 if($a -match '\bdynamic\b'){throw 'dynamic is forbidden in Console.FlexMetersAdapter.cs'}
 if(([regex]::Matches($p,'<Reference Include="FlexMeters">')).Count -ne 1){throw 'FlexMeters reference count is not exactly one'}
 if(([regex]::Matches($p,'<Compile Include="Console\.FlexMetersAdapter\.cs"')).Count -ne 1){throw 'FlexMeters adapter compile item count is not exactly one'}
+if(([regex]::Matches($p,'<Compile Include="Setup\.FlexMetersEntry\.cs"')).Count -ne 1){throw 'FlexMeters Setup entry compile item count is not exactly one'}
 
 $nativeTokens=@(
     'DttSP.CalculateRXMeter(0, 0, DttSP.MeterType.SIGNAL_STRENGTH)',
@@ -71,7 +78,10 @@ $adapterTokens=@(
     'FlexMetersRadioStateAdapter',
     '_console.VFOAFreq * 1000000.0',
     '_console.VFOBFreq * 1000000.0',
-    'CreateFlexMetersRadioState(),'
+    'CreateFlexMetersRadioState(),',
+    'Mox = _console.MOX',
+    'Tune = _console.TUN',
+    'EnsureFlexMetersWorkspaceManager'
 )
 foreach($token in $adapterTokens){
     if(!$a.Contains($token)){throw "FlexMeters RX1 adapter gate missing: $token"}
@@ -95,12 +105,29 @@ if($console.IndexOf('InitializeFlexMetersWorkspaceRuntime();',[StringComparison]
     throw 'FlexMeters workspace starts before DB.Init'
 }
 
-foreach($setupName in @('setup.cs','setup.Designer.cs')){
-    $setup=Join-Path $SourceRoot ('Console\'+$setupName)
-    if(Test-Path $setup){
-        $s=[IO.File]::ReadAllText($setup)
-        if($s.Contains('FlexMeters')){throw "FlexMeters RX1 stage leaked into $setupName"}
-    }
+if(([regex]::Matches($setup,'InitializeFlexMetersAppearanceEntry\(\);')).Count -ne 1){
+    throw 'FlexMeters Setup Appearance hook count is not exactly one'
+}
+if($setup.IndexOf('InitializeFlexMetersAppearanceEntry();',[StringComparison]::Ordinal) -lt
+   $setup.IndexOf('console = c;',[StringComparison]::Ordinal)){
+    throw 'FlexMeters Setup Appearance entry runs before console assignment'
+}
+if($setupDesignerText.Contains('FlexMeters')){
+    throw 'FlexMeters must not modify legacy setup.Designer.cs'
+}
+if($entry -match '\bdynamic\b'){
+    throw 'dynamic is forbidden in Setup.FlexMetersEntry.cs'
+}
+$entryTokens=@(
+    'tcAppearance.TabPages.Add(flexMetersAppearancePage)',
+    'flexMetersAppearancePage.Text = "Meters/Gadgets"',
+    'new FlexMeters.FlexMetersEditorForm(manager)',
+    'console.EnsureFlexMetersWorkspaceManager()',
+    'flexMetersEditorForm.Show(console)'
+)
+foreach($token in $entryTokens){
+    if(!$entry.Contains($token)){throw "FlexMeters Setup entry gate missing: $token"}
 }
 
+Write-Host 'FLEXMETERS_SETUP_ENTRY=PASS'
 Write-Host 'FLEXMETERS_RX1_SOURCE_GATE=PASS'
