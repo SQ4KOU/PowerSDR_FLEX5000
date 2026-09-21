@@ -35,6 +35,7 @@
     <Compile Include="Contracts.cs" />
     <Compile Include="Model.cs" />
     <Compile Include="DataTableMeterStore.cs" />
+    <Compile Include="Flex5000Rx1SignalCalibration.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

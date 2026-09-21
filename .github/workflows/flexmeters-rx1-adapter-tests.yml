@@ -1,0 +1,151 @@
+name: FlexMeters RX1 native adapter
+
+on:
+  push:
+    branches:
+      - feature/flex5000-thetis-meters-gadgets-1to1
+    paths:
+      - 'tools/powersdr/meters-native/FlexMeters/**'
+      - 'tools/powersdr/meters-native/FlexMeters.Tests/**'
+      - 'tools/powersdr/meters-native/PowerSDR/**'
+      - 'tools/powersdr/Apply-PowerSDR-FlexMeters-RX1.ps1'
+      - 'tools/powersdr/Verify-PowerSDR-FlexMeters-RX1.ps1'
+      - '.github/workflows/flexmeters-rx1-adapter-tests.yml'
+  workflow_dispatch:
+
+jobs:
+  rx1-native-adapter:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout SQ4KOU harness
+        uses: actions/checkout@v4
+
+      - name: Ensure extraction tools
+        shell: pwsh
+        run: |
+          if (!(Get-Command innoextract.exe -ErrorAction SilentlyContinue) -and !(Get-Command innoextract -ErrorAction SilentlyContinue)) {
+            choco install innoextract -y --no-progress
+          }
+          if (!(Get-Command nuget.exe -ErrorAction SilentlyContinue) -and !(Get-Command nuget -ErrorAction SilentlyContinue)) {
+            choco install nuget.commandline -y --no-progress
+          }
+
+      - name: Fetch pinned KE9NS source
+        shell: pwsh
+        run: |
+          git clone --no-tags https://github.com/ke9ns/PowerSDR-KE9NS-v2.8.0.git _build_source
+          Push-Location _build_source
+          git checkout --detach d558979570c4c2e4572b63ac218d3d4477926cb8
+          if ((git rev-parse HEAD).Trim() -ne 'd558979570c4c2e4572b63ac218d3d4477926cb8') {
+            throw 'Pinned KE9NS source SHA mismatch'
+          }
+          Pop-Location
+
+      - name: Prepare runtime and restore
+        shell: pwsh
+        run: |
+          $work=(Resolve-Path './_build_source').Path
+          $out=Join-Path $work 'bin\Release'
+          $logs=Join-Path $work '_sq4kou_logs'
+          New-Item -ItemType Directory -Force -Path $out,$logs | Out-Null
+          ./tools/powersdr/Prepare-PowerSDR-Runtime.ps1 -WorkRoot $work -OutDir $out -LogRoot $logs
+          nuget restore ./_build_source/PowerSDR.sln -NonInteractive
+          if ($LASTEXITCODE -ne 0) { throw ('NuGet restore failed rc=' + $LASTEXITCODE) }
+
+      - name: Build FlexMeters and contract tests
+        shell: pwsh
+        run: |
+          $pf86=[Environment]::GetFolderPath('ProgramFilesX86')
+          $vswhere=Join-Path $pf86 'Microsoft Visual Studio\Installer\vswhere.exe'
+          $msbuild=& $vswhere -latest -products * -requires Microsoft.Component.MSBuild -find 'MSBuild\**\Bin\MSBuild.exe' | Select-Object -First 1
+          if (!$msbuild) { throw 'MSBuild not found' }
+
+          $testProject=(Resolve-Path './tools/powersdr/meters-native/FlexMeters.Tests/FlexMeters.Tests.csproj').Path
+          & $msbuild $testProject '/m' '/t:Rebuild' '/p:Configuration=Release' '/p:Platform=x86' '/v:minimal'
+          if ($LASTEXITCODE -ne 0) { throw ('FlexMeters build failed rc=' + $LASTEXITCODE) }
+
+          $testExe=(Resolve-Path './tools/powersdr/meters-native/FlexMeters.Tests/bin/Release/FlexMeters.Tests.exe').Path
+          & $testExe
+          if ($LASTEXITCODE -ne 0) { throw ('FlexMeters tests failed rc=' + $LASTEXITCODE) }
+
+      - name: Prepare current P21 PowerSDR baseline
+        shell: pwsh
+        run: |
+          $work=(Resolve-Path './_build_source').Path
+          $out=Join-Path $work 'bin\Release'
+          $pf86=[Environment]::GetFolderPath('ProgramFilesX86')
+          $vswhere=Join-Path $pf86 'Microsoft Visual Studio\Installer\vswhere.exe'
+          $msbuild=& $vswhere -latest -products * -requires Microsoft.Component.MSBuild -find 'MSBuild\**\Bin\MSBuild.exe' | Select-Object -First 1
+          if (!$msbuild) { throw 'MSBuild not found' }
+
+          $powerMateDll=Join-Path $out 'PowerMate.dll'
+          if(!(Test-Path $powerMateDll)){
+            & $msbuild (Join-Path $work 'PowerMate\PowerMate.vcxproj') '/m' '/t:Rebuild' '/p:Configuration=Release' '/p:Platform=Win32' '/v:minimal'
+            if($LASTEXITCODE -ne 0){throw "PowerMate build failed rc=$LASTEXITCODE"}
+            Copy-Item (Join-Path $work 'PowerMate\bin\Release\PowerMate.dll') $powerMateDll -Force
+          }
+
+          $csproj=Join-Path $work 'Console\PowerSDR.csproj'
+          $cs=[IO.File]::ReadAllText($csproj)
+          $rx=[regex]::new('(?ms)\s*<ProjectReference Include="\.\.\\PowerMate\\PowerMate\.vcxproj">.*?</ProjectReference>')
+          if($rx.Matches($cs).Count -ne 1){throw 'Unexpected PowerMate ProjectReference layout'}
+          $pmRef=@"
+    <Reference Include="PowerMate">
+      <HintPath>..\bin\Release\PowerMate.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+"@
+          $cs=$rx.Replace($cs,[Environment]::NewLine+$pmRef,1)
+          [IO.File]::WriteAllText($csproj,$cs,[Text.UTF8Encoding]::new($false))
+
+          ./tools/powersdr/Apply-PowerSDR-DatabaseReliability.ps1 -SourceRoot $work
+          ./tools/powersdr/Apply-PowerSDR-WindowState.ps1 -SourceRoot $work
+          ./tools/powersdr/Apply-PowerSDR-FastShutdown.ps1 -SourceRoot $work
+          ./tools/powersdr/Apply-PowerSDR-FastAudioExit.ps1 -SourceRoot $work
+          ./tools/powersdr/Apply-PowerSDR-AudioBeforeStandby.ps1 -SourceRoot $work
+          ./tools/powersdr/Apply-PowerSDR-ShutdownEvidence.ps1 -SourceRoot $work
+          ./tools/powersdr/Apply-PowerSDR-FastStateSave-P07.ps1 -SourceRoot $work
+          ./tools/powersdr/Apply-PowerSDR-DisplayPerformance-P08.ps1 -SourceRoot $work
+          ./tools/powersdr/Apply-PowerSDR-StableDisplayPacing-P13.ps1 -SourceRoot $work
+          ./tools/powersdr/Verify-PowerSDR-StabilityBaseline-P14.ps1 -SourceRoot $work
+          ./tools/powersdr/Apply-PowerSDR-UIDiagnostics-P17.ps1 -SourceRoot $work
+          ./tools/powersdr/Verify-PowerSDR-UIDiagnostics-P17.ps1 -SourceRoot $work
+          ./tools/powersdr/Apply-PowerSDR-CleanStartupPresentation-P18.ps1 -SourceRoot $work
+          ./tools/powersdr/Verify-PowerSDR-CleanStartupPresentation-P18.ps1 -SourceRoot $work
+          ./tools/powersdr/Apply-PowerSDR-ScreenBeforeAudio-P19.ps1 -SourceRoot $work
+          ./tools/powersdr/Verify-PowerSDR-ScreenBeforeAudio-P19.ps1 -SourceRoot $work
+          ./tools/powersdr/Apply-PowerSDR-OriginalFlexSplash-P20.ps1 -SourceRoot $work
+          ./tools/powersdr/Verify-PowerSDR-OriginalFlexSplash-P20.ps1 -SourceRoot $work
+          ./tools/powersdr/Apply-PowerSDR-SQ4KOUSplash-P21-FINAL2.ps1 -SourceRoot $work
+          ./tools/powersdr/Verify-PowerSDR-SQ4KOUSplash-P21-FINAL2.ps1 -SourceRoot $work
+
+      - name: Apply and verify RX1 adapter
+        shell: pwsh
+        run: |
+          $work=(Resolve-Path './_build_source').Path
+          $dll=(Resolve-Path './tools/powersdr/meters-native/FlexMeters/bin/Release/FlexMeters.dll').Path
+          ./tools/powersdr/Apply-PowerSDR-FlexMeters-RX1.ps1 -SourceRoot $work -FlexMetersDll $dll
+          ./tools/powersdr/Verify-PowerSDR-FlexMeters-RX1.ps1 -SourceRoot $work
+
+      - name: Compile integrated PowerSDR x86
+        shell: pwsh
+        run: |
+          $work=(Resolve-Path './_build_source').Path
+          $pf86=[Environment]::GetFolderPath('ProgramFilesX86')
+          $vswhere=Join-Path $pf86 'Microsoft Visual Studio\Installer\vswhere.exe'
+          $msbuild=& $vswhere -latest -products * -requires Microsoft.Component.MSBuild -find 'MSBuild\**\Bin\MSBuild.exe' | Select-Object -First 1
+          if (!$msbuild) { throw 'MSBuild not found' }
+
+          $csproj=Join-Path $work 'Console\PowerSDR.csproj'
+          & $msbuild $csproj '/m' '/t:Rebuild' '/p:Configuration=Release' '/p:Platform=x86' '/p:BuildProjectReferences=false' '/v:minimal'
+          if($LASTEXITCODE -ne 0){throw "Integrated PowerSDR x86 build failed rc=$LASTEXITCODE"}
+
+          $exe=Join-Path $work 'bin\Release\PowerSDR.exe'
+          if(!(Test-Path $exe)){throw 'PowerSDR.exe missing after integrated build'}
+          $fv=[Diagnostics.FileVersionInfo]::GetVersionInfo($exe).FileVersion
+          if($fv -ne '2.8.0.336'){throw "Unexpected PowerSDR file version: $fv"}
+          if(!(Test-Path (Join-Path $work 'bin\Release\FlexMeters.dll'))){throw 'FlexMeters.dll missing from final PowerSDR output'}
+
+          'FLEXMETERS_RX1_NATIVE_ADAPTER=PASS' | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+          'FLEXMETERS_RX1_SOURCE_PARITY=PASS' | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+          'POWERSDR_P21_INTEGRATED_BUILD=PASS' | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append

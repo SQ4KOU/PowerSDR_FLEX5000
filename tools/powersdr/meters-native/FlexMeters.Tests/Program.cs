@@ -17,8 +17,10 @@ namespace FlexMeters.Tests
             Run("replace-all with zero containers clears old IDs", ZeroContainersPurgesAllContainerIds);
             Run("unsupported reading has no numeric value", UnsupportedReadingHasNoNumericValue);
             Run("fake telemetry signal changes are observable", FakeTelemetrySignalChangesAreObservable);
+            Run("FLEX-5000 RX1 calibration matches native KE9NS sum", Flex5000Rx1CalibrationMatchesNativeSum);
+            Run("FLEX-5000 RX1 loop gain is conditional", Flex5000Rx1LoopGainIsConditional);
 
-            Console.WriteLine("PASS " + _passed + "/6");
+            Console.WriteLine("PASS " + _passed + "/8");
             return 0;
         }
 
@@ -115,6 +117,32 @@ namespace FlexMeters.Tests
             Equal(-113.5, first, "first signal");
             Equal(-87.25, second, "second signal");
             True(second > first, "signal value did not change");
+        }
+
+        private static void Flex5000Rx1CalibrationMatchesNativeSum()
+        {
+            double value = Flex5000Rx1SignalCalibration.Apply(
+                -110.25,
+                2.5,
+                6.0,
+                1.25,
+                -0.5,
+                10.0,
+                false,
+                3.75);
+
+            Equal(-91.0, value, "native RX1 calibrated signal");
+        }
+
+        private static void Flex5000Rx1LoopGainIsConditional()
+        {
+            double withoutLoop = Flex5000Rx1SignalCalibration.Apply(
+                -110.25, 2.5, 6.0, 1.25, -0.5, 10.0, false, 3.75);
+            double withLoop = Flex5000Rx1SignalCalibration.Apply(
+                -110.25, 2.5, 6.0, 1.25, -0.5, 10.0, true, 3.75);
+
+            Equal(-91.0, withoutLoop, "RX1 value without loop");
+            Equal(-87.25, withLoop, "RX1 value with loop");
         }
 
         private static DataTable NewTable()
