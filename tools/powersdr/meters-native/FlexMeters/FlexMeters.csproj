@@ -38,6 +38,7 @@
     <Compile Include="Flex5000Rx1SignalCalibration.cs" />
     <Compile Include="MeterLiveRuntime.cs" />
     <Compile Include="MeterWorkspaceRuntimeHost.cs" />
+    <Compile Include="MeterWorkspaceManager.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

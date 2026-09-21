@@ -8,6 +8,7 @@ namespace PowerSDR
 
         private FlexMeters.DataTableMeterStore flexMetersStore;
         private FlexMeters.MeterWorkspaceRuntimeHost flexMetersWorkspaceHost;
+        private FlexMeters.MeterWorkspaceManager flexMetersContainerManager;
 
         private sealed class FlexMetersTelemetryAdapter : FlexMeters.IMeterTelemetrySource
         {
@@ -95,6 +96,9 @@ namespace PowerSDR
                 flexMetersStore,
                 CreateFlexMetersTelemetrySource());
             flexMetersWorkspaceHost.Start(FlexMetersLiveInterval);
+            flexMetersContainerManager = new FlexMeters.MeterWorkspaceManager(
+                flexMetersWorkspaceHost,
+                delegate { DB.Update(); });
         }
 
         internal void ReplaceFlexMetersWorkspace(
@@ -106,11 +110,7 @@ namespace PowerSDR
             if (flexMetersWorkspaceHost == null)
                 InitializeFlexMetersWorkspaceRuntime();
 
-            flexMetersWorkspaceHost.ReplaceWorkspace(workspace);
-
-            // ReplaceAll mutates the dedicated DataSet table atomically.
-            // Explicit configuration saves are persisted immediately to disk.
-            DB.Update();
+            flexMetersContainerManager.ReplaceAll(workspace);
         }
 
         internal void ReloadFlexMetersWorkspaceRuntime()
@@ -118,7 +118,7 @@ namespace PowerSDR
             if (flexMetersWorkspaceHost == null)
                 InitializeFlexMetersWorkspaceRuntime();
             else
-                flexMetersWorkspaceHost.ReloadFromStore();
+                flexMetersContainerManager.ReloadFromStore();
         }
 
         internal FlexMeters.MeterWorkspaceRuntimeHost FlexMetersWorkspaceHost
@@ -126,9 +126,39 @@ namespace PowerSDR
             get { return flexMetersWorkspaceHost; }
         }
 
+        internal FlexMeters.MeterWorkspaceManager FlexMetersContainerManager
+        {
+            get { return flexMetersContainerManager; }
+        }
+
+        internal void AddFlexMetersContainer(FlexMeters.MeterContainerSnapshot container)
+        {
+            if (flexMetersContainerManager == null)
+                InitializeFlexMetersWorkspaceRuntime();
+
+            flexMetersContainerManager.AddContainer(container);
+        }
+
+        internal bool RemoveFlexMetersContainer(System.Guid containerId)
+        {
+            if (flexMetersContainerManager == null)
+                InitializeFlexMetersWorkspaceRuntime();
+
+            return flexMetersContainerManager.RemoveContainer(containerId);
+        }
+
+        internal void ReplaceFlexMetersContainer(FlexMeters.MeterContainerSnapshot container)
+        {
+            if (flexMetersContainerManager == null)
+                InitializeFlexMetersWorkspaceRuntime();
+
+            flexMetersContainerManager.ReplaceContainer(container);
+        }
+
         private void ShutdownFlexMetersWorkspaceRuntime()
         {
             FlexMeters.MeterWorkspaceRuntimeHost host = flexMetersWorkspaceHost;
+            flexMetersContainerManager = null;
             flexMetersWorkspaceHost = null;
             flexMetersStore = null;
 

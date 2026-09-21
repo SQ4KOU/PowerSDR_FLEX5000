@@ -29,8 +29,13 @@ namespace FlexMeters.Tests
             Run("workspace host replace-all reloads runtime", WorkspaceHostReplaceAllReloadsRuntime);
             Run("workspace host reload sees external store change", WorkspaceHostReloadSeesExternalStoreChange);
             Run("workspace host stop disposes runtime", WorkspaceHostStopDisposesRuntime);
+            Run("container manager add persists authoritative copy", ContainerManagerAddPersistsAuthoritativeCopy);
+            Run("container manager remove purges restart state", ContainerManagerRemovePurgesRestartState);
+            Run("container manager replace updates container", ContainerManagerReplaceUpdatesContainer);
+            Run("container manager rejects duplicate ID without mutation", ContainerManagerRejectsDuplicateIdWithoutMutation);
+            Run("container manager reload follows store", ContainerManagerReloadFollowsStore);
 
-            Console.WriteLine("PASS " + _passed + "/17");
+            Console.WriteLine("PASS " + _passed + "/22");
             return 0;
         }
 
@@ -365,6 +370,156 @@ namespace FlexMeters.Tests
                 "stopped runtime was not disposed");
 
             host.Dispose();
+        }
+
+        private static void ContainerManagerAddPersistsAuthoritativeCopy()
+        {
+            var table = NewTable();
+            var store = new DataTableMeterStore(table);
+            store.ReplaceAll(new MeterWorkspaceSnapshot());
+
+            var fake = new FakeTelemetrySource();
+            fake.Set(MeterReading.SignalStrength, MeterReadingResult.Supported(-88.0));
+
+            using (var host = new MeterWorkspaceRuntimeHost(store, fake))
+            {
+                host.Start(TimeSpan.FromHours(1));
+                int persistCount = 0;
+                var manager = new MeterWorkspaceManager(host, delegate { persistCount++; });
+
+                MeterContainerSnapshot container = BuildLiveWorkspace().Containers[0];
+                manager.AddContainer(container);
+
+                Equal(1, manager.ContainerCount, "manager add count");
+                Equal(1, persistCount, "manager add persist callback");
+
+                // Mutating the caller-owned object after Add must not mutate authoritative state.
+                container.Geometry.Width = 9999;
+                Equal(320, manager.Snapshot.Containers[0].Geometry.Width, "authoritative copy width");
+
+                MeterWorkspaceSnapshot loaded = store.Load();
+                Equal(1, loaded.Containers.Count, "manager add store count");
+                Equal(320, loaded.Containers[0].Geometry.Width, "manager add stored width");
+            }
+        }
+
+        private static void ContainerManagerRemovePurgesRestartState()
+        {
+            var table = NewTable();
+            var store = new DataTableMeterStore(table);
+            MeterWorkspaceSnapshot initial = BuildTwoContainerSnapshot();
+            store.ReplaceAll(initial);
+            Guid removedId = initial.Containers[0].Id;
+
+            var fake = new FakeTelemetrySource();
+            fake.Set(MeterReading.SignalStrength, MeterReceiver.Rx1, MeterReadingResult.Supported(-97.0));
+            fake.Set(MeterReading.SignalStrength, MeterReceiver.Rx2, MeterReadingResult.Unsupported("RX2 not implemented."));
+
+            using (var host = new MeterWorkspaceRuntimeHost(store, fake))
+            {
+                host.Start(TimeSpan.FromHours(1));
+                var manager = new MeterWorkspaceManager(host, null);
+
+                True(manager.RemoveContainer(removedId), "manager remove returned false");
+                Equal(1, manager.ContainerCount, "manager remove count");
+                RawTableDoesNotContain(table, removedId.ToString("D"));
+            }
+
+            string xml;
+            var dataSet = new DataSet("PowerSDR");
+            dataSet.Tables.Add(table.Copy());
+            using (var writer = new StringWriter())
+            {
+                dataSet.WriteXml(writer, XmlWriteMode.WriteSchema);
+                xml = writer.ToString();
+            }
+
+            var restarted = new DataSet("PowerSDR");
+            using (var reader = new StringReader(xml))
+                restarted.ReadXml(reader, XmlReadMode.ReadSchema);
+
+            var restartedStore = new DataTableMeterStore(restarted.Tables["FlexMeters"]);
+            MeterWorkspaceSnapshot loaded = restartedStore.Load();
+            Equal(1, loaded.Containers.Count, "restart count after manager remove");
+            False(loaded.Containers[0].Id == removedId, "removed container returned after restart");
+        }
+
+        private static void ContainerManagerReplaceUpdatesContainer()
+        {
+            var table = NewTable();
+            var store = new DataTableMeterStore(table);
+            MeterWorkspaceSnapshot initial = BuildLiveWorkspace();
+            store.ReplaceAll(initial);
+
+            var fake = new FakeTelemetrySource();
+            fake.Set(MeterReading.SignalStrength, MeterReadingResult.Supported(-92.0));
+
+            using (var host = new MeterWorkspaceRuntimeHost(store, fake))
+            {
+                host.Start(TimeSpan.FromHours(1));
+                var manager = new MeterWorkspaceManager(host, null);
+
+                MeterContainerSnapshot replacement = CloneContainer(manager.Snapshot.Containers[0]);
+                replacement.Geometry.X = 777;
+                replacement.Geometry.Width = 555;
+                manager.ReplaceContainer(replacement);
+
+                MeterWorkspaceSnapshot current = manager.Snapshot;
+                Equal(777, current.Containers[0].Geometry.X, "manager replace X");
+                Equal(555, current.Containers[0].Geometry.Width, "manager replace width");
+
+                MeterWorkspaceSnapshot loaded = store.Load();
+                Equal(777, loaded.Containers[0].Geometry.X, "stored replace X");
+                Equal(555, loaded.Containers[0].Geometry.Width, "stored replace width");
+            }
+        }
+
+        private static void ContainerManagerRejectsDuplicateIdWithoutMutation()
+        {
+            var table = NewTable();
+            var store = new DataTableMeterStore(table);
+            MeterWorkspaceSnapshot initial = BuildLiveWorkspace();
+            store.ReplaceAll(initial);
+
+            var fake = new FakeTelemetrySource();
+            fake.Set(MeterReading.SignalStrength, MeterReadingResult.Supported(-90.0));
+
+            using (var host = new MeterWorkspaceRuntimeHost(store, fake))
+            {
+                host.Start(TimeSpan.FromHours(1));
+                var manager = new MeterWorkspaceManager(host, null);
+
+                MeterContainerSnapshot duplicate = CloneContainer(manager.Snapshot.Containers[0]);
+                Throws<InvalidOperationException>(
+                    delegate { manager.AddContainer(duplicate); },
+                    "duplicate container ID was accepted");
+
+                Equal(1, manager.ContainerCount, "duplicate changed manager count");
+                Equal(1, store.Load().Containers.Count, "duplicate changed store count");
+            }
+        }
+
+        private static void ContainerManagerReloadFollowsStore()
+        {
+            var table = NewTable();
+            var store = new DataTableMeterStore(table);
+            store.ReplaceAll(BuildLiveWorkspace());
+
+            var fake = new FakeTelemetrySource();
+            fake.Set(MeterReading.SignalStrength, MeterReadingResult.Supported(-91.0));
+
+            using (var host = new MeterWorkspaceRuntimeHost(store, fake))
+            {
+                host.Start(TimeSpan.FromHours(1));
+                var manager = new MeterWorkspaceManager(host, null);
+                Equal(1, manager.ContainerCount, "manager pre-reload count");
+
+                store.ReplaceAll(new MeterWorkspaceSnapshot());
+                manager.ReloadFromStore();
+
+                Equal(0, manager.ContainerCount, "manager reload count");
+                Equal(0, host.Runtime.BindingCount, "manager reload runtime binding count");
+            }
         }
 
         private static MeterWorkspaceSnapshot BuildLiveWorkspace()

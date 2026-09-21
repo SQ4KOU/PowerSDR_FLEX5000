@@ -44,7 +44,7 @@ namespace FlexMeters
             get
             {
                 lock (_sync)
-                    return _workspace;
+                    return MeterWorkspaceCopy.Clone(_workspace);
             }
         }
 
@@ -104,7 +104,7 @@ namespace FlexMeters
             if (IsStarted)
                 ReloadFromStore();
             else
-                _workspace = _store.Load();
+                _workspace = MeterWorkspaceCopy.Clone(_store.Load());
         }
 
         public void ReloadFromStore()
@@ -148,7 +148,7 @@ namespace FlexMeters
 
                 previous = _runtime;
                 _runtime = replacement;
-                _workspace = workspace;
+                _workspace = MeterWorkspaceCopy.Clone(workspace);
             }
 
             if (previous != null)

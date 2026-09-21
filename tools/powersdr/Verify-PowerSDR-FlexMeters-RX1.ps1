@@ -57,7 +57,12 @@ $adapterTokens=@(
     'ReplaceFlexMetersWorkspace',
     'ReloadFlexMetersWorkspaceRuntime',
     'DB.Update()',
-    'ShutdownFlexMetersWorkspaceRuntime'
+    'ShutdownFlexMetersWorkspaceRuntime',
+    'MeterWorkspaceManager',
+    'flexMetersContainerManager.AddContainer',
+    'flexMetersContainerManager.RemoveContainer',
+    'flexMetersContainerManager.ReplaceContainer',
+    'delegate { DB.Update(); }'
 )
 foreach($token in $adapterTokens){
     if(!$a.Contains($token)){throw "FlexMeters RX1 adapter gate missing: $token"}
