@@ -12,19 +12,33 @@ namespace FlexMeters
         private bool _supported;
         private string _reason;
         private double? _value;
+        private ThetisMeterItemSettings _settings;
 
         public FlexTxMeterControl(MeterItemDescriptor descriptor)
+            : this(descriptor, CreateDefaultItem(descriptor))
+        {
+        }
+
+        public FlexTxMeterControl(
+            MeterItemDescriptor descriptor,
+            MeterItemSnapshot item)
         {
             if (descriptor == null)
                 throw new ArgumentNullException("descriptor");
             if (descriptor.RendererKind != MeterItemRendererKind.Linear)
                 throw new ArgumentException("Linear renderer descriptor required.", "descriptor");
 
+            if (item == null)
+                throw new ArgumentNullException("item");
+            if (!String.Equals(item.Type, descriptor.Type, StringComparison.Ordinal))
+                throw new ArgumentException("Meter item type mismatch.", "item");
+
             _descriptor = descriptor;
+            _settings = ThetisMeterItemSettings.FromItem(item);
             DoubleBuffered = true;
             ResizeRedraw = true;
-            BackColor = Color.FromArgb(32, 32, 32);
-            ForeColor = Color.Yellow;
+            BackColor = _settings.BackgroundColor;
+            ForeColor = _settings.LowColor;
             MinimumSize = new Size(180, 58);
             Height = 72;
             Dock = DockStyle.Top;
@@ -35,6 +49,34 @@ namespace FlexMeters
                 ControlStyles.OptimizedDoubleBuffer |
                 ControlStyles.ResizeRedraw,
                 true);
+        }
+
+        private static MeterItemSnapshot CreateDefaultItem(
+            MeterItemDescriptor descriptor)
+        {
+            if (descriptor == null)
+                throw new ArgumentNullException("descriptor");
+
+            var item = new MeterItemSnapshot
+            {
+                Id = Guid.NewGuid(),
+                Type = descriptor.Type
+            };
+            ThetisMeterItemSettings.ApplyDefaults(item);
+            return item;
+        }
+
+        public void ApplySettings(MeterItemSnapshot item)
+        {
+            if (item == null)
+                throw new ArgumentNullException("item");
+            if (!String.Equals(item.Type, _descriptor.Type, StringComparison.Ordinal))
+                throw new ArgumentException("Meter item type mismatch.", "item");
+
+            _settings = ThetisMeterItemSettings.FromItem(item);
+            BackColor = _settings.BackgroundColor;
+            ForeColor = _settings.LowColor;
+            Invalidate();
         }
 
         public string RendererKind
@@ -126,13 +168,17 @@ namespace FlexMeters
 
             using (var titleFont = new Font("Trebuchet MS", 9.0f, FontStyle.Regular))
             using (var valueFont = new Font("Trebuchet MS", 10.0f, FontStyle.Bold))
-            using (var titleBrush = new SolidBrush(Color.DarkGray))
-            using (var valueBrush = new SolidBrush(Color.Yellow))
-            using (var trackBrush = new SolidBrush(Color.FromArgb(55, 55, 55)))
-            using (var fillBrush = new SolidBrush(Color.Yellow))
-            using (var borderPen = new Pen(Color.DimGray))
+            using (var titleBrush = new SolidBrush(_settings.TitleColor))
+            using (var valueBrush = new SolidBrush(_settings.LowColor))
+            using (var trackBrush = new SolidBrush(
+                _settings.DarkMode
+                    ? Color.FromArgb(55, 55, 55)
+                    : Color.FromArgb(220, 220, 220)))
+            using (var fillBrush = new SolidBrush(_settings.LowColor))
+            using (var borderPen = new Pen(_settings.HighColor))
             {
-                g.DrawString(_descriptor.DisplayName, titleFont, titleBrush, left, 4.0f);
+                if (_settings.ShowType)
+                    g.DrawString(_descriptor.DisplayName, titleFont, titleBrush, left, 4.0f);
 
                 string units = String.IsNullOrEmpty(_descriptor.Units)
                     ? ""
