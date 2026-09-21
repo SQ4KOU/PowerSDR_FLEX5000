@@ -161,3 +161,52 @@ Required tests:
 6. Meters/Gadgets editor UI.
 7. Remaining gadgets/actions one capability at a time.
 8. MSI only after persistence + live-value gates pass.
+
+
+## Build integration
+
+The existing P21 build intentionally invokes PowerSDR with
+`/p:BuildProjectReferences=false`. FlexMeters must therefore be built explicitly before
+PowerSDR, not added as an implicit project reference.
+
+Required deterministic sequence:
+1. restore the pinned PowerSDR and FlexMeters NuGet dependencies;
+2. build `FlexMeters.dll` for .NET Framework 4.8 / x86;
+3. copy `FlexMeters.dll` and required SharpDX 4.2.0 runtime assemblies into the existing
+   PowerSDR `bin\Release` output;
+4. inject a normal assembly Reference/HintPath to `FlexMeters.dll` into the generated
+   PowerSDR csproj, matching the build's existing PowerMate reference pattern;
+5. compile PowerSDR with `BuildProjectReferences=false`;
+6. WiX `heat` harvests the complete output directory, so the DLL and its runtime
+   dependencies enter the MSI through the existing packaging path.
+
+No second installer and no external registration mechanism are required.
+
+## PowerSDR adapter placement
+
+Pinned KE9NS declares both `Console` and `Setup` as partial classes.
+
+Use additive partial source files compiled into PowerSDR:
+- `Console.FlexMetersAdapter.cs`
+- `Setup.FlexMetersEntry.cs`
+
+The Console partial can read the existing private calibration/FWC/state fields directly.
+This is preferable to reflection and avoids changing proven backend fields to public.
+
+For the first functional implementation, do not refactor the existing KE9NS legacy meter
+calculation path. The adapter will reproduce the source-proven formulas from the pinned
+base and source gates will verify those expressions. Refactoring the working legacy meter
+into shared helpers is deferred until FlexMeters has passed real-radio parity tests.
+This follows the project rule: working code is not changed without need.
+
+## Lifecycle hooks
+
+- Construct/load FlexMeters model after `InitConsole()` has returned.
+- Register the main Console `Shown` handler before Application.Run presents the form.
+- Do not show restored floating windows before Console.Shown.
+- Start FlexMeters telemetry in the existing successful POWER-ON branch after Audio.Start,
+  beside the native multimeter worker.
+- Read cached `pa_fwd_power` / `pa_rev_power`; never start a second FWC PA-ADC poller.
+- Save the complete FlexMeters model into the dedicated DataTable at the start of
+  `Console_Closing()`, before forms are hidden/destroyed.
+- Let existing `DB.Exit()` perform the final database file write.
