@@ -35,22 +35,24 @@ foreach($name in $files)
     [IO.File]::WriteAllText((Join-Path $consoleDir ("P25_"+$name)),$c,$utf8)
 }
 
-# MeterManager: retain Thetis container/model/renderer implementation, replace only
-# the Thetis-console event feed with a direct PowerSDR telemetry boundary.
+# Keep the native Thetis meter model/container/SharpDX renderer.
+# Replace only the later Thetis event bus with a small PowerSDR telemetry boundary.
 $mmPath=Join-Path $consoleDir 'P25_MeterManager.cs'
 $mm=[IO.File]::ReadAllText($mmPath)
 
-# The 2023 Thetis renderer used a later HiPerfTimer API. PowerSDR's own timer
-# exposes DurationMsec only, so use the framework Stopwatch for the same elapsed-time purpose.
-$mm=$mm.Replace('private HiPerfTimer _objFrameStartTimer = new HiPerfTimer();','private System.Diagnostics.Stopwatch _objFrameStartTimer = System.Diagnostics.Stopwatch.StartNew();')
+# The 2023 Thetis renderer expects ElapsedMsec. PowerSDR's older HiPerfTimer
+# does not expose that member, so use Stopwatch for the same elapsed-time role.
+$mm=$mm.Replace(
+    'private HiPerfTimer _objFrameStartTimer = new HiPerfTimer();',
+    'private System.Diagnostics.Stopwatch _objFrameStartTimer = System.Diagnostics.Stopwatch.StartNew();'
+)
 $mm=$mm.Replace('_objFrameStartTimer.ElapsedMsec','_objFrameStartTimer.Elapsed.TotalMilliseconds')
 
-$rx='(?s)        private static void addDelegates\(\).*?        private static void OnTransverterIndexChanged'
-$replacement=@'
+$eventRx='(?s)        private static void addDelegates\(\).*?        private static void OnTransverterIndexChanged'
+$eventReplacement=@'
         private static void addDelegates()
         {
-            // P25: PowerSDR does not expose the later Thetis event bus.
-            // The meter thread polls the native PowerSDR state/readings instead.
+            // P25: native PowerSDR state is polled by the existing Thetis meter thread.
             _delegatesAdded = true;
         }
         private static void removeDelegates()
@@ -64,13 +66,13 @@ $replacement=@'
         }
         private static void OnTransverterIndexChanged
 '@
-$new=[regex]::Replace($mm,$rx,$replacement,1)
-if($new -eq $mm){throw 'P25 failed to replace Thetis MeterManager event-bus methods'}
-$mm=$new
+$mm2=[regex]::Replace($mm,$eventRx,$eventReplacement,1)
+if($mm2 -eq $mm){throw 'P25 failed to replace Thetis MeterManager event-bus methods'}
+$mm=$mm2
 
-$anchor='        public static void AddImage(string sKey, System.Drawing.Bitmap image)'
-if(!$mm.Contains($anchor)){throw 'P25 MeterManager AddImage anchor missing'}
-$bridge=@'
+$addImageAnchor='        public static void AddImage(string sKey, System.Drawing.Bitmap image)'
+if(!$mm.Contains($addImageAnchor)){throw 'P25 MeterManager AddImage anchor missing'}
+$telemetryBridge=@'
         private static bool _p25LastMox;
         private static bool _p25MoxValid;
 
@@ -80,16 +82,16 @@ $bridge=@'
 
             _power = _console.PowerOn;
             _rx1VHForAbove = _console.VFOAFreq >= 30.0;
-            _rx2VHForAbove = false; // RX2 deliberately not integrated in the FLEX-5000 port.
+            _rx2VHForAbove = false;
 
             bool mox = _console.MOX;
             if (!_p25MoxValid || mox != _p25LastMox)
             {
-                bool old = _p25MoxValid ? _p25LastMox : mox;
+                bool oldMox = _p25MoxValid ? _p25LastMox : mox;
                 _p25LastMox = mox;
                 _p25MoxValid = true;
-                OnMox(1, old, mox);
-                _console.P25RaiseMeterMox(1, old, mox);
+                OnMox(1, oldMox, mox);
+                _console.P25RaiseMeterMox(1, oldMox, mox);
             }
 
             if (!_power || mox) return;
@@ -105,152 +107,26 @@ $bridge=@'
         }
 
 '@
-$mm=$mm.Replace($anchor,$bridge+$anchor)
+$mm=$mm.Replace($addImageAnchor,$telemetryBridge+$addImageAnchor)
 
 $loopRx='(?m)^(\s*)while \(_meterThreadRunning\)\s*\{'
 $loopMatch=[regex]::Match($mm,$loopRx)
 if(!$loopMatch.Success){throw 'P25 MeterManager loop anchor missing'}
 $loopInsert=$nl+$loopMatch.Groups[1].Value+'    P25RefreshPowerSDR();'
 $mm=$mm.Insert($loopMatch.Index+$loopMatch.Length,$loopInsert)
-
-# Remove only the Thetis event registration call in Init; direct polling above replaces it.
-$mm=$mm.Replace('            addDelegates();                       ','            addDelegates();')
 [IO.File]::WriteAllText($mmPath,$mm,$utf8)
 
-# ucMeter only needs MOX title updates. Keep its native control mechanics and subscribe
-# to the single compatibility event exposed by P25ThetisMetersBridge.cs.
+# PowerSDR ButtonTS predates Thetis' Selectable property.
 $ucDesignerPath=Join-Path $consoleDir 'P25_ucMeter.Designer.cs'
 $ucDesigner=[IO.File]::ReadAllText($ucDesignerPath)
-$ucDesigner=[regex]::Replace($ucDesigner,'(?m)^\s*this\.[A-Za-z0-9_]+\.Selectable\s*=\s*false;\s*$resourceNames=@(
- 'dockIcon_dock','dockIcon_float','dot','arrow_left','arrow_topleft','arrow_up',
- 'arrow_topright','arrow_right','arrow_bottomright','down','arrow_bottomleft',
- 'pin_on_top','pin_not_on_top','resizegrab'
+$ucDesigner=[regex]::Replace(
+    $ucDesigner,
+    '(?m)^\s*this\.[A-Za-z0-9_]+\.Selectable\s*=\s*false;\s*$',
+    ''
 )
-$resDir=Join-Path $consoleDir 'Resources'
-New-Item -ItemType Directory -Force -Path $resDir | Out-Null
-foreach($r in $resourceNames)
-{
-    $url="$RawBase/Resources/$r.png"
-    Invoke-WebRequest -UseBasicParsing -Uri $url -OutFile (Join-Path $resDir ($r+'.png'))
-}
-
-# Add the bridge source.
-Copy-Item (Join-Path $PSScriptRoot 'P25ThetisMetersBridge.cs') (Join-Path $consoleDir 'P25ThetisMetersBridge.cs') -Force
-
-# Common helpers used by the Thetis serialization/form code are added in a partial class.
-$common=[IO.File]::ReadAllText($commonPath)
-if($common -notmatch 'public partial class Common')
-{
-    $common=$common.Replace('public class Common','public partial class Common')
-    [IO.File]::WriteAllText($commonPath,$common,$utf8)
-}
-
-# Wire P25 after WinForms creation; DB is available by the time Shown fires.
-$con=[IO.File]::ReadAllText($consolePath)
-if($con -notmatch 'P25ThetisMetersShown')
-{
-    $init='            InitializeComponent();                              // Windows Forms Generated Code'
-    if(!$con.Contains($init)){throw 'P25 console InitializeComponent anchor missing'}
-    $con=$con.Replace($init,$init+$nl+'            this.Shown += new EventHandler(P25ThetisMetersShown);')
-}
-if($con -notmatch 'P25ShutdownThetisMeters\(\);\s*// P25')
-{
-    $close='        public void Console_Closing(object sender, FormClosingEventArgs e)'+$nl+'        {'
-    if(!$con.Contains($close)){throw 'P25 Console_Closing anchor missing'}
-    $con=$con.Replace($close,$close+$nl+'            P25ShutdownThetisMeters(); // P25: save/stop native Thetis meters before PowerSDR shutdown')
-}
-[IO.File]::WriteAllText($consolePath,$con,$utf8)
-
-# SharpDX dependencies required by this exact Thetis renderer.
-$pkg=[IO.File]::ReadAllText($pkgPath)
-$packages=@(
- @('SharpDX','4.2.0'),
- @('SharpDX.Desktop','4.2.0'),
- @('SharpDX.Direct2D1','4.2.0'),
- @('SharpDX.Direct3D11','4.2.0'),
- @('SharpDX.DXGI','4.2.0'),
- @('SharpDX.Mathematics','4.2.0')
-)
-foreach($x in $packages)
-{
-    if($pkg -notmatch ('id="'+[regex]::Escape($x[0])+'"'))
-    {
-        $line='  <package id="'+$x[0]+'" version="'+$x[1]+'" targetFramework="net48" />'
-        $pkg=$pkg.Replace('</packages>',$line+$nl+'</packages>')
-    }
-}
-[IO.File]::WriteAllText($pkgPath,$pkg,$utf8NoBom)
-
-$proj=[IO.File]::ReadAllText($projPath)
-$refs=@'
-    <Reference Include="SharpDX, Version=4.2.0.0, Culture=neutral, PublicKeyToken=b4dcf0f35e5521f1, processorArchitecture=MSIL">
-      <HintPath>..\packages\SharpDX.4.2.0\lib\net45\SharpDX.dll</HintPath>
-    </Reference>
-    <Reference Include="SharpDX.Desktop, Version=4.2.0.0, Culture=neutral, PublicKeyToken=b4dcf0f35e5521f1, processorArchitecture=MSIL">
-      <HintPath>..\packages\SharpDX.Desktop.4.2.0\lib\net45\SharpDX.Desktop.dll</HintPath>
-    </Reference>
-    <Reference Include="SharpDX.Direct2D1, Version=4.2.0.0, Culture=neutral, PublicKeyToken=b4dcf0f35e5521f1, processorArchitecture=MSIL">
-      <HintPath>..\packages\SharpDX.Direct2D1.4.2.0\lib\net45\SharpDX.Direct2D1.dll</HintPath>
-    </Reference>
-    <Reference Include="SharpDX.Direct3D11, Version=4.2.0.0, Culture=neutral, PublicKeyToken=b4dcf0f35e5521f1, processorArchitecture=MSIL">
-      <HintPath>..\packages\SharpDX.Direct3D11.4.2.0\lib\net45\SharpDX.Direct3D11.dll</HintPath>
-    </Reference>
-    <Reference Include="SharpDX.DXGI, Version=4.2.0.0, Culture=neutral, PublicKeyToken=b4dcf0f35e5521f1, processorArchitecture=MSIL">
-      <HintPath>..\packages\SharpDX.DXGI.4.2.0\lib\net45\SharpDX.DXGI.dll</HintPath>
-    </Reference>
-    <Reference Include="SharpDX.Mathematics, Version=4.2.0.0, Culture=neutral, PublicKeyToken=b4dcf0f35e5521f1, processorArchitecture=MSIL">
-      <HintPath>..\packages\SharpDX.Mathematics.4.2.0\lib\net45\SharpDX.Mathematics.dll</HintPath>
-    </Reference>
-'@
-if($proj -notmatch '<Reference Include="SharpDX,')
-{
-    $anchorRef='<Reference Include="System.Drawing">'
-    $idx=$proj.IndexOf($anchorRef)
-    if($idx -lt 0){throw 'P25 csproj reference anchor missing'}
-    $proj=$proj.Insert($idx,$refs+$nl+'    ')
-}
-
-$compile=@(
- 'P25_MeterManager.cs',
- 'P25_ucMeter.cs',
- 'P25_ucMeter.Designer.cs',
- 'P25_frmMeterDisplay.cs',
- 'P25_frmMeterDisplay.Designer.cs',
- 'P25ThetisMetersBridge.cs'
-)
-$anchorCompile='<Compile Include="Skin.cs" />'
-if(!$proj.Contains($anchorCompile)){throw 'P25 csproj compile anchor missing'}
-foreach($name in $compile)
-{
-    if($proj -notmatch ('Compile Include="'+[regex]::Escape($name)+'"'))
-    {
-        $proj=$proj.Replace($anchorCompile,$anchorCompile+$nl+'    <Compile Include="'+$name+'" />')
-    }
-}
-
-foreach($r in $resourceNames)
-{
-    $rel='Resources\'+$r+'.png'
-    if($proj -notmatch ('Content Include="'+[regex]::Escape($rel)+'"'))
-    {
-        $item='    <Content Include="'+$rel+'">'+$nl+'      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>'+$nl+'    </Content>'
-        $igPos=$proj.IndexOf('</ItemGroup>')
-        if($igPos -lt 0){throw 'P25 csproj ItemGroup close missing'}
-        $proj=$proj.Insert($igPos,$item+$nl)
-    }
-}
-
-[IO.File]::WriteAllText($projPath,$proj,$utf8NoBom)
-
-Write-Host "P25_THETIS_SOURCE_SHA=$ThetisSha"
-Write-Host 'P25_THETIS_CORE=DIRECT_2023_02_26'
-Write-Host 'P25_RX2=NOT_EXPOSED'
-Write-Host 'P25_RENDERER=THETIS_SHARPDX'
-Write-Host 'P25_TELEMETRY=POWERSDR_FLEX5000_RX1_NATIVE_CALIBRATION'
-,'')
 [IO.File]::WriteAllText($ucDesignerPath,$ucDesigner,$utf8)
 
-# Bring the exact tiny Thetis toolbar graphics into the runtime Resources directory.
+# Exact small toolbar graphics used by this pinned Thetis ucMeter.
 $resourceNames=@(
  'dockIcon_dock','dockIcon_float','dot','arrow_left','arrow_topleft','arrow_up',
  'arrow_topright','arrow_right','arrow_bottomright','down','arrow_bottomleft',
@@ -264,10 +140,9 @@ foreach($r in $resourceNames)
     Invoke-WebRequest -UseBasicParsing -Uri $url -OutFile (Join-Path $resDir ($r+'.png'))
 }
 
-# Add the bridge source.
 Copy-Item (Join-Path $PSScriptRoot 'P25ThetisMetersBridge.cs') (Join-Path $consoleDir 'P25ThetisMetersBridge.cs') -Force
 
-# Common helpers used by the Thetis serialization/form code are added in a partial class.
+# Existing PowerSDR form persistence is reused by frmMeterDisplay.
 $common=[IO.File]::ReadAllText($commonPath)
 if($common -notmatch 'public partial class Common')
 {
@@ -275,9 +150,9 @@ if($common -notmatch 'public partial class Common')
     [IO.File]::WriteAllText($commonPath,$common,$utf8)
 }
 
-# Wire P25 after WinForms creation; DB is available by the time Shown fires.
+# Start meters only after the main form exists. Save/stop them before native PowerSDR close.
 $con=[IO.File]::ReadAllText($consolePath)
-if($con -notmatch 'P25ThetisMetersShown')
+if($con -notmatch 'this\.Shown \+= new EventHandler\(P25ThetisMetersShown\)')
 {
     $init='            InitializeComponent();                              // Windows Forms Generated Code'
     if(!$con.Contains($init)){throw 'P25 console InitializeComponent anchor missing'}
@@ -287,11 +162,14 @@ if($con -notmatch 'P25ShutdownThetisMeters\(\);\s*// P25')
 {
     $close='        public void Console_Closing(object sender, FormClosingEventArgs e)'+$nl+'        {'
     if(!$con.Contains($close)){throw 'P25 Console_Closing anchor missing'}
-    $con=$con.Replace($close,$close+$nl+'            P25ShutdownThetisMeters(); // P25: save/stop native Thetis meters before PowerSDR shutdown')
+    $con=$con.Replace(
+        $close,
+        $close+$nl+'            P25ShutdownThetisMeters(); // P25: save/stop native Thetis meters before PowerSDR shutdown'
+    )
 }
 [IO.File]::WriteAllText($consolePath,$con,$utf8)
 
-# SharpDX dependencies required by this exact Thetis renderer.
+# Pinned SharpDX version matching the direct renderer.
 $pkg=[IO.File]::ReadAllText($pkgPath)
 $packages=@(
  @('SharpDX','4.2.0'),
@@ -358,13 +236,18 @@ foreach($name in $compile)
     }
 }
 
+# Put toolbar PNG files next to the executable under Resources\.
 foreach($r in $resourceNames)
 {
     $rel='Resources\'+$r+'.png'
     if($proj -notmatch ('Content Include="'+[regex]::Escape($rel)+'"'))
     {
-        $item='    <Content Include="'+$rel+'">'+$nl+'      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>'+$nl+'    </Content>'
-        $proj=[regex]::Replace($proj,'</ItemGroup>',[System.Text.RegularExpressions.MatchEvaluator]{ param($m) $item+$nl+'  </ItemGroup>' },1)
+        $item='    <Content Include="'+$rel+'">'+$nl+
+              '      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>'+$nl+
+              '    </Content>'+$nl
+        $igPos=$proj.IndexOf('</ItemGroup>')
+        if($igPos -lt 0){throw 'P25 csproj ItemGroup close missing'}
+        $proj=$proj.Insert($igPos,$item)
     }
 }
 
