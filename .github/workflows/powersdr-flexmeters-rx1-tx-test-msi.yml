@@ -1,0 +1,75 @@
+name: Build PowerSDR FLEX5000 FlexMeters RX1 TX test MSI
+
+on:
+  push:
+    branches:
+      - feature/flex5000-thetis-meters-gadgets-1to1
+  workflow_dispatch:
+
+jobs:
+  build-msi:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Ensure build tools
+        shell: pwsh
+        run: |
+          if (!(Get-Command innoextract.exe -ErrorAction SilentlyContinue) -and !(Get-Command innoextract -ErrorAction SilentlyContinue)) {
+            choco install innoextract -y --no-progress
+          }
+          if (!(Get-Command nuget.exe -ErrorAction SilentlyContinue) -and !(Get-Command nuget -ErrorAction SilentlyContinue)) {
+            choco install nuget.commandline -y --no-progress
+          }
+          if (!(Get-Command candle.exe -ErrorAction SilentlyContinue)) {
+            choco install wixtoolset -y --no-progress
+          }
+
+      - name: Locate WiX
+        id: wix
+        shell: pwsh
+        run: |
+          $candle = Get-Command candle.exe -ErrorAction SilentlyContinue
+          if (!$candle) {
+            $candle = Get-ChildItem 'C:\Program Files (x86)' -Recurse -Filter candle.exe -ErrorAction SilentlyContinue | Select-Object -First 1
+          }
+          if (!$candle) { throw 'candle.exe not found' }
+          $path = Split-Path $candle.Source -Parent
+          "WIXBIN=$path" | Out-File -FilePath $env:GITHUB_ENV -Append
+
+      - name: Build FlexMeters physical-test MSI
+        shell: pwsh
+        run: |
+          ./tools/powersdr/Build-PowerSDR-MSI-FlexMeters-TX.ps1 -WixBin "$env:WIXBIN"
+
+      - name: Verify physical-test MSI
+        shell: pwsh
+        run: |
+          $msi = Get-ChildItem ./artifacts/powersdr -Filter '*FLEXMETERS-RX1-TX-TEST*.msi' -File | Select-Object -First 1
+          if (!$msi) { throw 'FlexMeters RX1/TX MSI artifact missing' }
+          if (!(Test-Path ./artifacts/powersdr/POWERSDR_BUILD_MANIFEST.txt)) { throw 'build manifest missing' }
+          $manifest = Get-Content ./artifacts/powersdr/POWERSDR_BUILD_MANIFEST.txt -Raw
+          foreach ($token in @(
+            'FLEXMETERS=RX1_SIGNAL_PLUS_TX_DTTSP_FWC_END_TO_END',
+            'FLEXMETERS_RX2=DISABLED_BY_DESIGN',
+            'FLEXMETERS_STORE=AUTHORITATIVE_REPLACE_ALL'
+          )) {
+            if (!$manifest.Contains($token)) { throw "manifest gate missing: $token" }
+          }
+          $sha = (Get-FileHash -Algorithm SHA256 $msi.FullName).Hash.ToLowerInvariant()
+          "MSI=$($msi.Name)" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+          "SHA256=$sha" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+          "TARGET=Physical FLEX-5000 RX1 + TX/FWC test" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+          "RX2=disabled" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+
+      - name: Upload physical-test MSI
+        uses: actions/upload-artifact@v4
+        with:
+          name: PowerSDR-FLEX5000-FlexMeters-RX1-TX-TEST
+          path: |
+            artifacts/powersdr/*.msi
+            artifacts/powersdr/*.sha256
+            artifacts/powersdr/POWERSDR_BUILD_MANIFEST.txt
+            artifacts/powersdr/logs/**
+          if-no-files-found: error
