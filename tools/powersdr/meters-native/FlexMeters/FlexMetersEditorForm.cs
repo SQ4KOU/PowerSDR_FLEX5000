@@ -33,10 +33,7 @@ namespace FlexMeters
         }
 
         private static readonly MeterTypeChoice[] SupportedTypes =
-        {
-            new MeterTypeChoice { Type = "SIGNAL_STRENGTH", Text = "Signal Peak" },
-            new MeterTypeChoice { Type = "SIGNAL_TEXT", Text = "Signal Text" }
-        };
+            BuildSupportedTypes();
 
         private readonly MeterWorkspaceManager _manager;
         private readonly ComboBox _comboContainer;
@@ -201,8 +198,8 @@ namespace FlexMeters
             rendererInfo.Dock = DockStyle.Fill;
             rendererInfo.Padding = new Padding(8);
             rendererInfo.Text =
-                "Native Thetis signal renderer\r\n" +
-                "FLEX-5000 RX1 live telemetry\r\n" +
+                "RX1 Thetis signal renderer + FLEX-5000 TX meters\r\n" +
+                "Native DttSP/FWC telemetry\r\n" +
                 "100 ms live update";
             rendererGroup.Controls.Add(rendererInfo);
 
@@ -583,16 +580,23 @@ namespace FlexMeters
             if (choice == null)
             {
                 _itemStatus.Text =
-                    "Available native item types:\r\n" +
-                    "Signal Peak - Thetis horizontal S-meter\r\n" +
-                    "Signal Text - S unit / dBm / uV";
+                    "Available native items:\r\n" +
+                    "RX1: Signal Peak / Signal Text\r\n" +
+                    "TX: Mic, EQ, Leveler, Compressor, ALC, FWD/REV Power, SWR";
+                return;
+            }
+
+            MeterItemDescriptor descriptor;
+            if (!MeterItemCatalog.TryGet(choice.Type, out descriptor))
+            {
+                _itemStatus.Text = choice.Text + "\r\n\r\nUnsupported item definition.";
                 return;
             }
 
             _itemStatus.Text =
                 choice.Text + "\r\n\r\n" +
-                "Renderer: native Thetis port\r\n" +
-                "Telemetry: FLEX-5000 RX1\r\n" +
+                "Renderer: " + descriptor.RendererKind.ToString() + "\r\n" +
+                "Telemetry: " + (descriptor.TxOnly ? "FLEX-5000 TX" : "FLEX-5000 RX1") + "\r\n" +
                 "Persistence: authoritative replace-all store";
         }
 
@@ -619,30 +623,32 @@ namespace FlexMeters
 
         private static bool IsSupportedItemType(string itemType)
         {
-            for (int i = 0; i < SupportedTypes.Length; i++)
-            {
-                if (String.Equals(
-                    SupportedTypes[i].Type,
-                    itemType,
-                    StringComparison.Ordinal))
-                    return true;
-            }
-
-            return false;
+            return MeterItemCatalog.IsSupported(itemType);
         }
 
         private static string DisplayName(string itemType)
         {
-            for (int i = 0; i < SupportedTypes.Length; i++)
+            MeterItemDescriptor descriptor;
+            return MeterItemCatalog.TryGet(itemType, out descriptor)
+                ? descriptor.DisplayName
+                : itemType;
+        }
+
+        private static MeterTypeChoice[] BuildSupportedTypes()
+        {
+            MeterItemDescriptor[] descriptors = MeterItemCatalog.All;
+            var result = new MeterTypeChoice[descriptors.Length];
+
+            for (int i = 0; i < descriptors.Length; i++)
             {
-                if (String.Equals(
-                    SupportedTypes[i].Type,
-                    itemType,
-                    StringComparison.Ordinal))
-                    return SupportedTypes[i].Text;
+                result[i] = new MeterTypeChoice
+                {
+                    Type = descriptors[i].Type,
+                    Text = descriptors[i].DisplayName
+                };
             }
 
-            return itemType;
+            return result;
         }
     }
 }
