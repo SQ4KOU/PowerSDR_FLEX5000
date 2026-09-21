@@ -13,9 +13,14 @@ $setupDesigner=Join-Path $SourceRoot 'Console\setup.Designer.cs'
 $setupEntry=Join-Path $SourceRoot 'Console\Setup.FlexMetersEntry.cs'
 $dspCs=Join-Path $SourceRoot 'Console\dsp.cs'
 $txMath=Join-Path $PSScriptRoot 'meters-native\FlexMeters\ThetisTxMeterMath.cs'
+$catalog=Join-Path $PSScriptRoot 'meters-native\FlexMeters\MeterItemCatalog.cs'
+$runtime=Join-Path $PSScriptRoot 'meters-native\FlexMeters\MeterLiveRuntime.cs'
+$txRenderer=Join-Path $PSScriptRoot 'meters-native\FlexMeters\FlexTxMeterRenderer.cs'
+$editor=Join-Path $PSScriptRoot 'meters-native\FlexMeters\FlexMetersEditorForm.cs'
+$windowHost=Join-Path $PSScriptRoot 'meters-native\FlexMeters\WinFormsMeterWindowHost.cs'
 $dll=Join-Path $SourceRoot 'bin\Release\FlexMeters.dll'
 
-foreach($required in @($adapter,$csproj,$cat,$consoleCs,$setupCs,$setupDesigner,$setupEntry,$dspCs,$txMath,$dll)){
+foreach($required in @($adapter,$csproj,$cat,$consoleCs,$setupCs,$setupDesigner,$setupEntry,$dspCs,$txMath,$catalog,$runtime,$txRenderer,$editor,$windowHost,$dll)){
     if(!(Test-Path $required)){throw "FlexMeters RX1 verification input missing: $required"}
 }
 
@@ -28,6 +33,11 @@ $setupDesignerText=[IO.File]::ReadAllText($setupDesigner)
 $entry=[IO.File]::ReadAllText($setupEntry)
 $dsp=[IO.File]::ReadAllText($dspCs)
 $txMathText=[IO.File]::ReadAllText($txMath)
+$catalogText=[IO.File]::ReadAllText($catalog)
+$runtimeText=[IO.File]::ReadAllText($runtime)
+$txRendererText=[IO.File]::ReadAllText($txRenderer)
+$editorText=[IO.File]::ReadAllText($editor)
+$windowHostText=[IO.File]::ReadAllText($windowHost)
 
 if($a -match '\bdynamic\b'){throw 'dynamic is forbidden in Console.FlexMetersAdapter.cs'}
 if(([regex]::Matches($p,'<Reference Include="FlexMeters">')).Count -ne 1){throw 'FlexMeters reference count is not exactly one'}
@@ -65,6 +75,35 @@ $txMathTokens=@(
 )
 foreach($token in $txMathTokens){
     if(!$txMathText.Contains($token)){throw "Pinned Thetis TX normalization gate missing: $token"}
+}
+
+$txEndToEndTokens=@(
+    '"MIC", "Mic", MeterReading.Mic',
+    '"MIC_PK", "Mic Peak", MeterReading.MicPeak',
+    '"EQ", "EQ", MeterReading.Eq',
+    '"LEVELER", "Leveler", MeterReading.Leveler',
+    '"COMP", "Compressor", MeterReading.Compressor',
+    '"ALC", "ALC", MeterReading.Alc',
+    '"ALC_GROUP", "ALC Group", MeterReading.AlcGroup',
+    '"FWD_PWR", "Forward Power", MeterReading.ForwardPower',
+    '"REV_PWR", "Reverse Power", MeterReading.ReversePower',
+    '"SWR", "SWR", MeterReading.Swr'
+)
+foreach($token in $txEndToEndTokens){
+    if(!$catalogText.Contains($token)){throw "TX catalog gate missing: $token"}
+}
+
+if(!$runtimeText.Contains('MeterItemCatalog.TryGet(itemType, out descriptor)')){
+    throw 'MeterLiveRuntime is not bound through the shared meter catalog'
+}
+if(!$editorText.Contains('BuildSupportedTypes()')){
+    throw 'Meters/Gadgets editor is not populated from the shared meter catalog'
+}
+if(!$windowHostText.Contains('new FlexTxMeterControl(descriptor)')){
+    throw 'WinForms meter host does not create the live TX renderer'
+}
+if(!$txRendererText.Contains('FLEX5000_LINEAR_')){
+    throw 'TX renderer identity gate missing'
 }
 
 $adapterTokens=@(
@@ -178,3 +217,4 @@ foreach($token in $entryTokens){
 Write-Host 'FLEXMETERS_SETUP_ENTRY=PASS'
 Write-Host 'FLEXMETERS_RX1_SOURCE_GATE=PASS'
 Write-Host 'FLEXMETERS_TX_FWC_SOURCE_GATE=PASS'
+Write-Host 'FLEXMETERS_TX_END_TO_END_GATE=PASS'
