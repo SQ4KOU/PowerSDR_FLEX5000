@@ -1,0 +1,42 @@
+name: FlexMeters contracts and replace-all store
+
+on:
+  push:
+    branches:
+      - feature/flex5000-thetis-meters-gadgets-1to1
+    paths:
+      - 'tools/powersdr/meters-native/FlexMeters/**'
+      - 'tools/powersdr/meters-native/FlexMeters.Tests/**'
+      - '.github/workflows/flexmeters-contracts-tests.yml'
+  workflow_dispatch:
+
+jobs:
+  contracts-store-tests:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build FlexMeters.dll and tests
+        shell: pwsh
+        run: |
+          $pf86 = [Environment]::GetFolderPath('ProgramFilesX86')
+          $vswhere = Join-Path $pf86 'Microsoft Visual Studio\Installer\vswhere.exe'
+          $msbuild = & $vswhere -latest -products * -requires Microsoft.Component.MSBuild -find 'MSBuild\**\Bin\MSBuild.exe' | Select-Object -First 1
+          if (!$msbuild) { throw 'MSBuild not found' }
+
+          $testProject = (Resolve-Path './tools/powersdr/meters-native/FlexMeters.Tests/FlexMeters.Tests.csproj').Path
+          & $msbuild $testProject '/m' '/t:Rebuild' '/p:Configuration=Release' '/p:Platform=x86' '/v:minimal'
+          if ($LASTEXITCODE -ne 0) { throw ('FlexMeters build failed rc=' + $LASTEXITCODE) }
+
+      - name: Run contract/store tests
+        shell: pwsh
+        run: |
+          $exe = (Resolve-Path './tools/powersdr/meters-native/FlexMeters.Tests/bin/Release/FlexMeters.Tests.exe').Path
+          & $exe
+          if ($LASTEXITCODE -ne 0) { throw ('FlexMeters tests failed rc=' + $LASTEXITCODE) }
+
+          'FLEXMETERS_CONTRACTS=PASS' | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+          'REPLACE_ALL_STORE=PASS' | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+          'STALE_CONTAINER_PURGE=PASS' | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+          'UNSUPPORTED_READING_NULL_VALUE=PASS' | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
