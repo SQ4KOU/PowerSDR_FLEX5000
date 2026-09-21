@@ -579,7 +579,7 @@ namespace FlexMeters.Tests
                 int persistCount = 0;
                 var manager = new MeterWorkspaceManager(runtimeHost, delegate { persistCount++; });
 
-                using (var windows = new WinFormsMeterWindowHost(null, manager, false))
+                using (var windows = new WinFormsMeterWindowHost(null, manager, runtimeHost, false))
                 {
                     windows.RestoreWindows(manager.Snapshot);
 
@@ -618,7 +618,7 @@ namespace FlexMeters.Tests
                 runtimeHost.Start(TimeSpan.FromHours(1));
                 var manager = new MeterWorkspaceManager(runtimeHost, null);
 
-                using (var windows = new WinFormsMeterWindowHost(null, manager, false))
+                using (var windows = new WinFormsMeterWindowHost(null, manager, runtimeHost, false))
                 {
                     windows.RestoreWindows(manager.Snapshot);
                     Equal(0, windows.OpenWindowCount, "initial empty WinForms count");
@@ -650,7 +650,7 @@ namespace FlexMeters.Tests
                 runtimeHost.Start(TimeSpan.FromHours(1));
                 var manager = new MeterWorkspaceManager(runtimeHost, null);
 
-                using (var windows = new WinFormsMeterWindowHost(null, manager, false))
+                using (var windows = new WinFormsMeterWindowHost(null, manager, runtimeHost, false))
                 {
                     windows.RestoreWindows(manager.Snapshot);
                     Equal(2, windows.OpenWindowCount, "pre-remove window count");
@@ -690,7 +690,7 @@ namespace FlexMeters.Tests
                 runtimeHost.Start(TimeSpan.FromHours(1));
                 var manager = new MeterWorkspaceManager(runtimeHost, null);
 
-                using (var windows = new WinFormsMeterWindowHost(null, manager, false))
+                using (var windows = new WinFormsMeterWindowHost(null, manager, runtimeHost, false))
                 {
                     windows.RestoreWindows(manager.Snapshot);
                     Equal(0, windows.OpenWindowCount, "empty workspace fabricated a default window");
