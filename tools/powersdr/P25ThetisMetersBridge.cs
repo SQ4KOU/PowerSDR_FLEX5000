@@ -89,6 +89,18 @@ namespace PowerSDR
         private ToolStripMenuItem p25MetersMenu;
         private ToolStripMenuItem p25AddRx1Menu;
 
+        internal event Action<int, bool, bool> MoxChangeHandlers;
+
+        internal HPSDRModel CurrentHPSDRModel { get { return HPSDRModel.HERMES; } }
+        internal bool AlexPresent { get { return current_model == Model.FLEX5000 || current_model == Model.FLEX3000; } }
+        internal bool ApolloPresent { get { return false; } }
+
+        internal void P25RaiseMeterMox(int rx, bool oldMox, bool newMox)
+        {
+            Action<int, bool, bool> h = MoxChangeHandlers;
+            if (h != null) h(rx, oldMox, newMox);
+        }
+
         internal float P25ReadRx1SignalDbm()
         {
             if (!PowerOn) return -200.0f;
