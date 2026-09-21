@@ -43,8 +43,14 @@ namespace FlexMeters.Tests
             Run("window host displays live RX1 signal by item ID", WindowHostDisplaysLiveRx1SignalByItemId);
             Run("window host updates same item after refresh", WindowHostUpdatesSameItemAfterRefresh);
             Run("window host preserves unsupported text without zero", WindowHostPreservesUnsupportedTextWithoutZero);
+            Run("Thetis signal scale matches pinned calibration", ThetisSignalScaleMatchesPinnedCalibration);
+            Run("Thetis VHF signal scale applies 20 dB offset", ThetisVhfSignalScaleApplies20DbOffset);
+            Run("Thetis S-unit thresholds match pinned common", ThetisSUnitThresholdsMatchPinnedCommon);
+            Run("window host uses Thetis signal renderers", WindowHostUsesThetisSignalRenderers);
+            Run("Thetis renderer position changes with live RX1", ThetisRendererPositionChangesWithLiveRx1);
+            Run("Thetis renderer switches reference at 30 MHz", ThetisRendererSwitchesReferenceAt30Mhz);
 
-            Console.WriteLine("PASS " + _passed + "/30");
+            Console.WriteLine("PASS " + _passed + "/36");
             return 0;
         }
 
@@ -802,6 +808,154 @@ namespace FlexMeters.Tests
             }
         }
 
+        private static void ThetisSignalScaleMatchesPinnedCalibration()
+        {
+            Equal(0.0, ThetisSignalMeterMath.MapSignalDbmToPosition(-133.0, false), "HF S0 position");
+            Equal(0.5, ThetisSignalMeterMath.MapSignalDbmToPosition(-73.0, false), "HF S9 position");
+            Equal(0.99, ThetisSignalMeterMath.MapSignalDbmToPosition(-13.0, false), "HF S9+60 position");
+        }
+
+        private static void ThetisVhfSignalScaleApplies20DbOffset()
+        {
+            Equal(0.0, ThetisSignalMeterMath.MapSignalDbmToPosition(-153.0, true), "VHF S0 position");
+            Equal(0.5, ThetisSignalMeterMath.MapSignalDbmToPosition(-93.0, true), "VHF S9 position");
+            Equal(0.99, ThetisSignalMeterMath.MapSignalDbmToPosition(-33.0, true), "VHF S9+60 position");
+        }
+
+        private static void ThetisSUnitThresholdsMatchPinnedCommon()
+        {
+            int s;
+            int over;
+
+            ThetisSignalMeterMath.SmeterFromDbm(-73.0, false, out s, out over);
+            Equal(9, s, "HF -73 dBm S unit");
+            Equal(0, over, "HF -73 dBm over-S9");
+
+            ThetisSignalMeterMath.SmeterFromDbm(-65.0, false, out s, out over);
+            Equal(9, s, "HF -65 dBm S unit");
+            Equal(10, over, "HF -65 dBm over-S9");
+
+            ThetisSignalMeterMath.SmeterFromDbm(-93.0, true, out s, out over);
+            Equal(9, s, "VHF -93 dBm S unit");
+            Equal(0, over, "VHF -93 dBm over-S9");
+
+            double uv = ThetisSignalMeterMath.UvFromDbm(-73.0);
+            True(Math.Abs(uv - 50.1187) < 0.01, "Thetis uV conversion at -73 dBm");
+        }
+
+        private static void WindowHostUsesThetisSignalRenderers()
+        {
+            var table = NewTable();
+            var store = new DataTableMeterStore(table);
+            store.ReplaceAll(BuildLiveWorkspace());
+
+            var fake = new FakeTelemetrySource();
+            fake.Set(MeterReading.SignalStrength, MeterReadingResult.Supported(-90.0));
+
+            using (var runtimeHost = new MeterWorkspaceRuntimeHost(store, fake))
+            {
+                runtimeHost.Start(TimeSpan.FromHours(1));
+                var manager = new MeterWorkspaceManager(runtimeHost, null);
+
+                using (var windows = new WinFormsMeterWindowHost(null, manager, runtimeHost, false))
+                {
+                    windows.RestoreWindows(manager.Snapshot);
+
+                    string kind;
+                    True(
+                        windows.TryGetRendererKind(
+                            Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"),
+                            out kind),
+                        "signal bar renderer missing");
+                    Equal("THETIS_SIGNAL_BAR", kind, "signal bar renderer kind");
+
+                    True(
+                        windows.TryGetRendererKind(
+                            Guid.Parse("dddddddd-dddd-dddd-dddd-dddddddddddd"),
+                            out kind),
+                        "signal text renderer missing");
+                    Equal("THETIS_SIGNAL_TEXT", kind, "signal text renderer kind");
+                }
+            }
+        }
+
+        private static void ThetisRendererPositionChangesWithLiveRx1()
+        {
+            var table = NewTable();
+            var store = new DataTableMeterStore(table);
+            store.ReplaceAll(BuildLiveWorkspace());
+
+            var fake = new FakeTelemetrySource();
+            fake.Set(MeterReading.SignalStrength, MeterReadingResult.Supported(-120.0));
+
+            using (var runtimeHost = new MeterWorkspaceRuntimeHost(store, fake))
+            {
+                runtimeHost.Start(TimeSpan.FromHours(1));
+                var manager = new MeterWorkspaceManager(runtimeHost, null);
+
+                using (var windows = new WinFormsMeterWindowHost(null, manager, runtimeHost, false))
+                {
+                    windows.RestoreWindows(manager.Snapshot);
+                    Guid itemId = Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
+
+                    double before;
+                    True(windows.TryGetRenderedNormalizedPosition(itemId, out before), "initial Thetis position missing");
+
+                    fake.Set(MeterReading.SignalStrength, MeterReadingResult.Supported(-60.0));
+                    runtimeHost.RefreshNow();
+
+                    double after;
+                    True(windows.TryGetRenderedNormalizedPosition(itemId, out after), "updated Thetis position missing");
+                    True(after > before, "Thetis rendered marker did not move upward");
+                }
+            }
+        }
+
+        private static void ThetisRendererSwitchesReferenceAt30Mhz()
+        {
+            var table = NewTable();
+            var store = new DataTableMeterStore(table);
+            store.ReplaceAll(BuildLiveWorkspace());
+
+            var fake = new FakeTelemetrySource();
+            fake.Set(MeterReading.SignalStrength, MeterReadingResult.Supported(-93.0));
+            var radio = new FakeRadioState
+            {
+                State = new MeterRadioStateSnapshot
+                {
+                    VfoAHertz = 29999999,
+                    VfoBHertz = 0,
+                    Rx2Enabled = false
+                }
+            };
+
+            using (var runtimeHost = new MeterWorkspaceRuntimeHost(store, fake))
+            {
+                runtimeHost.Start(TimeSpan.FromHours(1));
+                var manager = new MeterWorkspaceManager(runtimeHost, null);
+
+                using (var windows = new WinFormsMeterWindowHost(null, manager, runtimeHost, radio, false))
+                {
+                    windows.RestoreWindows(manager.Snapshot);
+                    Guid itemId = Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
+
+                    bool above;
+                    True(windows.TryGetAboveS9Frequency(itemId, out above), "HF reference state missing");
+                    False(above, "29.999999 MHz incorrectly treated as VHF reference");
+
+                    radio.State.VfoAHertz = 30000000;
+                    runtimeHost.RefreshNow();
+
+                    True(windows.TryGetAboveS9Frequency(itemId, out above), "VHF reference state missing");
+                    True(above, "30.000000 MHz did not switch to VHF reference");
+
+                    double position;
+                    True(windows.TryGetRenderedNormalizedPosition(itemId, out position), "VHF marker position missing");
+                    True(position > 0.3 && position < 0.6, "VHF marker did not use shifted Thetis scale");
+                }
+            }
+        }
+
         private static MeterWorkspaceSnapshot BuildLiveWorkspace()
         {
             var workspace = new MeterWorkspaceSnapshot();
@@ -985,6 +1139,16 @@ namespace FlexMeters.Tests
             }
 
             throw new Exception(message + ": expected exception " + typeof(T).Name);
+        }
+
+        private sealed class FakeRadioState : IMeterRadioState
+        {
+            public MeterRadioStateSnapshot State { get; set; }
+
+            public MeterRadioStateSnapshot CaptureState()
+            {
+                return State;
+            }
         }
 
         private sealed class FakeTelemetrySource : IMeterTelemetrySource

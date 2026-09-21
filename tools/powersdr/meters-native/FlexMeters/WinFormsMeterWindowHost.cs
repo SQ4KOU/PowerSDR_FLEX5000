@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Drawing;
-using System.Globalization;
 using System.Windows.Forms;
 
 namespace FlexMeters
@@ -11,14 +10,18 @@ namespace FlexMeters
         private sealed class MeterContainerForm : Form
         {
             private readonly TableLayoutPanel _itemsPanel;
-            private readonly Dictionary<Guid, Label> _itemLabels =
-                new Dictionary<Guid, Label>();
+            private readonly Dictionary<Guid, Control> _itemControls =
+                new Dictionary<Guid, Control>();
+            private readonly Dictionary<Guid, string> _itemTypes =
+                new Dictionary<Guid, string>();
+            private readonly Dictionary<Guid, ThetisSignalMeterControl> _renderers =
+                new Dictionary<Guid, ThetisSignalMeterControl>();
 
             public MeterContainerForm(MeterContainerSnapshot container)
             {
                 ContainerId = container.Id;
                 StartPosition = FormStartPosition.Manual;
-                MinimumSize = new Size(180, 90);
+                MinimumSize = new Size(220, 110);
                 ShowInTaskbar = false;
 
                 _itemsPanel = new TableLayoutPanel();
@@ -38,17 +41,21 @@ namespace FlexMeters
             {
                 Text = BuildTitle(container);
 
+                if (DefinitionMatches(container))
+                    return;
+
                 _itemsPanel.SuspendLayout();
                 try
                 {
                     _itemsPanel.Controls.Clear();
                     _itemsPanel.RowStyles.Clear();
-                    _itemLabels.Clear();
+                    _itemControls.Clear();
+                    _itemTypes.Clear();
+                    _renderers.Clear();
 
                     if (container.Items.Count == 0)
                     {
-                        var empty = CreateItemLabel();
-                        empty.Text = "(no meter items)";
+                        var empty = CreateFallbackLabel("(no meter items)");
                         _itemsPanel.Controls.Add(empty, 0, 0);
                         return;
                     }
@@ -56,10 +63,10 @@ namespace FlexMeters
                     for (int i = 0; i < container.Items.Count; i++)
                     {
                         MeterItemSnapshot item = container.Items[i];
-                        var label = CreateItemLabel();
-                        label.Text = item.Type + ": pending";
-                        _itemLabels.Add(item.Id, label);
-                        _itemsPanel.Controls.Add(label, 0, i);
+                        Control control = CreateItemControl(item);
+                        _itemControls.Add(item.Id, control);
+                        _itemTypes.Add(item.Id, item.Type);
+                        _itemsPanel.Controls.Add(control, 0, i);
                     }
                 }
                 finally
@@ -70,32 +77,42 @@ namespace FlexMeters
 
             public void UpdateLive(
                 MeterContainerSnapshot container,
-                MeterLiveSnapshot live)
+                MeterLiveSnapshot live,
+                bool aboveS9Frequency)
             {
                 for (int i = 0; i < container.Items.Count; i++)
                 {
                     MeterItemSnapshot item = container.Items[i];
-                    Label label;
-                    if (!_itemLabels.TryGetValue(item.Id, out label))
+                    ThetisSignalMeterControl renderer;
+                    if (!_renderers.TryGetValue(item.Id, out renderer))
                         continue;
 
                     MeterLiveValue value;
                     if (live == null || !live.TryGetValue(item.Id, out value))
                     {
-                        label.Text = item.Type + ": pending";
+                        renderer.UpdateReading(
+                            MeterReadingResult.Unsupported("No live reading is available."),
+                            aboveS9Frequency);
                         continue;
                     }
 
-                    label.Text = FormatItem(item, value.Result);
+                    renderer.UpdateReading(value.Result, aboveS9Frequency);
                 }
             }
 
             public bool TryGetItemText(Guid itemId, out string text)
             {
-                Label label;
-                if (_itemLabels.TryGetValue(itemId, out label))
+                ThetisSignalMeterControl renderer;
+                if (_renderers.TryGetValue(itemId, out renderer))
                 {
-                    text = label.Text;
+                    text = renderer.DiagnosticText;
+                    return true;
+                }
+
+                Control control;
+                if (_itemControls.TryGetValue(itemId, out control))
+                {
+                    text = control.Text;
                     return true;
                 }
 
@@ -103,13 +120,84 @@ namespace FlexMeters
                 return false;
             }
 
-            private static Label CreateItemLabel()
+            public bool TryGetRendererKind(Guid itemId, out string kind)
+            {
+                ThetisSignalMeterControl renderer;
+                if (_renderers.TryGetValue(itemId, out renderer))
+                {
+                    kind = renderer.RendererKind;
+                    return true;
+                }
+
+                kind = null;
+                return false;
+            }
+
+            public bool TryGetNormalizedPosition(Guid itemId, out double position)
+            {
+                ThetisSignalMeterControl renderer;
+                if (_renderers.TryGetValue(itemId, out renderer))
+                {
+                    position = renderer.NormalizedPosition;
+                    return true;
+                }
+
+                position = Double.NaN;
+                return false;
+            }
+
+            public bool TryGetAboveS9Frequency(Guid itemId, out bool above)
+            {
+                ThetisSignalMeterControl renderer;
+                if (_renderers.TryGetValue(itemId, out renderer))
+                {
+                    above = renderer.AboveS9Frequency;
+                    return true;
+                }
+
+                above = false;
+                return false;
+            }
+
+            private bool DefinitionMatches(MeterContainerSnapshot container)
+            {
+                if (_itemTypes.Count != container.Items.Count)
+                    return false;
+
+                for (int i = 0; i < container.Items.Count; i++)
+                {
+                    MeterItemSnapshot item = container.Items[i];
+                    string type;
+                    if (!_itemTypes.TryGetValue(item.Id, out type))
+                        return false;
+                    if (!String.Equals(type, item.Type, StringComparison.Ordinal))
+                        return false;
+                }
+
+                return true;
+            }
+
+            private Control CreateItemControl(MeterItemSnapshot item)
+            {
+                if (String.Equals(item.Type, "SIGNAL_STRENGTH", StringComparison.Ordinal) ||
+                    String.Equals(item.Type, "SIGNAL_TEXT", StringComparison.Ordinal))
+                {
+                    var renderer = new ThetisSignalMeterControl(item.Type);
+                    _renderers.Add(item.Id, renderer);
+                    return renderer;
+                }
+
+                return CreateFallbackLabel(item.Type + ": renderer not implemented");
+            }
+
+            private static Label CreateFallbackLabel(string text)
             {
                 var label = new Label();
                 label.Dock = DockStyle.Top;
                 label.AutoSize = true;
                 label.Padding = new Padding(8, 6, 8, 6);
                 label.TextAlign = ContentAlignment.MiddleLeft;
+                label.Text = text;
                 return label;
             }
 
@@ -118,34 +206,13 @@ namespace FlexMeters
                 return "FlexMeters " + container.Receiver + " [" +
                     container.Id.ToString("D").Substring(0, 8) + "]";
             }
-
-            private static string FormatItem(
-                MeterItemSnapshot item,
-                MeterReadingResult result)
-            {
-                if (!result.IsSupported)
-                    return item.Type + ": UNSUPPORTED - " + result.Reason;
-
-                if (!result.Value.HasValue)
-                    return item.Type + ": INVALID";
-
-                if (String.Equals(item.Type, "SIGNAL_STRENGTH", StringComparison.Ordinal) ||
-                    String.Equals(item.Type, "SIGNAL_TEXT", StringComparison.Ordinal))
-                {
-                    return item.Type + ": " +
-                        result.Value.Value.ToString("0.0", CultureInfo.InvariantCulture) +
-                        " dBm";
-                }
-
-                return item.Type + ": " +
-                    result.Value.Value.ToString("0.###", CultureInfo.InvariantCulture);
-            }
         }
 
         private readonly object _sync = new object();
         private readonly Form _owner;
         private readonly MeterWorkspaceManager _manager;
         private readonly MeterWorkspaceRuntimeHost _runtimeHost;
+        private readonly IMeterRadioState _radioState;
         private readonly bool _showWindows;
         private readonly Dictionary<Guid, MeterContainerForm> _windows =
             new Dictionary<Guid, MeterContainerForm>();
@@ -157,7 +224,7 @@ namespace FlexMeters
             Form owner,
             MeterWorkspaceManager manager,
             MeterWorkspaceRuntimeHost runtimeHost)
-            : this(owner, manager, runtimeHost, true)
+            : this(owner, manager, runtimeHost, null, true)
         {
         }
 
@@ -165,6 +232,16 @@ namespace FlexMeters
             Form owner,
             MeterWorkspaceManager manager,
             MeterWorkspaceRuntimeHost runtimeHost,
+            bool showWindows)
+            : this(owner, manager, runtimeHost, null, showWindows)
+        {
+        }
+
+        public WinFormsMeterWindowHost(
+            Form owner,
+            MeterWorkspaceManager manager,
+            MeterWorkspaceRuntimeHost runtimeHost,
+            IMeterRadioState radioState,
             bool showWindows)
         {
             if (manager == null)
@@ -178,6 +255,7 @@ namespace FlexMeters
             _owner = owner;
             _manager = manager;
             _runtimeHost = runtimeHost;
+            _radioState = radioState;
             _showWindows = showWindows;
 
             _manager.WorkspaceChanged += ManagerWorkspaceChanged;
@@ -294,19 +372,12 @@ namespace FlexMeters
         public bool TryGetDisplayedItemText(Guid itemId, out string text)
         {
             ThrowIfDisposed();
-
             string captured = null;
             bool found = false;
 
             ExecuteOnUi(delegate
             {
-                MeterContainerForm[] forms;
-                lock (_sync)
-                {
-                    forms = new MeterContainerForm[_windows.Count];
-                    _windows.Values.CopyTo(forms, 0);
-                }
-
+                MeterContainerForm[] forms = SnapshotForms();
                 for (int i = 0; i < forms.Length; i++)
                 {
                     if (forms[i].TryGetItemText(itemId, out captured))
@@ -318,6 +389,75 @@ namespace FlexMeters
             });
 
             text = captured;
+            return found;
+        }
+
+        public bool TryGetRendererKind(Guid itemId, out string kind)
+        {
+            ThrowIfDisposed();
+            string captured = null;
+            bool found = false;
+
+            ExecuteOnUi(delegate
+            {
+                MeterContainerForm[] forms = SnapshotForms();
+                for (int i = 0; i < forms.Length; i++)
+                {
+                    if (forms[i].TryGetRendererKind(itemId, out captured))
+                    {
+                        found = true;
+                        return;
+                    }
+                }
+            });
+
+            kind = captured;
+            return found;
+        }
+
+        public bool TryGetRenderedNormalizedPosition(Guid itemId, out double position)
+        {
+            ThrowIfDisposed();
+            double captured = Double.NaN;
+            bool found = false;
+
+            ExecuteOnUi(delegate
+            {
+                MeterContainerForm[] forms = SnapshotForms();
+                for (int i = 0; i < forms.Length; i++)
+                {
+                    if (forms[i].TryGetNormalizedPosition(itemId, out captured))
+                    {
+                        found = true;
+                        return;
+                    }
+                }
+            });
+
+            position = captured;
+            return found;
+        }
+
+        public bool TryGetAboveS9Frequency(Guid itemId, out bool above)
+        {
+            ThrowIfDisposed();
+            bool captured = false;
+            bool found = false;
+
+            ExecuteOnUi(delegate
+            {
+                MeterContainerForm[] forms = SnapshotForms();
+                for (int i = 0; i < forms.Length; i++)
+                {
+                    if (forms[i].TryGetAboveS9Frequency(itemId, out captured))
+                    {
+                        found = true;
+                        return;
+                    }
+                }
+            });
+
+            above = captured;
             return found;
         }
 
@@ -467,6 +607,10 @@ namespace FlexMeters
             if (workspace == null)
                 return;
 
+            MeterRadioStateSnapshot radio = _radioState == null
+                ? null
+                : _radioState.CaptureState();
+
             for (int i = 0; i < workspace.Containers.Count; i++)
             {
                 MeterContainerSnapshot container = workspace.Containers[i];
@@ -475,8 +619,38 @@ namespace FlexMeters
                 lock (_sync)
                     _windows.TryGetValue(container.Id, out form);
 
-                if (form != null)
-                    form.UpdateLive(container, live);
+                if (form == null)
+                    continue;
+
+                bool above = false;
+                if (radio != null)
+                {
+                    if (container.Receiver == MeterReceiver.Rx1)
+                    {
+                        above =
+                            radio.VfoAHertz >=
+                            ThetisSignalMeterMath.S9FrequencyThresholdHertz;
+                    }
+                    else if (container.Receiver == MeterReceiver.Rx2)
+                    {
+                        above =
+                            radio.Rx2Enabled &&
+                            radio.VfoBHertz >=
+                            ThetisSignalMeterMath.S9FrequencyThresholdHertz;
+                    }
+                }
+
+                form.UpdateLive(container, live, above);
+            }
+        }
+
+        private MeterContainerForm[] SnapshotForms()
+        {
+            lock (_sync)
+            {
+                var forms = new MeterContainerForm[_windows.Count];
+                _windows.Values.CopyTo(forms, 0);
+                return forms;
             }
         }
 

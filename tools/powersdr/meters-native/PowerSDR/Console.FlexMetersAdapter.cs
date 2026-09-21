@@ -11,6 +11,26 @@ namespace PowerSDR
         private FlexMeters.MeterWorkspaceManager flexMetersContainerManager;
         private FlexMeters.WinFormsMeterWindowHost flexMetersWindowHost;
 
+        private sealed class FlexMetersRadioStateAdapter : FlexMeters.IMeterRadioState
+        {
+            private readonly Console _console;
+
+            public FlexMetersRadioStateAdapter(Console console)
+            {
+                _console = console;
+            }
+
+            public FlexMeters.MeterRadioStateSnapshot CaptureState()
+            {
+                return new FlexMeters.MeterRadioStateSnapshot
+                {
+                    VfoAHertz = (long)System.Math.Round(_console.VFOAFreq * 1000000.0),
+                    VfoBHertz = (long)System.Math.Round(_console.VFOBFreq * 1000000.0),
+                    Rx2Enabled = _console.RX2Enabled
+                };
+            }
+        }
+
         private sealed class FlexMetersTelemetryAdapter : FlexMeters.IMeterTelemetrySource
         {
             private readonly Console _console;
@@ -64,6 +84,11 @@ namespace PowerSDR
             return new FlexMetersTelemetryAdapter(this);
         }
 
+        internal FlexMeters.IMeterRadioState CreateFlexMetersRadioState()
+        {
+            return new FlexMetersRadioStateAdapter(this);
+        }
+
         internal FlexMeters.MeterLiveRuntime CreateFlexMetersLiveRuntime(
             FlexMeters.MeterWorkspaceSnapshot workspace)
         {
@@ -114,7 +139,9 @@ namespace PowerSDR
             flexMetersWindowHost = new FlexMeters.WinFormsMeterWindowHost(
                 this,
                 flexMetersContainerManager,
-                flexMetersWorkspaceHost);
+                flexMetersWorkspaceHost,
+                CreateFlexMetersRadioState(),
+                true);
             flexMetersWindowHost.RestoreWindows(
                 flexMetersContainerManager.Snapshot);
         }

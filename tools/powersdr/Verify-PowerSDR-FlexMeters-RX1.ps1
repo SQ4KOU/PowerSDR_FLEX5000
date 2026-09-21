@@ -67,7 +67,11 @@ $adapterTokens=@(
     'this.Shown += FlexMetersConsoleShown',
     'RestoreWindows(',
     'windowHost.Dispose()',
-    'flexMetersWorkspaceHost);'
+    'CreateFlexMetersRadioState()',
+    'FlexMetersRadioStateAdapter',
+    '_console.VFOAFreq * 1000000.0',
+    '_console.VFOBFreq * 1000000.0',
+    'CreateFlexMetersRadioState(),'
 )
 foreach($token in $adapterTokens){
     if(!$a.Contains($token)){throw "FlexMeters RX1 adapter gate missing: $token"}
