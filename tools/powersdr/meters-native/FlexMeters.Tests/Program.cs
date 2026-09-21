@@ -21,6 +21,10 @@ namespace FlexMeters.Tests
             Run("fake telemetry signal changes are observable", FakeTelemetrySignalChangesAreObservable);
             Run("FLEX-5000 RX1 calibration matches native KE9NS sum", Flex5000Rx1CalibrationMatchesNativeSum);
             Run("FLEX-5000 RX1 loop gain is conditional", Flex5000Rx1LoopGainIsConditional);
+            Run("Thetis TX MIC clamp matches pinned rule", ThetisTxMicClampMatchesPinnedRule);
+            Run("Thetis TX stage clamp matches pinned rule", ThetisTxStageClampMatchesPinnedRule);
+            Run("Thetis TX gain signs match pinned rules", ThetisTxGainSignsMatchPinnedRules);
+            Run("Thetis TX ALC group combines peak and gain", ThetisTxAlcGroupCombinesPeakAndGain);
             Run("live runtime propagates changing RX1 signal", LiveRuntimePropagatesChangingRx1Signal);
             Run("live runtime deduplicates identical telemetry requests", LiveRuntimeDeduplicatesIdenticalRequests);
             Run("live runtime preserves unsupported without zero", LiveRuntimePreservesUnsupportedWithoutZero);
@@ -55,7 +59,7 @@ namespace FlexMeters.Tests
             Run("editor does not expose unsupported RX2 creation", EditorDoesNotExposeUnsupportedRx2Creation);
             Run("window visibility follows RX/TX state", WindowVisibilityFollowsRxTxState);
 
-            Console.WriteLine("PASS " + _passed + "/41");
+            Console.WriteLine("PASS " + _passed + "/45");
             return 0;
         }
 
@@ -178,6 +182,31 @@ namespace FlexMeters.Tests
 
             Equal(-91.0, withoutLoop, "RX1 value without loop");
             Equal(-87.25, withLoop, "RX1 value with loop");
+        }
+
+        private static void ThetisTxMicClampMatchesPinnedRule()
+        {
+            Equal(-17.0, ThetisTxMeterMath.Mic(17.0), "TX MIC normal value");
+            Equal(-195.0, ThetisTxMeterMath.Mic(240.0), "TX MIC floor clamp");
+        }
+
+        private static void ThetisTxStageClampMatchesPinnedRule()
+        {
+            Equal(-12.0, ThetisTxMeterMath.Stage(12.0), "TX stage normal value");
+            Equal(-30.0, ThetisTxMeterMath.Stage(50.0), "TX stage floor clamp");
+        }
+
+        private static void ThetisTxGainSignsMatchPinnedRules()
+        {
+            Equal(8.0, ThetisTxMeterMath.LevelerGain(8.0), "leveler gain positive");
+            Equal(0.0, ThetisTxMeterMath.LevelerGain(-3.0), "leveler gain floor");
+            Equal(9.0, ThetisTxMeterMath.AlcGain(-9.0), "ALC gain sign");
+            Equal(0.0, ThetisTxMeterMath.AlcGain(2.0), "ALC gain floor");
+        }
+
+        private static void ThetisTxAlcGroupCombinesPeakAndGain()
+        {
+            Equal(-12.0, ThetisTxMeterMath.AlcGroup(18.0, -6.0), "ALC group");
         }
 
         private static void LiveRuntimePropagatesChangingRx1Signal()
