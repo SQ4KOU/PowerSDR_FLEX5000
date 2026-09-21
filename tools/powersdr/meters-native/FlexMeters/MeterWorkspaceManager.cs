@@ -29,6 +29,15 @@ namespace FlexMeters
                 Receiver = source.Receiver,
                 VisibleOnReceive = source.VisibleOnReceive,
                 VisibleOnTransmit = source.VisibleOnTransmit,
+                Border = source.Border,
+                Highlight = source.Highlight,
+                Locked = source.Locked,
+                NoTitleBar = source.NoTitleBar,
+                AutoHeight = source.AutoHeight,
+                Minimises = source.Minimises,
+                HideWhenReceiverNotUsed = source.HideWhenReceiverNotUsed,
+                BackgroundArgb = source.BackgroundArgb,
+                Notes = source.Notes ?? "",
                 Geometry = new MeterWindowGeometry
                 {
                     X = source.Geometry.X,
