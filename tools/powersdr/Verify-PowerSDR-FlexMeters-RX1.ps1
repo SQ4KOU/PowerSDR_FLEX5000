@@ -213,7 +213,8 @@ if($entry -match '\bdynamic\b'){
 $entryTokens=@(
     'tcAppearance.TabPages.Add(flexMetersAppearancePage)',
     'flexMetersAppearancePage.Text = "Meters/Gadgets"',
-    'new FlexMeters.FlexMetersEditorForm(manager)',
+    'new FlexMeters.FlexMetersEditorForm(',
+    'console.RecoverFlexMetersContainer(id)',
     'console.EnsureFlexMetersWorkspaceManager()',
     'flexMetersAppearancePage.AutoScroll = true',
     'flexMetersEditorForm.TopLevel = false',
