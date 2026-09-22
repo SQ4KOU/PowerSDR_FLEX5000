@@ -277,9 +277,171 @@ $adapter=@'
 '@
 $mm=$mm.Replace($updateAnchor,$adapter+$updateAnchor)
 
-$loop='            while (_meterThreadRunning)'+$nl+'            {'
-if(!$mm.Contains($loop)){throw 'P32 coherent meter loop anchor missing'}
-$mm=$mm.Replace($loop,$loop+$nl+'                P32RefreshPowerSDR();')
+$loopRx=[regex]'(?m)^(?<indent>\s*)while \(_meterThreadRunning\)\s*
+
+# Culture adapter: exact Thetis VFO parsing assumes ".".
+$dxMethod='            private void dxRender()'
+$pos=$mm.IndexOf($dxMethod,[StringComparison]::Ordinal)
+if($pos -lt 0){throw 'P32 coherent dxRender marker missing'}
+$guard='                if (!_bDXSetup) return;'
+$g=$mm.IndexOf($guard,$pos,[StringComparison]::Ordinal)
+if($g -lt 0){throw 'P32 coherent dxRender guard missing'}
+$culture='                System.Threading.Thread.CurrentThread.CurrentCulture = System.Globalization.CultureInfo.InvariantCulture;'
+if(!$mm.Contains($culture)){$mm=$mm.Insert($g+$guard.Length,$nl+$nl+$culture)}
+
+[IO.File]::WriteAllText($mmPath,$mm,$utf8)
+
+# Console-only API boundary needed by the coherent Thetis core.
+$adapterPath=Join-Path $consoleDir 'P32ThetisPowerSDRAdapter.cs'
+$adapterSource=@'
+using System;
+using System.Windows.Forms;
+
+namespace PowerSDR
+{
+    sealed unsafe public partial class Console
+    {
+        internal bool P32VFOALock
+        {
+            get { return (CATVFOLockAB & 1) != 0; }
+            set { CATVFOLockAB = value ? (CATVFOLockAB | 1) : (CATVFOLockAB & ~1); }
+        }
+        internal bool P32VFOBLock
+        {
+            get { return (CATVFOLockAB & 2) != 0; }
+            set { CATVFOLockAB = value ? (CATVFOLockAB | 2) : (CATVFOLockAB & ~2); }
+        }
+
+        internal void P32SetRX1Band(Band band) { RX1Band = band; }
+        internal void P32SetRX2Band(Band band) { RX2Band = band; }
+
+        internal void P32PopupFilterMenu(int rx)
+        {
+            // PowerSDR has no Thetis filter-popup API. Filter buttons themselves
+            // map directly to RX1Filter; only the Thetis context-popup has no native peer.
+        }
+    }
+}
+'@
+[IO.File]::WriteAllText($adapterPath,$adapterSource,$utf8)
+
+# Mechanical substitutions for APIs whose PowerSDR equivalents differ in name.
+$mm=[IO.File]::ReadAllText($mmPath)
+$mm=$mm.Replace('_console.BandPreChangeHandlers?.Invoke(1, b);','_console.P32SetRX1Band(b);')
+$mm=$mm.Replace('_console.SetupRX2Band(b, false);','_console.P32SetRX2Band(b);')
+$mm=$mm.Replace('_console.SetupRX2Band(b);','_console.P32SetRX2Band(b);')
+$mm=$mm.Replace('_console.PopupFilterContextMenu(_owningmeter.RX, e);','_console.P32PopupFilterMenu(_owningmeter.RX);')
+$mm=$mm.Replace('_console.PopupFilterContextMenu(_owningmeter.RX, null);','_console.P32PopupFilterMenu(_owningmeter.RX);')
+[IO.File]::WriteAllText($mmPath,$mm,$utf8)
+
+# NuGet packages used by the coherent Thetis MeterManager/ImageFetcher.
+$pkg=[IO.File]::ReadAllText($pkgPath)
+$packages=@(
+ @('HtmlAgilityPack','1.11.62','net48'),
+ @('Microsoft.CodeAnalysis.Common','4.10.0','net48'),
+ @('Microsoft.CodeAnalysis.CSharp','4.10.0','net48'),
+ @('Microsoft.CodeAnalysis.CSharp.Scripting','4.10.0','net48'),
+ @('Microsoft.CodeAnalysis.Scripting.Common','4.10.0','net48'),
+ @('SkiaSharp','2.88.8','net48'),
+ @('SkiaSharp.NativeAssets.Win32','2.88.8','net48'),
+ @('Svg','3.4.7','net48')
+)
+foreach($p in $packages)
+{
+    if($pkg -notmatch ('id="'+[regex]::Escape($p[0])+'"'))
+    {
+        $line='  <package id="'+$p[0]+'" version="'+$p[1]+'" targetFramework="'+$p[2]+'" />'
+        $pkg=$pkg.Replace('</packages>',$line+$nl+'</packages>')
+    }
+}
+[IO.File]::WriteAllText($pkgPath,$pkg,$utf8NoBom)
+
+$proj=[IO.File]::ReadAllText($projPath)
+$refAnchor='<Reference Include="System.Drawing">'
+if(!$proj.Contains($refAnchor)){throw 'P32 coherent reference anchor missing'}
+$refs=@'
+    <Reference Include="HtmlAgilityPack, Version=1.11.62.0, Culture=neutral, PublicKeyToken=bd319b19eaf3b43a, processorArchitecture=MSIL">
+      <HintPath>..\packages\HtmlAgilityPack.1.11.62\lib\Net45\HtmlAgilityPack.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.CodeAnalysis, Version=4.10.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.CodeAnalysis.Common.4.10.0\lib\netstandard2.0\Microsoft.CodeAnalysis.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.CodeAnalysis.CSharp, Version=4.10.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.CodeAnalysis.CSharp.4.10.0\lib\netstandard2.0\Microsoft.CodeAnalysis.CSharp.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.CodeAnalysis.CSharp.Scripting, Version=4.10.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.CodeAnalysis.CSharp.Scripting.4.10.0\lib\netstandard2.0\Microsoft.CodeAnalysis.CSharp.Scripting.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.CodeAnalysis.Scripting, Version=4.10.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.CodeAnalysis.Scripting.Common.4.10.0\lib\netstandard2.0\Microsoft.CodeAnalysis.Scripting.dll</HintPath>
+    </Reference>
+    <Reference Include="SkiaSharp, Version=2.88.0.0, Culture=neutral, PublicKeyToken=0738eb9f132ed756, processorArchitecture=MSIL">
+      <HintPath>..\packages\SkiaSharp.2.88.8\lib\net462\SkiaSharp.dll</HintPath>
+    </Reference>
+    <Reference Include="Svg, Version=3.4.0.0, Culture=neutral, PublicKeyToken=12a0bac221edeae2, processorArchitecture=MSIL">
+      <HintPath>..\packages\Svg.3.4.7\lib\net472\Svg.dll</HintPath>
+    </Reference>
+'@
+if(!$proj.Contains('Reference Include="HtmlAgilityPack'))
+{
+    $proj=$proj.Replace($refAnchor,$refs+$nl+'    '+$refAnchor)
+}
+
+$compileAnchor='<Compile Include="P30ThetisMetersTxBridge.cs" />'
+if(!$proj.Contains($compileAnchor)){throw 'P32 coherent compile anchor missing'}
+foreach($name in @('P32_clsImageFetcher.cs','P32ThetisPowerSDRAdapter.cs'))
+{
+    if(!$proj.Contains('<Compile Include="'+$name+'" />'))
+    {
+        $proj=$proj.Replace($compileAnchor,$compileAnchor+$nl+'    <Compile Include="'+$name+'" />')
+    }
+}
+foreach($file in @('gear.png','Lock-64.png','Link-64.png'))
+{
+    $rel='Resources\'+$file
+    if($proj -notmatch ('Content Include="'+[regex]::Escape($rel)+'"'))
+    {
+        $item='    <Content Include="'+$rel+'">'+$nl+
+              '      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>'+$nl+
+              '    </Content>'+$nl
+        $igPos=$proj.IndexOf('</ItemGroup>')
+        if($igPos -lt 0){throw 'P32 coherent content ItemGroup anchor missing'}
+        $proj=$proj.Insert($igPos,$item)
+    }
+}
+[IO.File]::WriteAllText($projPath,$proj,$utf8NoBom)
+
+# Hard source-coherence gates. These are source gates only; CI compile is the next gate.
+$verify=[IO.File]::ReadAllText($mmPath)
+foreach($token in @(
+ 'SIGNAL_TEXT','VFO_DISPLAY','CLOCK','SPACER','TEXT_OVERLAY','DATA_OUT','ROTATOR','LED','WEB_IMAGE',
+ 'BAND_BUTTONS','MODE_BUTTONS','FILTER_BUTTONS','ANTENNA_BUTTONS','HISTORY','TUNESTEP_BUTTONS',
+ '_displayTarget.MouseDown += OnMouseDown;','_displayTarget.MouseWheel += OnMouseWheel;',
+ 'public static void LockContainer','public static bool ContainerLocked','public bool NoControls',
+ 'public bool Locked','public bool ShowOnRX','public bool ShowOnTX','public bool AutoHeight',
+ 'SetSetting<','GetSetting<'
+))
+{
+    if(!$verify.Contains($token)){throw "P32 coherent source gate missing: $token"}
+}
+$ucVerify=[IO.File]::ReadAllText((Join-Path $consoleDir 'P25_ucMeter.cs'))
+foreach($token in @('NoControls','Locked','ShowOnRX','ShowOnTX','AutoHeight'))
+{
+    if(!$ucVerify.Contains($token)){throw "P32 coherent ucMeter gate missing: $token"}
+}
+
+Write-Host "P32_THETIS_SOURCE_SHA=$ThetisSha"
+Write-Host 'P32_SOURCE_COHERENCE=METER_MANAGER_UCMETER_DISPLAY_SAME_COMMIT'
+Write-Host 'P32_CONTAINER=THETIS_NATIVE_21_FIELD_MODEL'
+Write-Host 'P32_INPUT=THETIS_NATIVE_MOUSE_PIPELINE'
+Write-Host 'P32_METER_TYPES=FULL_A53B192_GENERATION'
+Write-Host 'P32_RX2=NOT_EXPOSED'
+
+$loopMatch=$loopRx.Match($mm)
+if(!$loopMatch.Success){throw 'P32 coherent meter loop anchor missing'}
+$openBracePos=$mm.IndexOf('{',$loopMatch.Index+$loopMatch.Length)
+if($openBracePos -lt 0){throw 'P32 coherent meter loop opening brace missing'}
+$mm=$mm.Insert($openBracePos+1,$nl+$loopMatch.Groups['indent'].Value+'    P32RefreshPowerSDR();')
 
 # Culture adapter: exact Thetis VFO parsing assumes ".".
 $dxMethod='            private void dxRender()'
