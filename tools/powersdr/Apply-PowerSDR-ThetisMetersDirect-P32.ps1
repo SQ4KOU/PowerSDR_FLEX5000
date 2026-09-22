@@ -521,14 +521,7 @@ if(!$proj.Contains('<Compile Include="P32ThetisExactGadgets.cs" />'))
 }
 [IO.File]::WriteAllText($projPath,$proj,$utf8NoBom)
 
-# Setup list: expose exact Thetis gadgets in the existing Thetis-style list.
-if(Test-Path $cfgPath)
-{
-    $cfg=[IO.File]::ReadAllText($cfgPath)
-    $loop='            for (MeterType mt = MeterType.SIGNAL_STRENGTH; mt < MeterType.LAST; mt++)'
-    if(!$cfg.Contains($loop)){throw 'P32 config meter enumeration anchor missing'}
-    [IO.File]::WriteAllText($cfgPath,$cfg,$utf8)
-}
+# Setup list enumerates MeterType.NONE..LAST already; exact P32 enum entries appear automatically.
 
 # Hard gates: P31 substitutes must not enter the build.
 $verify=[IO.File]::ReadAllText($dstExact)
