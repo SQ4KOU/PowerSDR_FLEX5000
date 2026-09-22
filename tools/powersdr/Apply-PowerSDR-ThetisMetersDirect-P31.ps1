@@ -30,6 +30,7 @@ Copy-Item $srcModern $dstModern -Force
 # values/dispatch hooks. The existing P30 implementation remains in place.
 # ---------------------------------------------------------------------------
 $mm=[IO.File]::ReadAllText($mmPath)
+$mm=$mm.Replace("`r`n","`n")
 
 foreach($pair in @(
     @('internal static class MeterManager','internal static partial class MeterManager'),
@@ -135,6 +136,7 @@ $mm=$mm.Replace($mouseUpAnchor,$mouseUpAnchor+$nl+'                P31DispatchMo
 # persistence while keeping all original 13 fields compatible.
 # ---------------------------------------------------------------------------
 $uc=[IO.File]::ReadAllText($ucPath)
+$uc=$uc.Replace("`r`n","`n")
 
 $fieldAnchor='        private bool _border;'
 if(!$uc.Contains($fieldAnchor)){throw 'P31 ucMeter field anchor missing'}
@@ -172,84 +174,20 @@ $properties=@'
 '@
 $uc=$uc.Replace($propertyAnchor,$properties+$propertyAnchor)
 
-$moveOld=@'
-        private void picContainer_MouseMove(object sender, MouseEventArgs e)
-        {
-            bool bContains;
+$moveDecl='            bool bContains;'
+if(!$uc.Contains($moveDecl)){throw 'P31 ucMeter mouse declaration anchor missing'}
+$uc=$uc.Replace($moveDecl,
+    $moveDecl+$nl+'            bool noControls = _no_controls && (Control.ModifierKeys & Keys.Shift) != Keys.Shift;')
 
-            if (!_dragging)
-            {
-                bContains = pnlBar.ClientRectangle.Contains(pnlBar.PointToClient(Control.MousePosition));
-                if (bContains && !pnlBar.Visible)
-                {
-                    pnlBar.BringToFront();
-                    pnlBar.Show();
-                }
-                else if (!bContains && pnlBar.Visible)
-                {
-                    pnlBar.Hide();
-                }
-            }
+$barHit='                bContains = pnlBar.ClientRectangle.Contains(pnlBar.PointToClient(Control.MousePosition));'
+if(!$uc.Contains($barHit)){throw 'P31 ucMeter top-bar hit-test anchor missing'}
+$uc=$uc.Replace($barHit,
+    '                bContains = !noControls && pnlBar.ClientRectangle.Contains(pnlBar.PointToClient(Control.MousePosition));')
 
-            if (!_resizing)
-            {
-                bContains = pbGrab.ClientRectangle.Contains(pbGrab.PointToClient(Control.MousePosition));
-                if (bContains && !pbGrab.Visible)
-                {
-                    pbGrab.BringToFront();
-                    pbGrab.Show();
-                }
-                else if (!bContains && pbGrab.Visible)
-                {
-                    pbGrab.Hide();
-                }
-            }
-        }
-'@
-$moveNew=@'
-        private void picContainer_MouseMove(object sender, MouseEventArgs e)
-        {
-            bool bContains;
-            bool noControls = _no_controls && (Control.ModifierKeys & Keys.Shift) != Keys.Shift;
-
-            if (noControls)
-            {
-                if (pnlBar.Visible) pnlBar.Hide();
-                if (pbGrab.Visible) pbGrab.Hide();
-                return;
-            }
-
-            if (!_dragging)
-            {
-                bContains = pnlBar.ClientRectangle.Contains(pnlBar.PointToClient(Control.MousePosition));
-                if (bContains && !pnlBar.Visible)
-                {
-                    pnlBar.BringToFront();
-                    pnlBar.Show();
-                }
-                else if (!bContains && pnlBar.Visible)
-                {
-                    pnlBar.Hide();
-                }
-            }
-
-            if (!_resizing)
-            {
-                bContains = pbGrab.ClientRectangle.Contains(pbGrab.PointToClient(Control.MousePosition));
-                if (bContains && !pbGrab.Visible)
-                {
-                    pbGrab.BringToFront();
-                    pbGrab.Show();
-                }
-                else if (!bContains && pbGrab.Visible)
-                {
-                    pbGrab.Hide();
-                }
-            }
-        }
-'@
-if(!$uc.Contains($moveOld)){throw 'P31 ucMeter NoControls mouse anchor missing'}
-$uc=$uc.Replace($moveOld,$moveNew)
+$grabHit='                bContains = pbGrab.ClientRectangle.Contains(pbGrab.PointToClient(Control.MousePosition));'
+if(!$uc.Contains($grabHit)){throw 'P31 ucMeter resize-grabber hit-test anchor missing'}
+$uc=$uc.Replace($grabHit,
+    '                bContains = !noControls && pbGrab.ClientRectangle.Contains(pbGrab.PointToClient(Control.MousePosition));')
 
 $toOld='                Common.ColourToString(this.BackColor);'
 $toNew='                Common.ColourToString(this.BackColor) + "|" +'+$nl+
@@ -279,6 +217,7 @@ $parseTail=@'
                         if (bOk) Locked = locked;
                     }
 '@
+$parseTail=$parseTail.Replace("`r`n","`n")
 $uc=$uc.Replace($parseAnchor,$parseTail)
 
 [IO.File]::WriteAllText($ucPath,$uc,$utf8)
@@ -287,6 +226,7 @@ $uc=$uc.Replace($parseAnchor,$parseTail)
 # P27 config window: add the exact newer-Thetis Lock semantics and No Title Bar.
 # ---------------------------------------------------------------------------
 $cfg=[IO.File]::ReadAllText($configPath)
+$cfg=$cfg.Replace("`r`n","`n")
 
 $fieldCfg='        private readonly CheckBoxTS chkContainerBorder;'
 if(!$cfg.Contains($fieldCfg)){throw 'P31 config field anchor missing'}
@@ -344,18 +284,15 @@ $availOld='            btnAddMeterItem.Enabled = lstMetersAvailable.SelectedInde
 if(!$cfg.Contains($availOld)){throw 'P31 available-list lock anchor missing'}
 $cfg=$cfg.Replace($availOld,'            btnAddMeterItem.Enabled = !chkLockContainer.Checked && lstMetersAvailable.SelectedIndex >= 0;')
 
-$inUseOld=@'
-            btnRemoveMeterItem.Enabled = enabled;
-            btnMeterUp.Enabled = enabled;
-            btnMeterDown.Enabled = enabled;
-'@
-$inUseNew=@'
-            btnRemoveMeterItem.Enabled = !chkLockContainer.Checked && enabled;
-            btnMeterUp.Enabled = !chkLockContainer.Checked && enabled;
-            btnMeterDown.Enabled = !chkLockContainer.Checked && enabled;
-'@
-if(!$cfg.Contains($inUseOld)){throw 'P31 in-use lock anchor missing'}
-$cfg=$cfg.Replace($inUseOld,$inUseNew)
+foreach($linePair in @(
+    @('            btnRemoveMeterItem.Enabled = enabled;','            btnRemoveMeterItem.Enabled = !chkLockContainer.Checked && enabled;'),
+    @('            btnMeterUp.Enabled = enabled;','            btnMeterUp.Enabled = !chkLockContainer.Checked && enabled;'),
+    @('            btnMeterDown.Enabled = enabled;','            btnMeterDown.Enabled = !chkLockContainer.Checked && enabled;')
+))
+{
+    if(!$cfg.Contains($linePair[0])){throw "P31 in-use lock anchor missing: $($linePair[0])"}
+    $cfg=$cfg.Replace($linePair[0],$linePair[1])
+}
 
 $handlerAnchor='        private void clrbtnContainerBackground_Changed(object sender, EventArgs e)'
 if(!$cfg.Contains($handlerAnchor)){throw 'P31 config handler anchor missing'}
