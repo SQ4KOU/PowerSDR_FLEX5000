@@ -1,0 +1,1 @@
+P24 WinForms RESX resource fix build
