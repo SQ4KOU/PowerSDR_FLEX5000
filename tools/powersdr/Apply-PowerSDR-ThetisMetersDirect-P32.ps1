@@ -537,7 +537,7 @@ $map=[ordered]@{
  '@@CLS_MODE@@'=$clsMode
  '@@CLS_STEP@@'=$clsStep
  '@@CLS_VFO@@'=$clsVfo
- '@@CLS_FADE_COVER@@'=$clsFadeCover
+ '@@CLS_FADE_COVER@@'=$clsFade
  '@@GET_FADE_COVER@@'=$getFadeCover
  '@@GET_BAND_GROUP@@'=$getBandGroup
  '@@SET_BAND_PANEL@@'=$setBandPanel
@@ -560,7 +560,7 @@ $map=[ordered]@{
  '@@DRAW_STEP@@'=$drawStep
  '@@RENDER_VFO@@'=$renderVfo
  '@@RENDER_BUTTON@@'=$renderButton
- '@@RENDER_FADE_COVER@@'=$renderFadeCover
+ '@@RENDER_FADE_COVER@@'=$renderFade
 }
 $source=$template
 foreach($kv in $map.GetEnumerator()){$source=$source.Replace($kv.Key,[string]$kv.Value)}
