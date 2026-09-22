@@ -268,15 +268,16 @@ $cfg=$cfg.Replace($loadAnchor,
     '                clrbtnContainerBackground.Color = MeterManager.GetContainerBackgroundColour(cci.ID);')
 
 # Guard mutations exactly as newer Thetis Lock does.
-foreach($sig in @(
-    '        private void btnContainerDelete_Click(object sender, EventArgs e)'+$nl+'        {',
-    '        private void btnAddMeterItem_Click(object sender, EventArgs e)'+$nl+'        {',
-    '        private void btnRemoveMeterItem_Click(object sender, EventArgs e)'+$nl+'        {',
-    '        private void btnMeterUp_Click(object sender, EventArgs e)'+$nl+'        {',
-    '        private void btnMeterDown_Click(object sender, EventArgs e)'+$nl+'        {'
+foreach($methodName in @(
+    'btnContainerDelete_Click',
+    'btnAddMeterItem_Click',
+    'btnRemoveMeterItem_Click',
+    'btnMeterUp_Click',
+    'btnMeterDown_Click'
 ))
 {
-    if(!$cfg.Contains($sig)){throw "P31 config mutation anchor missing: $sig"}
+    $sig='        private void '+$methodName+'(object sender, EventArgs e)'+$nl+'        {'
+    if(!$cfg.Contains($sig)){throw "P31 config mutation anchor missing: $methodName"}
     $cfg=$cfg.Replace($sig,$sig+$nl+'            if (chkLockContainer.Checked) return;')
 }
 
@@ -284,15 +285,15 @@ $availOld='            btnAddMeterItem.Enabled = lstMetersAvailable.SelectedInde
 if(!$cfg.Contains($availOld)){throw 'P31 available-list lock anchor missing'}
 $cfg=$cfg.Replace($availOld,'            btnAddMeterItem.Enabled = !chkLockContainer.Checked && lstMetersAvailable.SelectedIndex >= 0;')
 
-foreach($linePair in @(
-    @('            btnRemoveMeterItem.Enabled = enabled;','            btnRemoveMeterItem.Enabled = !chkLockContainer.Checked && enabled;'),
-    @('            btnMeterUp.Enabled = enabled;','            btnMeterUp.Enabled = !chkLockContainer.Checked && enabled;'),
-    @('            btnMeterDown.Enabled = enabled;','            btnMeterDown.Enabled = !chkLockContainer.Checked && enabled;')
-))
-{
-    if(!$cfg.Contains($linePair[0])){throw "P31 in-use lock anchor missing: $($linePair[0])"}
-    $cfg=$cfg.Replace($linePair[0],$linePair[1])
-}
+$stateOld='            btnRemoveMeterItem.Enabled = enabled;'
+if(!$cfg.Contains($stateOld)){throw 'P31 remove state anchor missing'}
+$cfg=$cfg.Replace($stateOld,'            btnRemoveMeterItem.Enabled = !chkLockContainer.Checked && enabled;')
+$stateOld='            btnMeterUp.Enabled = enabled;'
+if(!$cfg.Contains($stateOld)){throw 'P31 up state anchor missing'}
+$cfg=$cfg.Replace($stateOld,'            btnMeterUp.Enabled = !chkLockContainer.Checked && enabled;')
+$stateOld='            btnMeterDown.Enabled = enabled;'
+if(!$cfg.Contains($stateOld)){throw 'P31 down state anchor missing'}
+$cfg=$cfg.Replace($stateOld,'            btnMeterDown.Enabled = !chkLockContainer.Checked && enabled;')
 
 $handlerAnchor='        private void clrbtnContainerBackground_Changed(object sender, EventArgs e)'
 if(!$cfg.Contains($handlerAnchor)){throw 'P31 config handler anchor missing'}
