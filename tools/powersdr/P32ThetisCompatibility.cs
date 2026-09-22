@@ -174,6 +174,17 @@ namespace PowerSDR
             else if (d <= 54) over9dBm = 50;
             else over9dBm = 60;
         }
+        public static bool OpenUri(string uri)
+        {
+            try
+            {
+                if (!IsValidUri(uri)) return false;
+                System.Threading.Tasks.Task.Run(() => System.Diagnostics.Process.Start(uri));
+                return true;
+            }
+            catch { return false; }
+        }
+
     }
 
     internal static class P32StringExtensions

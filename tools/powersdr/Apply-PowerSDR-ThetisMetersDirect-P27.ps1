@@ -12,12 +12,64 @@ $bridgePath=Join-Path $consoleDir 'P25ThetisMetersBridge.cs'
 $projPath=Join-Path $consoleDir 'PowerSDR.csproj'
 $srcConfig=Join-Path $PSScriptRoot 'P27ThetisMetersConfigForm.cs'
 $dstConfig=Join-Path $consoleDir 'P27ThetisMetersConfigForm.cs'
+$srcTuneGrid=Join-Path $PSScriptRoot 'P35_ucTunestepOptionsGrid.cs'
+$srcTuneGridDesigner=Join-Path $PSScriptRoot 'P35_ucTunestepOptionsGrid.Designer.cs'
+$srcVariablePicker=Join-Path $PSScriptRoot 'P35_frmVariablePicker.cs'
+$srcVariablePickerDesigner=Join-Path $PSScriptRoot 'P35_frmVariablePicker.Designer.cs'
+$dstTuneGrid=Join-Path $consoleDir 'ucTunestepOptionsGrid.cs'
+$dstTuneGridDesigner=Join-Path $consoleDir 'ucTunestepOptionsGrid.Designer.cs'
+$dstVariablePicker=Join-Path $consoleDir 'frmVariablePicker.cs'
+$dstVariablePickerDesigner=Join-Path $consoleDir 'frmVariablePicker.Designer.cs'
+$numericPath=Join-Path $consoleDir 'Invoke\numericupdownts.cs'
 $utf8=New-Object Text.UTF8Encoding($true)
 $utf8NoBom=New-Object Text.UTF8Encoding($false)
 $nl=[Environment]::NewLine
 
 if(!(Test-Path $srcConfig)){throw "P27 config source missing: $srcConfig"}
 Copy-Item $srcConfig $dstConfig -Force
+foreach($pair in @(
+ @($srcTuneGrid,$dstTuneGrid),
+ @($srcTuneGridDesigner,$dstTuneGridDesigner),
+ @($srcVariablePicker,$dstVariablePicker),
+ @($srcVariablePickerDesigner,$dstVariablePickerDesigner)
+)){
+    if(!(Test-Path $pair[0])){throw "P35 exact UI dependency missing: $($pair[0])"}
+    Copy-Item $pair[0] $pair[1] -Force
+}
+if(!(Test-Path $numericPath)){throw "P35 NumericUpDownTS missing: $numericPath"}
+
+# P35_TINYSTEP_PATCH: exact Thetis NumericUpDownTS TinyStep behavior.
+$numeric=[IO.File]::ReadAllText($numericPath)
+if(!$numeric.Contains('public bool TinyStep'))
+{
+    $tiny=@'
+        // MW0LGE_22b - exact Thetis TinyStep behavior used by Multi Meters.
+        private bool _tinyStep = false;
+        public bool TinyStep
+        {
+            get { return _tinyStep; }
+            set { _tinyStep = value; }
+        }
+        protected override void OnMouseWheel(MouseEventArgs e)
+        {
+            decimal newValue = this.Value;
+            decimal step = this.Increment;
+            if (this.DecimalPlaces > 0 && _tinyStep && step != (decimal)0.1f)
+                step = (decimal)0.1f;
+            if (e.Delta > 0) newValue += step;
+            else newValue -= step;
+            if (newValue > this.Maximum) newValue = this.Maximum;
+            else if (newValue < this.Minimum) newValue = this.Minimum;
+            this.Value = newValue;
+        }
+
+'@
+    $marker='        #endregion'
+    $last=$numeric.LastIndexOf($marker,[StringComparison]::Ordinal)
+    if($last -lt 0){throw 'P35 NumericUpDownTS region anchor missing'}
+    $numeric=$numeric.Insert($last,$tiny)
+    [IO.File]::WriteAllText($numericPath,$numeric,$utf8)
+}
 
 $bridge=[IO.File]::ReadAllText($bridgePath)
 # Exact Thetis configuration-button graphics.
@@ -92,6 +144,14 @@ if(!$proj.Contains('<Compile Include="P27ThetisMetersConfigForm.cs" />'))
 {
     $proj=$proj.Replace($anchor,$anchor+$nl+'    <Compile Include="P27ThetisMetersConfigForm.cs" />')
 }
+foreach($name in @('ucTunestepOptionsGrid.cs','ucTunestepOptionsGrid.Designer.cs','frmVariablePicker.cs','frmVariablePicker.Designer.cs'))
+{
+    if(!$proj.Contains('<Compile Include="'+$name+'" />'))
+    {
+        $proj=$proj.Replace('<Compile Include="P27ThetisMetersConfigForm.cs" />',
+            '<Compile Include="P27ThetisMetersConfigForm.cs" />'+$nl+'    <Compile Include="'+$name+'" />')
+    }
+}
 
 $resourceNames=@('arrow_left_black','arrow_right_black','arrow_up_black','down_black','pipette32border','brush32border')
 foreach($r in $resourceNames)
@@ -157,6 +217,7 @@ foreach($forbidden in @('PropertyGrid','MeterSettingsProxy','P23MeterManager','F
 }
 
 Write-Host 'P27_THETIS_CONFIG=THETIS_MULTIMETERS2_A53B192_EXACT_SURFACE'
+Write-Host 'P35_EXACT_AUX_CONTROLS=TUNESTEP_GRID,VARIABLE_PICKER,TINYSTEP'
 Write-Host 'P27_PROPERTYGRID=ABSENT'
 Write-Host 'P27_P25_CORE=UNCHANGED'
 Write-Host 'P27_RX2=NOT_EXPOSED'

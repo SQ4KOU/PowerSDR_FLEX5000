@@ -346,6 +346,7 @@ namespace PowerSDR
         private System.Windows.Forms.CheckBoxTS chkBandButtons_fade_tx;
         private System.Windows.Forms.CheckBoxTS chkBandButtons_fade_rx;
         private System.Windows.Forms.GroupBoxTS grpHistoryItem;
+        private ucTunestepOptionsGrid ucTunestepOptionsGrid_buttons;
         private System.Windows.Forms.LabelTS labelTS281;
         private System.Windows.Forms.LabelTS labelTS280;
         private PowerSDR.ColorButton clrbtnHistory_time;
@@ -730,6 +731,7 @@ namespace PowerSDR
             this.chkBandButtons_fade_tx = new System.Windows.Forms.CheckBoxTS();
             this.chkBandButtons_fade_rx = new System.Windows.Forms.CheckBoxTS();
             this.grpHistoryItem = new System.Windows.Forms.GroupBoxTS();
+            this.ucTunestepOptionsGrid_buttons = new ucTunestepOptionsGrid();
             this.labelTS281 = new System.Windows.Forms.LabelTS();
             this.labelTS280 = new System.Windows.Forms.LabelTS();
             this.clrbtnHistory_time = new PowerSDR.ColorButton();
@@ -5558,6 +5560,12 @@ namespace PowerSDR
             this.chkHistory_fade_rx.UseVisualStyleBackColor = true;
             this.chkHistory_fade_rx.CheckedChanged += new System.EventHandler(this.chkHistory_fade_rx_CheckedChanged);
 
+            this.ucTunestepOptionsGrid_buttons.Bitfield = 0;
+            this.ucTunestepOptionsGrid_buttons.Location = new System.Drawing.Point(444, 171);
+            this.ucTunestepOptionsGrid_buttons.Name = "ucTunestepOptionsGrid_buttons";
+            this.ucTunestepOptionsGrid_buttons.Size = new System.Drawing.Size(157, 182);
+            this.ucTunestepOptionsGrid_buttons.TabIndex = 111;
+            this.ucTunestepOptionsGrid_buttons.CheckboxChanged += new System.EventHandler(this.ucTunestepOptionsGrid_buttons_checkbox_changed);
             this.Controls.Add(this.grpMultiMeterHolder);
             this.Controls.Add(this.grpMeterItemClockSettings); this.grpMeterItemClockSettings.Visible = false;
             this.Controls.Add(this.grpMeterItemVfoDisplaySettings); this.grpMeterItemVfoDisplaySettings.Visible = false;
@@ -7204,16 +7212,6 @@ namespace PowerSDR
             updateMeterType();
         }
 
-        private void chkMaintainNFAdjustDeltaRX2_CheckedChanged(object sender, EventArgs e)
-        {
-            console.MaintainNFAdjustDeltaRX2 = chkMaintainNFAdjustDeltaRX2.Checked;
-        }
-
-        private void chkMaintainNFAdjustDeltaRX1_CheckedChanged(object sender, EventArgs e)
-        {
-            console.MaintainNFAdjustDeltaRX1 = chkMaintainNFAdjustDeltaRX1.Checked;
-        }
-
         private void chkContainerBorder_CheckedChanged(object sender, EventArgs e)
         {
             if (initializing) return;
@@ -7594,15 +7592,21 @@ namespace PowerSDR
         }
         public void ShowMultiMeterSetupTab(string sID = "")
         {
-            if (!String.IsNullOrEmpty(sId))
+            if (sID != "" && comboContainerSelect.Items.Count > 0)
             {
-                for (int i = 0; i < comboContainerSelect.Items.Count; i++)
+                for (int n = 0; n < comboContainerSelect.Items.Count; n++)
                 {
-                    clsContainerComboboxItem cci = comboContainerSelect.Items[i] as clsContainerComboboxItem;
-                    if (cci != null && cci.ID == sId) { comboContainerSelect.SelectedIndex = i; break; }
+                    clsContainerComboboxItem cci = comboContainerSelect.Items[n] as clsContainerComboboxItem;
+                    if (cci != null && cci.ID == sID)
+                    {
+                        comboContainerSelect.SelectedIndex = n;
+                        break;
+                    }
                 }
             }
+
             if (!Visible) Show(console);
+            Focus();
             WindowState = FormWindowState.Normal;
             BringToFront();
             Activate();
@@ -8222,11 +8226,11 @@ namespace PowerSDR
 
         private void txtWebImage_url_TextChanged(object sender, EventArgs e)
         {
-            if (txtWebImage_url.Text.Contains("hamqsl.com", StringComparison.InvariantCultureIgnoreCase) ||
-                txtWebImage_url.Text.Contains("bsdworld.org", StringComparison.InvariantCultureIgnoreCase) ||
-                //txtWebImage_url.Text.Contains("nascom.nasa.gov", StringComparison.InvariantCultureIgnoreCase) ||
-                //txtWebImage_url.Text.Contains("swpc.noaa.gov", StringComparison.InvariantCultureIgnoreCase) ||
-                txtWebImage_url.Text.Contains("kc2g.com", StringComparison.InvariantCultureIgnoreCase)
+            if ((txtWebImage_url.Text.IndexOf("hamqsl.com", StringComparison.InvariantCultureIgnoreCase) >= 0) ||
+                (txtWebImage_url.Text.IndexOf("bsdworld.org", StringComparison.InvariantCultureIgnoreCase) >= 0) ||
+                //(txtWebImage_url.Text.IndexOf("nascom.nasa.gov", StringComparison.InvariantCultureIgnoreCase) >= 0) ||
+                //(txtWebImage_url.Text.IndexOf("swpc.noaa.gov", StringComparison.InvariantCultureIgnoreCase) >= 0) ||
+                (txtWebImage_url.Text.IndexOf("kc2g.com", StringComparison.InvariantCultureIgnoreCase) >= 0)
                 )
             {
                 // lock and set the update interval
@@ -8551,6 +8555,373 @@ namespace PowerSDR
         {
             updateMeterType();
         }
+
+
+        private int getTotalColumnsNeededForAntennaButtons()
+        {
+            int enable_count = 0;
+            if (chkButtonBox_antenna_rx1.Checked) enable_count++;
+            if (chkButtonBox_antenna_rx2.Checked) enable_count++;
+            if (chkButtonBox_antenna_rx3.Checked) enable_count++;
+            if (chkButtonBox_antenna_tx1.Checked) enable_count++;
+            if (chkButtonBox_antenna_tx2.Checked) enable_count++;
+            if (chkButtonBox_antenna_tx3.Checked) enable_count++;
+            if (chkButtonBox_antenna_byp.Checked) enable_count++;
+            if (chkButtonBox_antenna_ext1.Checked) enable_count++;
+            if (chkButtonBox_antenna_xvtr.Checked) enable_count++;
+            if (chkButtonBox_antenna_rxtxant.Checked) enable_count++;
+
+            return enable_count;
+        }
+
+        private void updateWebImageState(ImageFetcher.State state, bool checkSelected = false, string id = "")
+        {
+            if (checkSelected)
+            {
+                string mgID = meterItemGroupIDfromSelected();
+                if (mgID == "") return;
+                if (mgID != id) return;
+
+                MeterType mt = meterItemGroupTypefromSelected();
+                if (mt == MeterType.NONE) return;
+                if (mt != MeterType.WEB_IMAGE) return;
+            }
+
+            string txt;
+
+            switch (state)
+            {
+                case ImageFetcher.State.IDLE:
+                    txt = "idle";
+                    break;
+                case ImageFetcher.State.OK:
+                    txt = "ok";
+                    break;
+                case ImageFetcher.State.ERROR_URL_ISSUE:
+                    txt = "url issue";
+                    break;
+                case ImageFetcher.State.ERROR_IMAGE_CONVERSION_PROBLEM:
+                    txt = "bad image";
+                    break;
+                case ImageFetcher.State.ERROR_NO_SUITABLE_IMAGE:
+                    txt = "no image";
+                    break;
+                case ImageFetcher.State.WAITING:
+                    txt = "waiting";
+                    break;
+                case ImageFetcher.State.GATHERING_IMAGES:
+                    txt = "gathering";
+                    break;
+                default:
+                    txt = "";
+                    break;
+            }
+            lblWebImage_state.Text = txt;
+        }
+
+        private void updateLedValidControls()
+        {
+            MeterManager.clsMeter m = meterFromSelectedContainer();
+            if (m == null) return;
+
+            clsMeterTypeComboboxItem mtci = lstMetersInUse.SelectedItem as clsMeterTypeComboboxItem;
+            if (mtci == null) return;
+
+            MeterType mt = meterItemGroupTypefromSelected();
+            if (mt == MeterType.NONE) return;
+
+            if (mt == MeterType.LED)
+            {
+                MeterManager.clsIGSettings igs = m.GetSettingsForMeterGroup(mt, mtci.Order);
+                if (igs == null) return;
+
+                lblLed_Error.ForeColor = Color.Red;
+                lblLed_Error.Visible = igs.ShowHistory;
+                lblLed_Valid.Text = igs.ShowType ? "Valid" : "Invalid";
+                lblLed_Valid.ForeColor = igs.ShowType ? Color.LimeGreen : Color.Red;
+            }
+
+        }
+
+        private bool variableInUse(int variable)
+        {
+            string mgID = meterItemGroupIDfromSelected();
+            if (mgID == "") return false;
+
+            clsMeterTypeComboboxItem mtci = lstMetersInUse.SelectedItem as clsMeterTypeComboboxItem;
+            if (mtci == null) return false;
+
+            MeterManager.clsMeter m = meterFromSelectedContainer();
+            if (m == null) return false;
+
+            MeterType mt = meterItemGroupTypefromSelected();
+            if (mt == MeterType.NONE) return false;
+
+            MeterManager.clsIGSettings igs = m.GetSettingsForMeterGroup(mt, mtci.Order);
+            if (igs == null) return false;
+
+            return igs.GetMMIOVariable(variable) == "--DEFAULT--" ? false : true;
+        }
+
+        private void updateVfoShowBandtextColour()
+        {
+            clrbtnMultiMeter_vfo_show_bandtext.Enabled = chkMultiMeter_vfo_show_bandtext.Checked;
+        }
+
+        private void updateTextOverlayBackTextControls()
+        {
+            clrbtnTextOverlay_TextBackColour1.Enabled = chkTextOverlay_textback1.Checked;
+            clrbtnTextOverlay_TextBackColour2.Enabled = chkTextOverlay_textback2.Checked;
+        }
+
+        private void updateTextOverlayPanelControls()
+        {
+            bool enabled = chkTextOverlay_ShowPanel.Checked;
+            clrbtnTextOverlay_PanelBackground.Enabled = enabled;
+            clrbtnTextOverlay_PanelBackgroundTX.Enabled = enabled;            
+            nudTextOverlay_PanelPadding.Enabled = enabled;
+            chkTextOverlay_FadeOnRX.Enabled = enabled;
+            chkTextOverlay_FadeOnTX.Enabled = enabled;
+            lblTextOverlay_panelbackground.Enabled = enabled;
+            lblTextOverlay_panelbackgroundTX.Enabled = enabled;
+            lblTextOverlay_panelpadding.Enabled = enabled;
+        }
+
+        private void updateRotatorControlControls()
+        {
+            bool en = chkMeterItemRotatorAllowControl.Checked;
+            clrbtnMeterItemRotatorControlColour.Enabled = en;
+            txtMeterItemRotatorAZcommand.Enabled = en;
+            txtMeterItemRotatorELEcommand.Enabled = en;
+            txtMeterItemRotatorSTOPcommand.Enabled = en;
+            picMultiMeterRotatorControlInfo.Enabled = en;
+            lblMeterItemRotatorAZcommand.Enabled = en;
+            lblMeterItemRotatorELEcommand.Enabled = en;
+            picMultiMeterRotatorControlInfo.Enabled = en;
+            bntMultiMeterItemRotator_default_pstRotator.Enabled = en;
+            txtRotator_4charID.Enabled = en;
+            lblRotator_4charID.Enabled = en;
+        }
+
+        private void updateShowBeamWidthControls()
+        {
+            bool en = chkMeterItemRotatorShowBeamWidth.Checked;
+            clrbtnMeterItemRotatorBeamWidth.Enabled = en;
+            lblMeterItemRotatorBeamWidth_degrees.Enabled = en;
+            nudMeterItemRotatorBeamWidth.Enabled = en;
+            lblMeterItemRotatorBeamWidth_alpha.Enabled = en;
+            nudMeterItemRotatorBeamWidth_alpha.Enabled = en;
+        }
+
+        private void updateLedIndicatorPanelControls()
+        {
+            bool enabled = chkLedIndicator_ShowPanel.Checked;
+            clrbtnLedIndicator_PanelBackground.Enabled = enabled;
+            clrbtnLedIndicator_PanelBackgroundTX.Enabled = enabled;
+            nudLedIndicator_PanelPadding.Enabled = enabled;
+            chkLedIndicator_FadeOnRX.Enabled = enabled;
+            chkLedIndicator_FadeOnTX.Enabled = enabled;
+            lblLedIndicator_panelbackground.Enabled = enabled;
+            lblLedIndicator_panelbackgroundTX.Enabled = enabled;
+            nudLedIndicator_PanelPadding.Enabled = enabled;
+        }
+
+        private void updateButtonIndicatorControls()
+        {
+            if (initializing) return;
+            bool enable = chkBandButtons_use_indicator.Checked;
+            lblBandButtons_indicator_border.Enabled = enable;
+            nudBandButtons_indicator_border.Enabled = enable;
+            lblBandButtons_indicator_style.Enabled = enable;
+            nudBandButtons_indicator_style.Enabled = enable;
+        }
+
+        private void mmioSetupVariable(int variable)
+        {
+            string mgID = meterItemGroupIDfromSelected();
+            if (mgID == "") return;
+
+            clsMeterTypeComboboxItem mtci = lstMetersInUse.SelectedItem as clsMeterTypeComboboxItem;
+            if (mtci == null) return;
+
+            MeterManager.clsMeter m = meterFromSelectedContainer();
+            if (m == null) return;
+
+            MeterType mt = meterItemGroupTypefromSelected();
+            if (mt == MeterType.NONE) return;
+
+            MeterManager.clsIGSettings igs = m.GetSettingsForMeterGroup(mt, mtci.Order);
+            if (igs == null) return;
+
+            frmVariablePicker f = new frmVariablePicker();
+            f.Init(variable, igs.GetMMIOGuid(variable), igs.GetMMIOVariable(variable));
+            DialogResult dr = f.ShowDialog(this);
+            if (dr == DialogResult.OK || dr == DialogResult.Ignore)
+            {
+                igs.SetMMIOGuid(variable, f.Guid);
+                igs.SetMMIOVariable(variable, f.Variable);
+
+                m.ApplySettingsForMeterGroup(mt, igs, mtci.Order);
+
+                switch(mt)
+                {
+                    case MeterType.HISTORY:
+                        {
+                            switch (variable)
+                            {
+                                case 0:
+                                    pnlVariableInUse_1_history.Visible = variableInUse(0);
+                                    break;
+                                case 1:
+                                    pnlVariableInUse_2_history.Visible = variableInUse(1);
+                                    break;
+                            }
+                        }
+                        break;
+                    case MeterType.ROTATOR:
+                        {
+                            switch (variable)
+                            {
+                                case 0:
+                                    pnlVariableInUse_1_rotator.Visible = variableInUse(0);
+                                    break;
+                                case 1:
+                                    pnlVariableInUse_2_rotator.Visible = variableInUse(1);
+                                    break;
+                            }
+                        }
+                        break;
+                    default:
+                        {
+                            switch (variable)
+                            {
+                                case 0:
+                                    pnlVariableInUse_1.Visible = variableInUse(0);
+                                    break;
+                                case 1:
+                                    pnlVariableInUse_2.Visible = variableInUse(1);
+                                    break;
+                            }
+                        }
+                        break;
+                }
+            }
+        }
+
+        private void ucTunestepOptionsGrid_buttons_checkbox_changed(object sender, EventArgs e)
+        {
+            updateMeterType();
+        }
+
+        private class clsComboHistoryItem
+        {
+            private string _reading_name;
+            private Reading _reading;
+            public clsComboHistoryItem(Reading r)
+            {
+                _reading = r;
+                _reading_name = MeterManager.ReadingName(r);
+            }
+            public Reading Reading
+            {
+                get { return _reading; }
+            }
+            public string ReadingName
+            {
+                get { return _reading_name; }
+            }
+            public override string ToString()
+            {
+                return _reading_name;
+            }
+        }
+
+        private Font _bandButtons_font = null;
+        private Font _textOverlayFont1 = null;
+        private Font _textOverlayFont2 = null;
+        KeyValuePair<string, string>[] _hamqsl_urls =
+{
+            new KeyValuePair<string, string>("select one", ""),
+            new KeyValuePair<string, string>("Layout 1 - sun", "https://www.hamqsl.com/solarn0nbh.php"),
+            new KeyValuePair<string, string>("Layout 2 - sun", "https://www.hamqsl.com/solarpic.php"),
+            new KeyValuePair<string, string>("Layout 3", "https://www.hamqsl.com/solarvhf.php"),
+            new KeyValuePair<string, string>("Layout 4", "https://www.hamqsl.com/solar.php"),
+            new KeyValuePair<string, string>("Layout 5", "https://www.hamqsl.com/solarsmall.php"),
+            new KeyValuePair<string, string>("Layout 6", "https://www.hamqsl.com/solarbrief.php"),
+            new KeyValuePair<string, string>("Layout 7", "https://www.hamqsl.com/solarbc.php"),
+            new KeyValuePair<string, string>("Layout 8", "https://www.hamqsl.com/solar100sc.php"),
+            new KeyValuePair<string, string>("Layout 9", "https://www.hamqsl.com/solar2.php"),
+            new KeyValuePair<string, string>("Layout 10 - sun", "https://www.hamqsl.com/solarpich.php"),
+            new KeyValuePair<string, string>("Layout 11 - sun", "https://www.hamqsl.com/solar101pic.php"),
+            new KeyValuePair<string, string>("Layout 12", "https://www.hamqsl.com/solar101vhf.php"),
+            new KeyValuePair<string, string>("Layout 13", "https://www.hamqsl.com/solar101vhfper.php"),
+            new KeyValuePair<string, string>("Layout 14 - sun", "https://www.hamqsl.com/solar101vhfpic.php"),
+            new KeyValuePair<string, string>("Layout 15", "https://www.hamqsl.com/solar101sc.php"),
+            new KeyValuePair<string, string>("Layout 16 - sun", "https://www.hamqsl.com/solarsun.php"),
+            new KeyValuePair<string, string>("Layout 17 - graphs", "https://www.hamqsl.com/solargraph.php"),
+            new KeyValuePair<string, string>("Layout 18 - graphs", "https://www.hamqsl.com/marston.php"),
+            new KeyValuePair<string, string>("Greyline 1", "https://www.hamqsl.com/solarmuf.php"),
+            new KeyValuePair<string, string>("Greyline 2", "https://www.hamqsl.com/solarmap.php"),
+            new KeyValuePair<string, string>("Earth 1", "https://www.hamqsl.com/solarglobe.php"),
+            new KeyValuePair<string, string>("Earth 2", "https://www.hamqsl.com/moonglobe.php"),
+            new KeyValuePair<string, string>("Planets", "https://www.hamqsl.com/solarsystem.php"),
+        };
+
+        private KeyValuePair<string, string>[] _bsdworld_urls =
+{
+            new KeyValuePair<string, string>("select one", ""),
+            new KeyValuePair<string, string>("NA Propagation All", "https://bsdworld.org/DXCC/continent/NA/latest.webp"),
+            new KeyValuePair<string, string>("NA Propagation Zone 3", "https://bsdworld.org/DXCC/cqzone/3/latest.webp"),
+            new KeyValuePair<string, string>("NA Propagation Zone 4", "https://bsdworld.org/DXCC/cqzone/4/latest.webp"),
+            new KeyValuePair<string, string>("NA Propagation Zone 5", "https://bsdworld.org/DXCC/cqzone/5/latest.webp"),
+            new KeyValuePair<string, string>("EU Propagation All", "https://bsdworld.org/DXCC/continent/EU/tn_latest.webp"),
+            new KeyValuePair<string, string>("EU Propagation Zone 14", "https://bsdworld.org/DXCC/cqzone/14/latest.webp"),
+            new KeyValuePair<string, string>("EU Propagation Zone 15", "https://bsdworld.org/DXCC/cqzone/15/latest.webp"),
+            new KeyValuePair<string, string>("EU Propagation Zone 16", "https://bsdworld.org/DXCC/cqzone/16/latest.webp"),
+            new KeyValuePair<string, string>("EU Propagation Zone 20", "https://bsdworld.org/DXCC/cqzone/20/latest.webp"),
+            new KeyValuePair<string, string>("OC Propagation All", "https://bsdworld.org/DXCC/continent/OC/tn_latest.webp"),
+            new KeyValuePair<string, string>("AS Propagation All", "https://bsdworld.org/DXCC/continent/AS/tn_latest.webp"),
+            new KeyValuePair<string, string>("SA Propagation All", "https://bsdworld.org/DXCC/continent/SA/tn_latest.webp"),
+            new KeyValuePair<string, string>("AF Propagation All", "https://bsdworld.org/DXCC/continent/AF/tn_latest.webp"),
+            new KeyValuePair<string, string>("A-Index", "https://bsdworld.org/aindex.svgz"),
+            new KeyValuePair<string, string>("PK Index", "https://bsdworld.org/pkindex.svgz"),
+            new KeyValuePair<string, string>("PK Predictions", "https://bsdworld.org/pki-forecast.svgz"),
+            new KeyValuePair<string, string>("Flux", "https://bsdworld.org/flux.svgz"),
+            new KeyValuePair<string, string>("Outlook", "https://bsdworld.org/outlook.svgz"),
+            new KeyValuePair<string, string>("Solar Wind", "https://bsdworld.org/solarwind.svgz"),
+            new KeyValuePair<string, string>("SSN", "https://bsdworld.org/ssn.svgz"),
+            new KeyValuePair<string, string>("SSN History", "https://bsdworld.org/ssnhist.svgz"),
+            new KeyValuePair<string, string>("EISN", "https://bsdworld.org/eisn.svgz"),
+            new KeyValuePair<string, string>("Proton Flux", "https://bsdworld.org/proton_flux.svgz"),
+            new KeyValuePair<string, string>("X-Ray Flux", "https://bsdworld.org/xray_flux.svgz"),
+            new KeyValuePair<string, string>("D-Layer", "https://bsdworld.org/d-rap/latest.svgz"),
+        };
+
+        private KeyValuePair<string, string>[] _nasa_urls =
+        {
+            new KeyValuePair<string, string>("select one", ""),
+            new KeyValuePair<string, string>("SOHO EIT 171", "https://soho.nascom.nasa.gov/data/realtime/eit_171/512/latest.jpg"),
+            new KeyValuePair<string, string>("SOHO EIT 195", "https://soho.nascom.nasa.gov/data/realtime/eit_195/512/latest.jpg"),
+            new KeyValuePair<string, string>("SOHO EIT 284", "https://soho.nascom.nasa.gov/data/realtime/eit_284/512/latest.jpg"),
+            new KeyValuePair<string, string>("SOHO EIT 304", "https://soho.nascom.nasa.gov/data/realtime/eit_304/512/latest.jpg"),
+            new KeyValuePair<string, string>("SOHO SDO/HMI Continuum", "https://soho.nascom.nasa.gov/data/realtime/hmi_igr/512/latest.jpg"),
+            new KeyValuePair<string, string>("SOHO SDO/HMI Magnetogram", "https://soho.nascom.nasa.gov/data/realtime/hmi_mag/512/latest.jpg"),
+            new KeyValuePair<string, string>("SOHO LASCO C2", "https://soho.nascom.nasa.gov/data/realtime/c2/512/latest.jpg"),
+            new KeyValuePair<string, string>("SOHO LASCO C3", "https://soho.nascom.nasa.gov/data/realtime/c3/512/latest.jpg")
+        };
+
+        private KeyValuePair<string, string>[] _noaa_urls =
+        {
+            new KeyValuePair<string, string>("select one", ""),
+            new KeyValuePair<string, string>("Northern Aurora Latest", "https://services.swpc.noaa.gov/images/animations/ovation/north/latest.jpg"),
+            new KeyValuePair<string, string>("Southern Aurora Latest", "https://services.swpc.noaa.gov/images/animations/ovation/south/latest.jpg"),
+            new KeyValuePair<string, string>("Northern Aurora Forecast", "https://services.swpc.noaa.gov/images/aurora-forecast-northern-hemisphere.jpg"),
+            new KeyValuePair<string, string>("Southern Aurora Forecast", "https://services.swpc.noaa.gov/images/aurora-forecast-southern-hemisphere.jpg"),
+            new KeyValuePair<string, string>("SWX Solar Overiew", "https://services.swpc.noaa.gov/images/swx-overview-large.gif"),
+            new KeyValuePair<string, string>("K Indicies", "https://services.swpc.noaa.gov/images/station-k-index.png"),
+            new KeyValuePair<string, string>("D Region Absorption Map", "https://services.swpc.noaa.gov/images/animations/d-rap/global/d-rap/latest.png")
+        };
+
 
 
     }
