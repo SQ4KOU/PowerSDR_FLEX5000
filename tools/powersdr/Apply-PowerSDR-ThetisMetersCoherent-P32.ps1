@@ -422,8 +422,7 @@ foreach($token in @(
  'SIGNAL_TEXT','VFO_DISPLAY','CLOCK','SPACER','TEXT_OVERLAY','DATA_OUT','ROTATOR','LED','WEB_IMAGE',
  'BAND_BUTTONS','MODE_BUTTONS','FILTER_BUTTONS','ANTENNA_BUTTONS','HISTORY','TUNESTEP_BUTTONS',
  '_displayTarget.MouseDown += OnMouseDown;','_displayTarget.MouseWheel += OnMouseWheel;',
- 'public static void LockContainer','public static bool ContainerLocked','public bool NoControls',
- 'public bool Locked','public bool ShowOnRX','public bool ShowOnTX','public bool AutoHeight',
+ 'public static void LockContainer','public static bool ContainerLocked',
  'SetSetting<','GetSetting<'
 ))
 {
