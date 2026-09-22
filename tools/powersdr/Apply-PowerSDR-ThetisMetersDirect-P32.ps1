@@ -96,6 +96,18 @@ $setBandPanel=$setBandPanel.Replace('c.BandVHFSelected = true;','c.P32SelectBand
 if(!(Test-Path $mmPath)){throw "P32 MeterManager missing: $mmPath"}
 $mm=[IO.File]::ReadAllText($mmPath)
 
+# PowerSDR/Windows adapter boundary only: the exact Thetis VFO renderer formats
+# frequency with a literal "." and assumes invariant numeric culture. Keep the
+# imported getParts()/renderer blocks byte-for-byte; set culture on the DX
+# renderer thread instead so pl-PL does not terminate the whole container.
+$dxCultureAnchor='            private void dxRender()'+$nl+'            {'+$nl+'                if (!_bDXSetup) return;'
+if(!$mm.Contains($dxCultureAnchor)){throw 'P32 DX renderer culture anchor missing'}
+$dxCultureLine='                System.Threading.Thread.CurrentThread.CurrentCulture = System.Globalization.CultureInfo.InvariantCulture;'
+if(!$mm.Contains($dxCultureLine))
+{
+    $mm=$mm.Replace($dxCultureAnchor,$dxCultureAnchor+$nl+$nl+$dxCultureLine)
+}
+
 # Partial hooks.
 $mm=$mm.Replace('internal static class MeterManager','internal static partial class MeterManager')
 $mm=$mm.Replace('public class clsMeterItem','public partial class clsMeterItem')
@@ -638,8 +650,14 @@ foreach($token in @(
     if(!$verify.Contains($token)){throw "P32 exact Thetis gate missing: $token"}
 }
 if($proj.Contains('P31ModernThetisGadgets.cs')){throw 'P32 invalid: custom P31 gadget source compiled'}
+$verifyMM=[IO.File]::ReadAllText($mmPath)
+if(!$verifyMM.Contains('System.Threading.Thread.CurrentThread.CurrentCulture = System.Globalization.CultureInfo.InvariantCulture;'))
+{
+    throw 'P32 invariant DX renderer culture adapter missing'
+}
 
 Write-Host "P32_THETIS_SOURCE_SHA=$ThetisSha"
+Write-Host 'P32_DX_CULTURE_ADAPTER=INVARIANT_THREAD'
 Write-Host 'P32_SOURCE_OF_TRUTH=THETIS_ONLY'
 Write-Host 'P32_VFO=EXACT_THETIS_SOURCE'
 Write-Host 'P32_BAND_MODE_STEP=EXACT_THETIS_SOURCE'
