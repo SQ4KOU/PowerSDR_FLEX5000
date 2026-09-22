@@ -277,12 +277,12 @@ $adapter=@'
 '@
 $mm=$mm.Replace($updateAnchor,$adapter+$updateAnchor)
 
-$loopRx=[regex]::new('(?m)^(?<indent>\\s*)while \\(_meterThreadRunning\\)\\s*$')
-$loopMatch=$loopRx.Match($mm)
-if(!$loopMatch.Success){throw 'P32 coherent meter loop anchor missing'}
-$openBracePos=$mm.IndexOf('{',$loopMatch.Index+$loopMatch.Length)
+$loopMarker='while (_meterThreadRunning)'
+$loopPos=$mm.IndexOf($loopMarker,[StringComparison]::Ordinal)
+if($loopPos -lt 0){throw 'P32 coherent meter loop anchor missing'}
+$openBracePos=$mm.IndexOf('{',$loopPos+$loopMarker.Length)
 if($openBracePos -lt 0){throw 'P32 coherent meter loop opening brace missing'}
-$mm=$mm.Insert($openBracePos+1,$nl+$loopMatch.Groups['indent'].Value+'    P32RefreshPowerSDR();')
+$mm=$mm.Insert($openBracePos+1,$nl+'                P32RefreshPowerSDR();')
 
 # Culture adapter: exact Thetis VFO parsing assumes ".".
 $dxMethod='            private void dxRender()'
