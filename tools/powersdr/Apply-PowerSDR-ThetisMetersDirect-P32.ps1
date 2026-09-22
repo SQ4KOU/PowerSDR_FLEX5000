@@ -106,7 +106,16 @@ $mm=$mm.Replace('private class DXRenderer','private partial class DXRenderer')
 # Robust enum insertion. This deliberately does not depend on CRLF shape.
 if($mm -notmatch '(?m)^\s*VFO_DISPLAY,\s*$')
 {
-    $rx=[regex]'(?m)^(?<indent>\s*)CROSS,\s*
+    $rx=[regex]'(?m)^(?<indent>\s*)CROSS,\s*$'
+    $match=$rx.Match($mm)
+    if(!$match.Success){throw 'P32 MeterType CROSS anchor missing'}
+    $indent=$match.Groups['indent'].Value
+    $replacement=$indent+'CROSS,'+$nl+
+                 $indent+'VFO_DISPLAY,'+$nl+
+                 $indent+'BAND_BUTTONS,'+$nl+
+                 $indent+'MODE_BUTTONS,'+$nl+
+                 $indent+'TUNESTEP_BUTTONS,'
+    $mm=$mm.Substring(0,$match.Index)+$replacement+$mm.Substring($match.Index+$match.Length)
 }
 if($mm -notmatch '(?m)^\s*VFO_DISPLAY,\s*$' -or $mm -notmatch '(?m)^\s*TUNESTEP_BUTTONS,\s*$')
 {
@@ -121,7 +130,16 @@ if($miEnd -lt 0){throw 'P32 MeterItemType enum close missing'}
 $miBlock=$mm.Substring($miStart,$miEnd-$miStart)
 if($miBlock -notmatch 'VFO_DISPLAY')
 {
-    $rxItem=[regex]'(?m)^(?<indent>\s*)ITEM_GROUP\s*,?\s*
+    $rxItem=[regex]'(?m)^(?<indent>\s*)ITEM_GROUP\s*,?\s*$'
+    $matchItem=$rxItem.Match($mm)
+    if(!$matchItem.Success){throw 'P32 MeterItemType ITEM_GROUP anchor missing'}
+    $indentItem=$matchItem.Groups['indent'].Value
+    $replacementItem=$indentItem+'ITEM_GROUP,'+$nl+
+                     $indentItem+'VFO_DISPLAY,'+$nl+
+                     $indentItem+'BAND_BUTTONS,'+$nl+
+                     $indentItem+'MODE_BUTTONS,'+$nl+
+                     $indentItem+'TUNESTEP_BUTTONS'
+    $mm=$mm.Substring(0,$matchItem.Index)+$replacementItem+$mm.Substring($matchItem.Index+$matchItem.Length)
 }
 
 # Exact AddMeter routes. P30 core has CROSS as last special case.
