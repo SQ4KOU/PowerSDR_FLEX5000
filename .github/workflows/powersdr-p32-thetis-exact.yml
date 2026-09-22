@@ -41,7 +41,7 @@ jobs:
         shell: pwsh
         run: |
           foreach($p in @(
-            './tools/powersdr/Apply-PowerSDR-ThetisMetersDirect-P32.ps1',
+            './tools/powersdr/Apply-PowerSDR-ThetisMetersCoherent-P32.ps1',
             './tools/powersdr/Build-PowerSDR-MSI-P32-THETIS-EXACT.ps1'
           )) {
             $tokens=$null; $errors=$null
@@ -67,9 +67,9 @@ jobs:
           $m = Get-Content $manifest -Raw
           foreach($required in @(
             'FLEX5000_BACKEND=POWERSDR_NATIVE_PAL_FWC_FIREWIRE_ASIO',
-            'P32_THETIS_SOURCE_SHA=6388c61d3c484eb7f72b0f03d0ec4cab14058c6e',
+            'P32_THETIS_SOURCE_SHA=a53b19274e715182d8f386bfabbb2c4164287a0e',
             'P32_SOURCE_OF_TRUTH=THETIS_ONLY',
-            'P32_GADGETS=VFO_DISPLAY,BAND_BUTTONS,MODE_BUTTONS,TUNESTEP_BUTTONS',
+            'P32_SOURCE_COHERENCE=METER_MANAGER_UCMETER_DISPLAY_SAME_COMMIT',`n            'P32_CONTAINER=THETIS_NATIVE_21_FIELD_MODEL',`n            'P32_INPUT=THETIS_NATIVE_MOUSE_PIPELINE',`n            'P32_METER_TYPES=FULL_A53B192_GENERATION',
             'P32_RENDERER=THETIS_EXACT',
             'P32_ADAPTER=POWERSDR_NATIVE_API_ONLY',
             'P32_RX2=NOT_EXPOSED'
