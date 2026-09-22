@@ -393,12 +393,12 @@ namespace PowerSDR
             }
         }
 
-        internal static Color BandToColour(Band b)
+        internal static System.Drawing.Color BandToColour(Band b)
         {
-            if(b==Band.WWV) return Color.Green;
-            if(b>=Band.B120M && b<=Band.B11M) return Color.Coral;
-            if(b>=Band.VHF0 && b<=Band.VHF13) return Color.Gold;
-            return Color.White;
+            if(b==Band.WWV) return System.Drawing.Color.Green;
+            if(b>=Band.B120M && b<=Band.B11M) return System.Drawing.Color.Coral;
+            if(b>=Band.VHF0 && b<=Band.VHF13) return System.Drawing.Color.Gold;
+            return System.Drawing.Color.White;
         }
     }
 
@@ -425,7 +425,7 @@ namespace PowerSDR
             }
         }
 
-        public void P32SelectBandPanel(MeterManager.BandGroups group) { _p32BandPanel=group; }
+        internal void P32SelectBandPanel(MeterManager.BandGroups group) { _p32BandPanel=group; }
 
         public bool VFOALock
         {
