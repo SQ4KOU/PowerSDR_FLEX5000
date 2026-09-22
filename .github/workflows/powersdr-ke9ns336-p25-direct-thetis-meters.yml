@@ -1,4 +1,4 @@
-name: Build PowerSDR FLEX5000 P27 Direct Thetis Meters Config 1to1 MSI
+name: Build PowerSDR FLEX5000 P28 Meters Remove Persistence Fix MSI
 
 on:
   push:
@@ -37,27 +37,27 @@ jobs:
           $path = Split-Path $candle.Source -Parent
           "WIXBIN=$path" | Out-File -FilePath $env:GITHUB_ENV -Append
 
-      - name: Build P27 MSI
+      - name: Build P28 MSI
         shell: pwsh
         run: |
-          ./tools/powersdr/Build-PowerSDR-MSI-P27-DIRECT-THETIS-METERS-CONFIG-1TO1.ps1 -WixBin "$env:WIXBIN"
+          ./tools/powersdr/Build-PowerSDR-MSI-P28-METERS-REMOVE-PERSISTENCE-FIX.ps1 -WixBin "$env:WIXBIN"
 
-      - name: Verify P27 MSI
+      - name: Verify P28 MSI
         shell: pwsh
         run: |
-          $msi = Get-ChildItem ./artifacts/powersdr -Filter '*P27-DIRECT-THETIS-METERS-CONFIG-1TO1*.msi' -File | Select-Object -First 1
-          if (!$msi) { throw 'P27 MSI artifact missing' }
+          $msi = Get-ChildItem ./artifacts/powersdr -Filter '*P28-METERS-REMOVE-PERSISTENCE-FIX*.msi' -File | Select-Object -First 1
+          if (!$msi) { throw 'P28 MSI artifact missing' }
           $manifest = Join-Path $msi.Directory.FullName 'POWERSDR_BUILD_MANIFEST.txt'
-          if (!(Test-Path $manifest)) { throw 'P27 manifest missing' }
+          if (!(Test-Path $manifest)) { throw 'P28 manifest missing' }
           $m = Get-Content $manifest -Raw
           foreach($required in @(
             'FLEX5000_BACKEND=POWERSDR_NATIVE_PAL_FWC_FIREWIRE_ASIO',
             'METERS_GADGETS=THETIS_DIRECT_2023_02_26',
             'THETIS_METER_RENDERER=SHARPDX_NATIVE',
-            'THETIS_METER_CONTAINER=NATIVE_UCMETER_FRMMETERDISPLAY',
+            'THETIS_METER_PERSISTENCE=REPLACE_ALL',
+            'THETIS_METER_STALE_KEYS=PURGED_ON_SAVE',
+            'THETIS_METER_ZERO_CONTAINERS=PRESERVED',
             'THETIS_METER_CONFIG=THETIS_MULTIMETERS2_2023_02_26_DIRECT_CONTROLS',
-            'THETIS_METER_CONFIG_PROPERTYGRID=ABSENT',
-            'P25_METER_CORE=UNCHANGED',
             'RX2_METER=NOT_EXPOSED',
             'FLEXMETERS_HELPER_DLL=ABSENT'
           )) {
@@ -66,12 +66,12 @@ jobs:
           $sha = (Get-FileHash -Algorithm SHA256 $msi.FullName).Hash.ToLowerInvariant()
           "MSI=$($msi.Name)" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
           "SHA256=$sha" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
-          "P27=P25 direct Thetis core unchanged + direct Thetis MultiMeters2 controls" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+          "P28=P27 unchanged + replace-all meter persistence + zero-container preservation" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
 
-      - name: Upload P27 artifact
+      - name: Upload P28 artifact
         uses: actions/upload-artifact@v4
         with:
-          name: PowerSDR-FLEX5000-P27-DIRECT-THETIS-METERS-CONFIG-1TO1
+          name: PowerSDR-FLEX5000-P28-METERS-REMOVE-PERSISTENCE-FIX
           path: |
             artifacts/powersdr/*.msi
             artifacts/powersdr/*.sha256
