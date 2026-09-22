@@ -437,7 +437,7 @@ namespace PowerSDR
         private void btnAddRX1Container_Click(object sender, EventArgs e)
         {
             if (MeterManager.TotalMeterContainers >= 10) return;
-            string sId = MeterManager.AddMeterContainer(1, false, console.MOX);
+            string sId = MeterManager.AddMeterContainer(1, false);
             updateMeter2Controls(sId);
         }
 
@@ -507,7 +507,12 @@ namespace PowerSDR
             for (int n = 1; n < (int)MeterType.LAST; n++)
             {
                 MeterType mt = (MeterType)n;
-                if (m.HasMeterType(mt)) inuse.Add(new clsMeterTypeComboboxItem(mt, m.GetOrderForMeterType(mt)));
+                List<int> orders = m.GetOrderForMeterType(mt);
+                if (orders != null && orders.Count > 0)
+                {
+                    foreach (int order in orders)
+                        inuse.Add(new clsMeterTypeComboboxItem(mt, order));
+                }
                 else notinuse.Add(new clsMeterTypeComboboxItem(mt, -1));
             }
 
@@ -580,7 +585,7 @@ namespace PowerSDR
             clsMeterTypeComboboxItem mti = lstMetersInUse.SelectedItem as clsMeterTypeComboboxItem;
             MeterManager.clsMeter m = meterFromSelectedContainer();
             if (mti == null || m == null) return;
-            m.RemoveMeterType(mti.MeterType, true);
+            m.RemoveMeterType(mti.MeterType, mti.Order, true);
             updateMeterLists();
         }
 
@@ -591,7 +596,7 @@ namespace PowerSDR
             if (m == null || mtci == null) return;
             int n = lstMetersInUse.SelectedIndex - 1;
             if (n < 0) return;
-            m.SetOrderForMeterType(mtci.MeterType, n, true, true);
+            m.SetOrderForMeterType(mtci.MeterType, n, true, true, mtci.Order);
             updateMeterLists();
             SelectMeterType(mtci.MeterType);
         }
@@ -603,7 +608,7 @@ namespace PowerSDR
             if (m == null || mtci == null) return;
             int n = lstMetersInUse.SelectedIndex + 1;
             if (n > lstMetersInUse.Items.Count - 1) return;
-            m.SetOrderForMeterType(mtci.MeterType, n, true, false);
+            m.SetOrderForMeterType(mtci.MeterType, n, true, false, mtci.Order);
             updateMeterLists();
             SelectMeterType(mtci.MeterType);
         }
@@ -669,7 +674,7 @@ namespace PowerSDR
             MeterManager.clsMeter m = meterFromSelectedContainer();
             clsMeterTypeComboboxItem mtci = lstMetersInUse.SelectedItem as clsMeterTypeComboboxItem;
             if (m == null || mtci == null || !m.HasMeterType(mtci.MeterType)) return "";
-            return m.MeterGroupID(mtci.MeterType);
+            return m.MeterGroupID(mtci.MeterType, mtci.Order);
         }
 
         private MeterType meterItemGroupTypefromSelected()
@@ -687,7 +692,7 @@ namespace PowerSDR
             MeterType mt = meterItemGroupTypefromSelected();
             if (m == null || mt == MeterType.NONE) return;
 
-            MeterManager.clsIGSettings igs = m.GetSettingsForMeterGroup(mt);
+            MeterManager.clsIGSettings igs = m.GetSettingsForMeterGroup(mt, (lstMetersInUse.SelectedItem as clsMeterTypeComboboxItem).Order);
             if (igs == null) return;
 
             igs.LowColor = Color.FromArgb(255, clrbtnMeterItemLow.Color);
@@ -702,7 +707,8 @@ namespace PowerSDR
             igs.Shadow = chkMeterItemShadow.Checked;
             igs.HistoryDuration = (int)nudMeterItemHistoryDuration.Value;
             igs.BarStyle = chkMeterItemSegmented.Checked ? MeterManager.clsBarItem.BarStyle.Segments : MeterManager.clsBarItem.BarStyle.Line;
-            igs.SegmentedColour = clrbtnMeterItemSegmentedColour.Color;
+            igs.SegmentedSolidLowColour = clrbtnMeterItemSegmentedColour.Color;
+            igs.SegmentedSolidHighColour = clrbtnMeterItemSegmentedColour.Color;
             igs.PeakHold = chkMeterItemPeakHold.Checked;
             igs.PeakHoldMarkerColor = Color.FromArgb(255, clrbtnMeterItemPeakHold.Color);
             igs.FadeOnRx = chkMeterItemFadeOnRx.Checked;
@@ -715,7 +721,7 @@ namespace PowerSDR
             if (mt == MeterType.ANANMM || mt == MeterType.MAGIC_EYE) igs.Average = chkMeterItemSignalAverage.Checked;
             if (mt == MeterType.ANANMM || mt == MeterType.CROSS) igs.DarkMode = chkMeterItemDarkMode.Checked;
 
-            m.ApplySettingsForMeterGroup(mt, igs);
+            m.ApplySettingsForMeterGroup(mt, igs, (lstMetersInUse.SelectedItem as clsMeterTypeComboboxItem).Order);
         }
 
         private void updateItemSettingsControlsForSelected()
@@ -725,7 +731,7 @@ namespace PowerSDR
             MeterType mt = meterItemGroupTypefromSelected();
             if (m == null || mt == MeterType.NONE) return;
 
-            MeterManager.clsIGSettings igs = m.GetSettingsForMeterGroup(mt);
+            MeterManager.clsIGSettings igs = m.GetSettingsForMeterGroup(mt, (lstMetersInUse.SelectedItem as clsMeterTypeComboboxItem).Order);
             if (igs == null) return;
 
             _ignoreMeterItemChangeEvents = true;
@@ -743,7 +749,7 @@ namespace PowerSDR
                 clrbtnMeterItemHistory.Color = Color.FromArgb(255, igs.HistoryColor);
                 SetNumeric(nudMeterItemHistoryDuration, igs.HistoryDuration);
                 chkMeterItemSegmented.Checked = igs.BarStyle == MeterManager.clsBarItem.BarStyle.Segments;
-                clrbtnMeterItemSegmentedColour.Color = igs.SegmentedColour;
+                clrbtnMeterItemSegmentedColour.Color = igs.SegmentedSolidLowColour;
                 chkMeterItemPeakHold.Checked = igs.PeakHold;
                 clrbtnMeterItemPeakHold.Color = Color.FromArgb(255, igs.PeakHoldMarkerColor);
                 chkMeterItemShadow.Checked = igs.Shadow;
@@ -837,7 +843,7 @@ namespace PowerSDR
             MeterManager.clsMeter m = meterFromSelectedContainer();
             MeterType mt = meterItemGroupTypefromSelected();
             if (m == null || mt == MeterType.NONE) return;
-            _itemGroupSettings = m.GetSettingsForMeterGroup(mt);
+            _itemGroupSettings = m.GetSettingsForMeterGroup(mt, (lstMetersInUse.SelectedItem as clsMeterTypeComboboxItem).Order);
             _itemGroupSettingsMeterType = _itemGroupSettings == null ? MeterType.NONE : mt;
             btnMeterPasteSettings.Enabled = canPasteSettings();
         }
@@ -862,7 +868,7 @@ namespace PowerSDR
             MeterManager.clsMeter m = meterFromSelectedContainer();
             MeterType mt = meterItemGroupTypefromSelected();
             if (m == null || mt == MeterType.NONE) return;
-            m.ApplySettingsForMeterGroup(mt, _itemGroupSettings);
+            m.ApplySettingsForMeterGroup(mt, _itemGroupSettings, (lstMetersInUse.SelectedItem as clsMeterTypeComboboxItem).Order);
             updateItemSettingsControlsForSelected();
         }
 

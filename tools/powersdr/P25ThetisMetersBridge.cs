@@ -13,7 +13,8 @@ namespace PowerSDR
         ORIONMKII,
         ANAN8000D,
         ANAN10,
-        ANAN10E
+        ANAN10E,
+        ANAN_G2
     }
 
     internal static class P25MeterResources
@@ -195,19 +196,19 @@ namespace PowerSDR
             p25MetersInitialised = true;
 
             MeterManager.Init(this, Path.Combine(Application.StartupPath, "MeterSkins"));
+            P32EnsureWindowStateEvents();
 
             ArrayList stored = DB.GetVars("SQ4KOU_ThetisMeters");
             if (stored != null && stored.Count > 0)
             {
-                var settings = new System.Collections.Generic.List<System.Collections.Generic.KeyValuePair<string, string>>();
+                var settings = new System.Collections.Generic.Dictionary<string, string>();
                 foreach (object o in stored)
                 {
                     string s = o as string;
                     if (String.IsNullOrEmpty(s)) continue;
                     int slash = s.IndexOf('/');
                     if (slash <= 0 || slash >= s.Length - 1) continue;
-                    settings.Add(new System.Collections.Generic.KeyValuePair<string, string>(
-                        s.Substring(0, slash), s.Substring(slash + 1)));
+                    settings[s.Substring(0, slash)] = s.Substring(slash + 1);
                 }
                 if (settings.Count > 0) MeterManager.RestoreSettings(ref settings);
             }
@@ -224,7 +225,7 @@ namespace PowerSDR
 
         private string P25AddRx1SignalMeter()
         {
-            string id = MeterManager.AddMeterContainer(1, true, MOX);
+            string id = MeterManager.AddMeterContainer(1, true);
             MeterManager.clsMeter m = MeterManager.MeterFromId(id);
             if (m != null)
             {
@@ -238,8 +239,11 @@ namespace PowerSDR
         private void P25SaveThetisMeters()
         {
             if (!p25MetersInitialised) return;
+            var settings = new System.Collections.Generic.Dictionary<string, string>();
+            MeterManager.StoreSettings2(ref settings);
             ArrayList a = new ArrayList();
-            MeterManager.StoreSettings(ref a);
+            foreach (System.Collections.Generic.KeyValuePair<string, string> kvp in settings)
+                a.Add(kvp.Key + "/" + kvp.Value);
             DB.SaveVars("SQ4KOU_ThetisMeters", ref a);
         }
 

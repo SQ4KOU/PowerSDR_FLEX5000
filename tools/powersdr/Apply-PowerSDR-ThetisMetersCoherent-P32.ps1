@@ -20,6 +20,11 @@ $utf8=New-Object Text.UTF8Encoding($true)
 $utf8NoBom=New-Object Text.UTF8Encoding($false)
 $nl=[Environment]::NewLine
 
+$compatSrc=Join-Path $PSScriptRoot 'P32ThetisCompatibility.cs'
+$compatDst=Join-Path $consoleDir 'P32ThetisCompatibility.cs'
+if(!(Test-Path $compatSrc)){throw 'P32 compatibility source missing'}
+Copy-Item $compatSrc $compatDst -Force
+
 $sourceMap=[ordered]@{
  'MeterManager.cs'='P25_MeterManager.cs'
  'ucMeter.cs'='P25_ucMeter.cs'
@@ -345,6 +350,16 @@ $mm=$mm.Replace('_console.SetupRX2Band(b, false);','_console.P32SetRX2Band(b);')
 $mm=$mm.Replace('_console.SetupRX2Band(b);','_console.P32SetRX2Band(b);')
 $mm=$mm.Replace('_console.PopupFilterContextMenu(_owningmeter.RX, e);','_console.P32PopupFilterMenu(_owningmeter.RX);')
 $mm=$mm.Replace('_console.PopupFilterContextMenu(_owningmeter.RX, null);','_console.P32PopupFilterMenu(_owningmeter.RX);')
+$mm=$mm.Replace('m.LevelerEnabled = !_console.IsSetupFormNull && _console.SetupForm.TXLevelerOn;','m.LevelerEnabled = _console.P32LevelerEnabled;')
+$mm=$mm.Replace('_console.SetupForm.ShowMultiMeterSetupTab(ucM.ID);','_console.P32ShowMeterSetup(ucM.ID);')
+$mm=$mm.Replace('_console.SetupForm.SetRXAntenna(antenna + 1, b);','_console.P32SetRXAntenna(antenna + 1, b);')
+$mm=$mm.Replace('_console.SetupForm.SetAuxAntenna(antenna + 1, b, byp, ext1);','_console.P32SetAuxAntenna(antenna + 1, b, byp, ext1);')
+$mm=$mm.Replace('_console.SetupForm.SetTXAntenna(antenna + 1, b);','_console.P32SetTXAntenna(antenna + 1, b);')
+$mm=$mm.Replace('_console.SetupForm.QuickSplitEnabled = !_console.SetupForm.QuickSplitEnabled;','_console.P32ToggleQuickSplit();')
+$mm=$mm.Replace('_console.SetupForm.SetWebImageState(ParentID, _state);','_console.P32SetWebImageState(ParentID, _state);')
+$mm=$mm.Replace('HiPerfTimer objStopWatch = new HiPerfTimer();','System.Diagnostics.Stopwatch objStopWatch = System.Diagnostics.Stopwatch.StartNew();')
+$mm=$mm.Replace('objStopWatch.Reset();','objStopWatch.Restart();')
+$mm=$mm.Replace('objStopWatch.ElapsedMsec','objStopWatch.Elapsed.TotalMilliseconds')
 [IO.File]::WriteAllText($mmPath,$mm,$utf8)
 
 # NuGet packages used by the coherent Thetis MeterManager/ImageFetcher.
@@ -357,7 +372,8 @@ $packages=@(
  @('Microsoft.CodeAnalysis.Scripting.Common','4.10.0','net48'),
  @('SkiaSharp','2.88.8','net48'),
  @('SkiaSharp.NativeAssets.Win32','2.88.8','net48'),
- @('Svg','3.4.7','net48')
+ @('Svg','3.4.7','net48'),
+ @('System.Collections.Immutable','8.0.0','net48')
 )
 foreach($p in $packages)
 {
@@ -428,6 +444,9 @@ $refs=@'
     <Reference Include="Svg, Version=3.4.0.0, Culture=neutral, PublicKeyToken=12a0bac221edeae2, processorArchitecture=MSIL">
       <HintPath>..\packages\Svg.3.4.7\lib\net472\Svg.dll</HintPath>
     </Reference>
+    <Reference Include="System.Collections.Immutable, Version=8.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Collections.Immutable.8.0.0\lib\net462\System.Collections.Immutable.dll</HintPath>
+    </Reference>
 '@
 if(!$proj.Contains('Reference Include="HtmlAgilityPack'))
 {
@@ -436,7 +455,7 @@ if(!$proj.Contains('Reference Include="HtmlAgilityPack'))
 
 $compileAnchor='<Compile Include="P30ThetisMetersTxBridge.cs" />'
 if(!$proj.Contains($compileAnchor)){throw 'P32 coherent compile anchor missing'}
-foreach($name in @('P32_clsImageFetcher.cs','P32ThetisPowerSDRAdapter.cs','P32ColorInterpolator.cs'))
+foreach($name in @('P32_clsImageFetcher.cs','P32ThetisPowerSDRAdapter.cs','P32ThetisCompatibility.cs','P32ColorInterpolator.cs'))
 {
     if(!$proj.Contains('<Compile Include="'+$name+'" />'))
     {
