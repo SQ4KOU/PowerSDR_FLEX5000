@@ -17,7 +17,7 @@ $srcModern=Join-Path $PSScriptRoot 'P31ModernThetisGadgets.cs'
 $dstModern=Join-Path $consoleDir 'P31ModernThetisGadgets.cs'
 $utf8=New-Object Text.UTF8Encoding($true)
 $utf8NoBom=New-Object Text.UTF8Encoding($false)
-$nl=[Environment]::NewLine
+$nl="`n"  # pinned Thetis/P27 sources are LF; do not use Windows CRLF for source anchors
 
 foreach($p in @($projPath,$mmPath,$ucPath,$configPath,$srcModern))
 {
