@@ -514,11 +514,9 @@ if($oldMeasureStart -lt 0 -or $oldMeasureEnd -lt 0){throw 'P32 legacy measureStr
 $mm=$mm.Remove($oldMeasureStart,$oldMeasureEnd-$oldMeasureStart)
 
 # Exact Thetis renderer switch entries.
-$renderAnchor='                                case clsMeterItem.MeterItemType.MAGIC_EYE:'+$nl+
-              '                                    renderEye(rect, mi, m);'+$nl+
-              '                                    break;'
+$renderAnchor='                                case clsMeterItem.MeterItemType.MAGIC_EYE:'
 if(!$mm.Contains($renderAnchor)){throw 'P32 renderer MAGIC_EYE anchor missing'}
-$mm=$mm.Replace($renderAnchor,
+$renderInsert=
               '                                case clsMeterItem.MeterItemType.VFO_DISPLAY:'+$nl+
               '                                    renderVfoDisplay(rect, mi, m);'+$nl+
               '                                    break;'+$nl+
@@ -528,9 +526,8 @@ $mm=$mm.Replace($renderAnchor,
               '                                    renderButtonBox(rect, mi, m);'+$nl+
               '                                    break;'+$nl+
               '                                case clsMeterItem.MeterItemType.FADE_COVER:'+$nl+
-              '                                    renderFadeCover(rect, mi, m);'+$nl+
-              '                                    break;'+$nl+
-              $renderAnchor)
+              '                                    renderFadeCover(rect, mi, m);'+$nl
+$mm=$mm.Replace($renderAnchor,$renderInsert+$renderAnchor)
 
 # The exact 3dbd mouse dispatcher supersedes the 2023 MouseUp-only dispatcher.
 $oldEvent='                _displayTarget.MouseUp += OnMouseUp;'
