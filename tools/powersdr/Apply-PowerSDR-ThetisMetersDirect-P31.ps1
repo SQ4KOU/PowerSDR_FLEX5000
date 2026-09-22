@@ -25,6 +25,7 @@ Copy-Item $srcModern $dstModern -Force
 
 # ---------- MeterManager: enable partial backport surface ----------
 $mm=[IO.File]::ReadAllText($mmPath)
+$mm=$mm.Replace("`r`n","`n").Replace("`n",$nl)
 
 foreach($pair in @(
     @('internal static class MeterManager','internal static partial class MeterManager'),
@@ -119,6 +120,7 @@ $mm=$mm.Replace($eventAnchor,
 
 # ---------- ucMeter: later Thetis Lock + NoControls behaviour ----------
 $uc=[IO.File]::ReadAllText($ucPath)
+$uc=$uc.Replace("`r`n","`n").Replace("`n",$nl)
 
 $fieldAnchor='        private bool _border;'
 if(!$uc.Contains($fieldAnchor)){throw 'P31 ucMeter field anchor missing'}
@@ -220,6 +222,7 @@ $uc=$uc.Replace($backAnchor,
 
 # ---------- P27 configuration window: expose Lock and No Title Bar ----------
 $cfg=[IO.File]::ReadAllText($configPath)
+$cfg=$cfg.Replace("`r`n","`n").Replace("`n",$nl)
 
 $cfgField='        private readonly CheckBoxTS chkContainerBorder;'
 if(!$cfg.Contains($cfgField)){throw 'P31 config field anchor missing'}
