@@ -71,7 +71,7 @@ $luminance = Slice-Between $thetisCommon '        public static int GetLuminance
 
 # Compatibility-only textual substitutions. They do not change Thetis layout, colours,
 # dimensions, state machine or click semantics.
-foreach($name in @('fadeClass','tuneClass','modeClass','bandClass','buttonClass','vfoClass','addBand','addMode','addTune','addVfo','getFadeCover','getBounds','renderBlock','mouseBlock','fadeMethod','measureMethod')) {
+foreach($name in @('fadeClass','tuneClass','modeClass','bandClass','buttonClass','vfoClass','addBand','addMode','addTune','addVfo','getFadeCover','getBounds','renderBlock','mouseBlock','measureMethod')) {
     $v=Get-Variable $name -ValueOnly
     $v=$v.Replace('BandStackManager.','P32ThetisBandStackManager.')
     $v=$v.Replace('Common.GetLuminance(','P32Common.GetLuminance(')
@@ -94,6 +94,7 @@ $generated=@"
 using System;
 using System.Collections.Generic;
 using System.Drawing;
+using Color = System.Drawing.Color;
 using System.Linq;
 using System.Windows.Forms;
 using SharpDX;
@@ -344,8 +345,6 @@ $addVfo
             private Queue<string> _stringMeasureKeys = new Queue<string>();
 
 $measureMethod
-
-$fadeMethod
 
 $renderBlock
 
