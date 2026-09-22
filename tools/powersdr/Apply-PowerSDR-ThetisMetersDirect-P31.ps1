@@ -38,40 +38,29 @@ foreach($pair in @(
     $mm=$mm.Replace($pair[0],$pair[1])
 }
 
-$oldMeterEnum=@'
-        CROSS,
-        //HISTORY,
-        LAST
-'@
-$newMeterEnum=@'
-        CROSS,
-        // later Thetis gadgets backported in P31
-        VFO_DISPLAY,
-        BAND_BUTTONS,
-        MODE_BUTTONS,
-        TUNESTEP_BUTTONS,
-        //HISTORY,
-        LAST
-'@
-if(!$mm.Contains($oldMeterEnum)){throw 'P31 MeterType enum anchor missing'}
-$mm=$mm.Replace($oldMeterEnum,$newMeterEnum)
+$meterEnumMarker='        CROSS,'
+if(!$mm.Contains($meterEnumMarker)){throw 'P31 MeterType enum anchor missing'}
+if(!$mm.Contains('        VFO_DISPLAY,'))
+{
+    $mm=$mm.Replace($meterEnumMarker,$meterEnumMarker+$nl+
+        '        // later Thetis gadgets backported in P31'+$nl+
+        '        VFO_DISPLAY,'+$nl+
+        '        BAND_BUTTONS,'+$nl+
+        '        MODE_BUTTONS,'+$nl+
+        '        TUNESTEP_BUTTONS,')
+}
 
-$oldItemEnum=@'
-                MAGIC_EYE,
-                HISTORY,
-                ITEM_GROUP
-'@
-$newItemEnum=@'
-                MAGIC_EYE,
-                HISTORY,
-                VFO_DISPLAY,
-                BAND_BUTTONS,
-                MODE_BUTTONS,
-                TUNESTEP_BUTTONS,
-                ITEM_GROUP
-'@
-if(!$mm.Contains($oldItemEnum)){throw 'P31 MeterItemType enum anchor missing'}
-$mm=$mm.Replace($oldItemEnum,$newItemEnum)
+$itemEnumMarker='                ITEM_GROUP'
+if(!$mm.Contains($itemEnumMarker)){throw 'P31 MeterItemType enum anchor missing'}
+if(!$mm.Contains('                VFO_DISPLAY,'))
+{
+    $mm=$mm.Replace($itemEnumMarker,
+        '                VFO_DISPLAY,'+$nl+
+        '                BAND_BUTTONS,'+$nl+
+        '                MODE_BUTTONS,'+$nl+
+        '                TUNESTEP_BUTTONS,'+$nl+
+        $itemEnumMarker)
+}
 
 $oldTypeClass=@'
                 case MeterType.CROSS: return 2;
