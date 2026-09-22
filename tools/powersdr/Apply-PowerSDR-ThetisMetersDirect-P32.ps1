@@ -125,43 +125,46 @@ if($enumBlock -notmatch 'VFO_DISPLAY')
 # AddMeter switch.
 if($mm -notmatch 'case MeterType\.VFO_DISPLAY:')
 {
-    $a='                    case MeterType.CROSS: AddCrossNeedle(nDelay, 0, out bBottom, restoreIg); break;'
-    if(!$mm.Contains($a)){throw 'P32 AddMeter CROSS anchor missing'}
-    $x=@'
-                    case MeterType.VFO_DISPLAY: AddVFODisplay(nDelay, 0, out bBottom, restoreIg); break;
-                    case MeterType.BAND_BUTTONS: AddBandButtons(nDelay, 0, out bBottom, restoreIg); break;
-                    case MeterType.MODE_BUTTONS: AddModeButtons(nDelay, 0, out bBottom, restoreIg); break;
-                    case MeterType.TUNESTEP_BUTTONS: AddTunestepButtons(nDelay, 0, out bBottom, restoreIg); break;
-'@
-    $mm=$mm.Replace($a,$a+$nl+$x.TrimEnd())
+    $rxAdd=[regex]'(?m)^(?<indent>\s*)case MeterType\.CROSS:\s*AddCrossNeedle\(nDelay,\s*0,\s*out bBottom,\s*restoreIg\);\s*break;\s*$'
+    $mAdd=$rxAdd.Match($mm)
+    if(!$mAdd.Success){throw 'P32 AddMeter CROSS anchor missing'}
+    $i=$mAdd.Groups['indent'].Value
+    $r=$mAdd.Value+$nl+
+       $i+'case MeterType.VFO_DISPLAY: AddVFODisplay(nDelay, 0, out bBottom, restoreIg); break;'+$nl+
+       $i+'case MeterType.BAND_BUTTONS: AddBandButtons(nDelay, 0, out bBottom, restoreIg); break;'+$nl+
+       $i+'case MeterType.MODE_BUTTONS: AddModeButtons(nDelay, 0, out bBottom, restoreIg); break;'+$nl+
+       $i+'case MeterType.TUNESTEP_BUTTONS: AddTunestepButtons(nDelay, 0, out bBottom, restoreIg); break;'
+    $mm=$mm.Substring(0,$mAdd.Index)+$r+$mm.Substring($mAdd.Index+$mAdd.Length)
 }
 
 # Names.
-if($mm -notmatch 'case MeterType\.VFO_DISPLAY: return "Vfo Display";')
+if($mm -notmatch 'case MeterType\.VFO_DISPLAY:\s*return "Vfo Display";')
 {
-    $a='                case MeterType.CROSS: return "Cross Meter";'
-    if(!$mm.Contains($a)){throw 'P32 MeterName CROSS anchor missing'}
-    $x=@'
-                case MeterType.VFO_DISPLAY: return "Vfo Display";
-                case MeterType.BAND_BUTTONS: return "Band Buttons";
-                case MeterType.MODE_BUTTONS: return "Mode Buttons";
-                case MeterType.TUNESTEP_BUTTONS: return "Tunestep Buttons";
-'@
-    $mm=$mm.Replace($a,$a+$nl+$x.TrimEnd())
+    $rxName=[regex]'(?m)^(?<indent>\s*)case MeterType\.CROSS:\s*return "Cross Meter";\s*$'
+    $mName=$rxName.Match($mm)
+    if(!$mName.Success){throw 'P32 MeterName CROSS anchor missing'}
+    $i=$mName.Groups['indent'].Value
+    $r=$mName.Value+$nl+
+       $i+'case MeterType.VFO_DISPLAY: return "Vfo Display";'+$nl+
+       $i+'case MeterType.BAND_BUTTONS: return "Band Buttons";'+$nl+
+       $i+'case MeterType.MODE_BUTTONS: return "Mode Buttons";'+$nl+
+       $i+'case MeterType.TUNESTEP_BUTTONS: return "Tunestep Buttons";'
+    $mm=$mm.Substring(0,$mName.Index)+$r+$mm.Substring($mName.Index+$mName.Length)
 }
 
-# TX/RX classification: these are special/control items.
-if($mm -notmatch 'case MeterType\.VFO_DISPLAY: return 2;')
+# TX/RX classification.
+if($mm -notmatch 'case MeterType\.VFO_DISPLAY:\s*return 2;')
 {
-    $a='                case MeterType.CROSS: return 2;'
-    if(!$mm.Contains($a)){throw 'P32 TXRX CROSS anchor missing'}
-    $x=@'
-                case MeterType.VFO_DISPLAY: return 2;
-                case MeterType.BAND_BUTTONS: return 2;
-                case MeterType.MODE_BUTTONS: return 2;
-                case MeterType.TUNESTEP_BUTTONS: return 2;
-'@
-    $mm=$mm.Replace($a,$a+$nl+$x.TrimEnd())
+    $rxType=[regex]'(?m)^(?<indent>\s*)case MeterType\.CROSS:\s*return 2;\s*$'
+    $mType=$rxType.Match($mm)
+    if(!$mType.Success){throw 'P32 TXRX CROSS anchor missing'}
+    $i=$mType.Groups['indent'].Value
+    $r=$mType.Value+$nl+
+       $i+'case MeterType.VFO_DISPLAY: return 2;'+$nl+
+       $i+'case MeterType.BAND_BUTTONS: return 2;'+$nl+
+       $i+'case MeterType.MODE_BUTTONS: return 2;'+$nl+
+       $i+'case MeterType.TUNESTEP_BUTTONS: return 2;'
+    $mm=$mm.Substring(0,$mType.Index)+$r+$mm.Substring($mType.Index+$mType.Length)
 }
 
 # Exact renderer dispatch.
