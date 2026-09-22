@@ -330,7 +330,7 @@ namespace PowerSDR
             set { CATVFOLockAB = value ? (CATVFOLockAB | 2) : (CATVFOLockAB & ~2); }
         }
 
-        internal void P32SetRX1Band(Band band) { RX1Band = band; }
+        internal void P32SetRX1Band(Band band) { SetCATBand(band); }
         internal void P32SetRX2Band(Band band) { RX2Band = band; }
 
         internal void P32PopupFilterMenu(int rx)
