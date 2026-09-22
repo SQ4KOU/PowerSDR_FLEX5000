@@ -227,12 +227,12 @@ namespace PowerSDR
             MeterManager.FinishSetupAndDisplay();
 
             p25MetersMenu = new ToolStripMenuItem("Meters/Gadgets");
-            if (menuStrip1.Items.Count > 0)
-                p25MetersMenu.ForeColor = menuStrip1.Items[0].ForeColor;
             p25AddRx1Menu = new ToolStripMenuItem("Add RX1 Signal Meter");
             p25AddRx1Menu.Click += delegate { P25AddRx1SignalMeter(); };
             p25MetersMenu.DropDownItems.Add(p25AddRx1Menu);
             menuStrip1.Items.Add(p25MetersMenu);
+            if (menuStrip1.Items.Count > 1)
+                p25MetersMenu.ForeColor = menuStrip1.Items[0].ForeColor;
         }
 
         private string P25AddRx1SignalMeter()
