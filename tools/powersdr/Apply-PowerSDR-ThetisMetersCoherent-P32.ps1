@@ -84,13 +84,6 @@ foreach($line in @(
 }
 $identityAnchor='        internal bool ApolloPresent { get { return false; } }'
 if(!$bridge.Contains($identityAnchor)){throw 'P32 coherent console identity anchor missing'}
-if(!$bridge.Contains('internal bool PAPresent'))
-{
-    $bridge=$bridge.Replace($identityAnchor,$identityAnchor+$nl+
-      '        internal bool PAPresent { get { return current_model == Model.FLEX5000 || current_model == Model.FLEX3000; } }'+$nl+
-      '        internal int TXXVTRIndex { get { return -1; } }')
-}
-
 # Newer MeterManager Init owns image loading and no longer takes a skin path.
 $bridge=$bridge.Replace(
  'MeterManager.Init(this, Path.Combine(Application.StartupPath, "MeterSkins"));',
@@ -361,6 +354,40 @@ foreach($p in $packages)
 }
 [IO.File]::WriteAllText($pkgPath,$pkg,$utf8NoBom)
 
+# Exact ColorInterpolator dependency used by the coherent MeterManager.
+$colorPath=Join-Path $consoleDir 'P32ColorInterpolator.cs'
+$colorSource=@'
+using System.Drawing;
+
+namespace PowerSDR
+{
+    public class ColorInterpolator
+    {
+        delegate byte ComponentSelector(Color color);
+        static ComponentSelector _alphaSelector = color => color.A;
+        static ComponentSelector _redSelector = color => color.R;
+        static ComponentSelector _greenSelector = color => color.G;
+        static ComponentSelector _blueSelector = color => color.B;
+
+        public static Color InterpolateBetween(Color endPoint1, Color endPoint2, double lambda)
+        {
+            if (lambda < 0 || lambda > 1) return Color.Empty;
+            return Color.FromArgb(
+                InterpolateComponent(endPoint1, endPoint2, lambda, _alphaSelector),
+                InterpolateComponent(endPoint1, endPoint2, lambda, _redSelector),
+                InterpolateComponent(endPoint1, endPoint2, lambda, _greenSelector),
+                InterpolateComponent(endPoint1, endPoint2, lambda, _blueSelector));
+        }
+
+        static byte InterpolateComponent(Color endPoint1, Color endPoint2, double lambda, ComponentSelector selector)
+        {
+            return (byte)(selector(endPoint1) + (selector(endPoint2) - selector(endPoint1)) * lambda);
+        }
+    }
+}
+'@
+[IO.File]::WriteAllText($colorPath,$colorSource,$utf8)
+
 $proj=[IO.File]::ReadAllText($projPath)
 $refAnchor='<Reference Include="System.Drawing">'
 if(!$proj.Contains($refAnchor)){throw 'P32 coherent reference anchor missing'}
@@ -394,7 +421,7 @@ if(!$proj.Contains('Reference Include="HtmlAgilityPack'))
 
 $compileAnchor='<Compile Include="P30ThetisMetersTxBridge.cs" />'
 if(!$proj.Contains($compileAnchor)){throw 'P32 coherent compile anchor missing'}
-foreach($name in @('P32_clsImageFetcher.cs','P32ThetisPowerSDRAdapter.cs'))
+foreach($name in @('P32_clsImageFetcher.cs','P32ThetisPowerSDRAdapter.cs','P32ColorInterpolator.cs'))
 {
     if(!$proj.Contains('<Compile Include="'+$name+'" />'))
     {
