@@ -100,12 +100,17 @@ $mm=[IO.File]::ReadAllText($mmPath)
 # frequency with a literal "." and assumes invariant numeric culture. Keep the
 # imported getParts()/renderer blocks byte-for-byte; set culture on the DX
 # renderer thread instead so pl-PL does not terminate the whole container.
-$dxCultureAnchor='            private void dxRender()'+$nl+'            {'+$nl+'                if (!_bDXSetup) return;'
-if(!$mm.Contains($dxCultureAnchor)){throw 'P32 DX renderer culture anchor missing'}
+$dxMethodMarker='            private void dxRender()'
+$dxMethodPos=$mm.IndexOf($dxMethodMarker,[StringComparison]::Ordinal)
+if($dxMethodPos -lt 0){throw 'P32 DX renderer method marker missing'}
+$dxGuard='                if (!_bDXSetup) return;'
+$dxGuardPos=$mm.IndexOf($dxGuard,$dxMethodPos,[StringComparison]::Ordinal)
+if($dxGuardPos -lt 0){throw 'P32 DX renderer guard marker missing'}
 $dxCultureLine='                System.Threading.Thread.CurrentThread.CurrentCulture = System.Globalization.CultureInfo.InvariantCulture;'
 if(!$mm.Contains($dxCultureLine))
 {
-    $mm=$mm.Replace($dxCultureAnchor,$dxCultureAnchor+$nl+$nl+$dxCultureLine)
+    $insertPos=$dxGuardPos+$dxGuard.Length
+    $mm=$mm.Insert($insertPos,$nl+$nl+$dxCultureLine)
 }
 
 # Partial hooks.
