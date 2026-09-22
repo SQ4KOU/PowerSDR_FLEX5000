@@ -365,11 +365,9 @@ namespace PowerSDR
         {
             private Dictionary<string, BitmapBrush> _bitmap_brushes = new Dictionary<string, BitmapBrush>();
 
-            private SizeF measureString(string sText, string sFontFamily, FontStyle style, float emSize, bool ignore_cache)
-            {
-                return measureString(sText, sFontFamily, style, emSize);
-            }
+            private Queue<string> _stringMeasureKeys = new Queue<string>();
 
+@@MEASURE_STRING5@@
 @@GET_PARTS@@
 @@PLOT_TEXT@@
 @@SHRINK_RECT@@
@@ -428,16 +426,22 @@ namespace PowerSDR
     {
         public static int GetLuminance(Color c)
         {
-            int r = P32RGBtoLin(c.R);
-            int g = P32RGBtoLin(c.G);
-            int b = P32RGBtoLin(c.B);
+            int r = rGBtoLin(c.R);
+            int g = rGBtoLin(c.G);
+            int b = rGBtoLin(c.B);
             return (r + r + b + g + g + g) / 6;
         }
-        private static int P32RGBtoLin(int col)
+        private static int rGBtoLin(int col)
         {
             float colorChannel = col / 255f;
-            if (colorChannel <= 0.04045f) return (int)((colorChannel / 12.92f) * 255f);
-            return (int)(Math.Pow(((colorChannel + 0.055f) / 1.055f), 2.4) * 255f);
+            if (colorChannel <= 0.04045)
+            {
+                return (int)((colorChannel / 12.92) * 255f);
+            }
+            else
+            {
+                return (int)(Math.Pow(((colorChannel + 0.055) / 1.055), 2.4) * 255f);
+            }
         }
     }
 
@@ -491,6 +495,7 @@ namespace PowerSDR
         public void P32SetRX1Band(Band band) { RX1Band=band; }
         public void P32SetVFOBBand(Band band) { RX2Band=band; }
         public void SetupRX2Band(Band band) { P32SetVFOBBand(band); }
+        public void SetupRX2Band(Band band, bool onlyChangeVfoB) { P32SetVFOBBand(band); }
 
         public Band P32BandFromFrequency(double mhz)
         {
@@ -545,6 +550,7 @@ $map=[ordered]@{
  '@@ADD_MODE@@'=$addMode
  '@@ADD_STEP@@'=$addStep
  '@@ADD_VFO@@'=$addVfo
+ '@@MEASURE_STRING5@@'=$measureString5
  '@@GET_PARTS@@'=$getParts
  '@@PLOT_TEXT@@'=$plotText
  '@@SHRINK_RECT@@'=$shrinkRect
