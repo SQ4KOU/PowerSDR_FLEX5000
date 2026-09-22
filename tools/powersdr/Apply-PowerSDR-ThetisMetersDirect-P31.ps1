@@ -90,13 +90,11 @@ $mm=$mm.Replace($addAnchor,
     '                    case MeterType.MODE_BUTTONS: P31AddModeButtons(nDelay, 0, out bBottom, restoreIg); break;'+$nl+
     '                    case MeterType.TUNESTEP_BUTTONS: P31AddTunestepButtons(nDelay, 0, out bBottom, restoreIg); break;')
 
-$drawAnchor=@'
-                                case clsMeterItem.MeterItemType.MAGIC_EYE:
-                                    renderEye(rect, mi, m);
-                                    break;
-'@
+$drawAnchor='                                case clsMeterItem.MeterItemType.MAGIC_EYE:'+$nl+
+            '                                    renderEye(rect, mi, m);'+$nl+
+            '                                    break;'
 if(!$mm.Contains($drawAnchor)){throw 'P31 drawMeters anchor missing'}
-$drawNew=$drawAnchor+
+$drawNew=$drawAnchor+$nl+
 '                                case clsMeterItem.MeterItemType.VFO_DISPLAY:'+$nl+
 '                                    P31RenderVfoDisplay(rect, mi, m);'+$nl+
 '                                    break;'+$nl+
@@ -104,7 +102,7 @@ $drawNew=$drawAnchor+
 '                                case clsMeterItem.MeterItemType.MODE_BUTTONS:'+$nl+
 '                                case clsMeterItem.MeterItemType.TUNESTEP_BUTTONS:'+$nl+
 '                                    P31RenderButtonBox(rect, mi, m);'+$nl+
-'                                    break;'+$nl
+'                                    break;'
 $mm=$mm.Replace($drawAnchor,$drawNew)
 
 $subAnchor='                _displayTarget.MouseUp += OnMouseUp;'
