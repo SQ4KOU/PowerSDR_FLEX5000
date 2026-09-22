@@ -1,9 +1,9 @@
-name: Build PowerSDR FLEX5000 P30 Dark Skin TX Fix MSI
+name: Build PowerSDR FLEX5000 P31 Modern Meters MSI
 
 on:
   push:
     branches:
-      - feature/flex5000-thetis-meters-direct-2023
+      - feature/flex5000-p31-modern-meters
   workflow_dispatch:
 
 jobs:
@@ -37,30 +37,27 @@ jobs:
           $path = Split-Path $candle.Source -Parent
           "WIXBIN=$path" | Out-File -FilePath $env:GITHUB_ENV -Append
 
-      - name: Build P30 MSI
+      - name: Build P31 MSI
         shell: pwsh
         run: |
-          ./tools/powersdr/Build-PowerSDR-MSI-P30-DARK-TX-FIX.ps1 -WixBin "$env:WIXBIN"
+          ./tools/powersdr/Build-PowerSDR-MSI-P31-MODERN-METERS.ps1 -WixBin "$env:WIXBIN"
 
-      - name: Verify P30 MSI
+      - name: Verify P31 MSI
         shell: pwsh
         run: |
-          $msi = Get-ChildItem ./artifacts/powersdr -Filter '*P30-DARK-TX-FIX*.msi' -File | Select-Object -First 1
-          if (!$msi) { throw 'P30 MSI artifact missing' }
+          $msi = Get-ChildItem ./artifacts/powersdr -Filter '*P31-MODERN-METERS*.msi' -File | Select-Object -First 1
+          if (!$msi) { throw 'P31 MSI artifact missing' }
           $manifest = Join-Path $msi.Directory.FullName 'POWERSDR_BUILD_MANIFEST.txt'
-          if (!(Test-Path $manifest)) { throw 'P30 manifest missing' }
+          if (!(Test-Path $manifest)) { throw 'P31 manifest missing' }
           $m = Get-Content $manifest -Raw
           foreach($required in @(
             'FLEX5000_BACKEND=POWERSDR_NATIVE_PAL_FWC_FIREWIRE_ASIO',
-            'METERS_GADGETS=THETIS_DIRECT_2023_02_26',
-            'THETIS_METER_RENDERER=SHARPDX_NATIVE',
+            'P31_BASE=P30_SAFE_5fb179f357771f2c6aebcfdd7f13136d8c5f1e72',
+            'P31_GADGETS=VFO_DISPLAY,BAND_BUTTONS,MODE_BUTTONS,TUNESTEP_BUTTONS',
+            'P31_CONTAINER_CONTROLS=LOCK,NO_TITLE_BAR',
+            'P31_NO_TITLE_BAR_SHIFT_ACCESS=ENABLED',
             'THETIS_METER_PERSISTENCE=REPLACE_ALL',
-            'THETIS_METER_SKINS=OFFICIAL_DEFAULT_METERS_ALL_IMAGES',
-            'THETIS_METER_DARK_SKINS=ananMM-dark,cross-needle-dark',
             'THETIS_TX_TELEMETRY=POWERSDR_NATIVE_DTTSP_THREAD1_AND_FLEX5000_PA_FIELDS',
-            'THETIS_DARK_FALLBACK=NORMAL_IMAGE_ONLY_IF_OFFICIAL_DARK_ABSENT',
-            'THETIS_POWER_SCALE=FLEX5000_100W',
-            'RX1_METER=UNCHANGED_FROM_P29',
             'RX2_METER=NOT_EXPOSED',
             'FLEXMETERS_HELPER_DLL=ABSENT'
           )) {
@@ -69,12 +66,12 @@ jobs:
           $sha = (Get-FileHash -Algorithm SHA256 $msi.FullName).Hash.ToLowerInvariant()
           "MSI=$($msi.Name)" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
           "SHA256=$sha" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
-          "P30=P29 accepted base + official dark skins + native FLEX5000 TX telemetry" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+          "P31=P30 SAFE + VFO/BAND/MODE/STEP + Lock/No Title Bar" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
 
-      - name: Upload P30 artifact
+      - name: Upload P31 artifact
         uses: actions/upload-artifact@v4
         with:
-          name: PowerSDR-FLEX5000-P30-DARK-TX-FIX
+          name: PowerSDR-FLEX5000-P31-MODERN-METERS
           path: |
             artifacts/powersdr/*.msi
             artifacts/powersdr/*.sha256
