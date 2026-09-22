@@ -14,6 +14,7 @@ $consoleDir = Join-Path $SourceRoot 'Console'
 $mmPath = Join-Path $consoleDir 'P25_MeterManager.cs'
 $ucPath = Join-Path $consoleDir 'P25_ucMeter.cs'
 $bridgePath = Join-Path $consoleDir 'P25ThetisMetersBridge.cs'
+$consolePath = Join-Path $consoleDir 'console.cs'
 $projPath = Join-Path $consoleDir 'PowerSDR.csproj'
 $outPath = Join-Path $consoleDir 'P32ThetisExactGadgets.cs'
 $adapterPath = Join-Path $consoleDir 'P32PowerSDRThetisAdapter.cs'
@@ -21,7 +22,7 @@ $utf8 = New-Object Text.UTF8Encoding($true)
 $utf8NoBom = New-Object Text.UTF8Encoding($false)
 $nl = [Environment]::NewLine
 
-foreach($p in @($mmPath,$ucPath,$bridgePath,$projPath)) {
+foreach($p in @($mmPath,$ucPath,$bridgePath,$consolePath,$projPath)) {
     if(!(Test-Path $p)){ throw "P32 required P30 file missing: $p" }
 }
 
@@ -556,6 +557,18 @@ if(!$mm.Contains('P32RefreshNativeState();'))
     $mm=$updateLoopRx.Replace($mm,'$1'+$nl+'                P32RefreshNativeState();',1)
 }
 [IO.File]::WriteAllText($mmPath,$mm,$utf8)
+
+# Exact Thetis VFO digit-entry path receives global key-down events even when the
+# meter container does not own keyboard focus. Wire PowerSDR's existing KeyDown
+# event into the exact MeterManager dispatcher; no key semantics are reimplemented.
+$consoleSrc=[IO.File]::ReadAllText($consolePath)
+$keyRx=[regex]::new('(?m)^(\s*private void Console_KeyDown\(object sender, System\.Windows\.Forms\.KeyEventArgs e\)\s*\r?\n\s*\{)')
+if($keyRx.Matches($consoleSrc).Count -ne 1){throw 'P32 PowerSDR Console_KeyDown anchor missing or ambiguous'}
+if(!$consoleSrc.Contains('MeterManager.P32GlobalKeyDown(e.KeyCode);'))
+{
+    $consoleSrc=$keyRx.Replace($consoleSrc,'$1'+$nl+'            MeterManager.P32GlobalKeyDown(e.KeyCode);',1)
+}
+[IO.File]::WriteAllText($consolePath,$consoleSrc,$utf8)
 
 # Add generated exact source and API adapter.
 $proj=[IO.File]::ReadAllText($projPath)
