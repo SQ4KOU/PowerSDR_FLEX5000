@@ -269,7 +269,7 @@ foreach($token in @(
     'P30ReadTxForwardWatts',
     'P30ReadTxSWR',
     'P25ReadRx1SignalDbm',
-    'ananMM-dark'
+    'MeterManager.ContainsBitmap(sImage)'
 )){
     if(!$verifyMM.Contains($token)){throw "P31 P30 regression gate missing: $token"}
 }
