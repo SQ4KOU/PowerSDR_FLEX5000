@@ -274,11 +274,23 @@ namespace PowerSDR
 
         internal bool CFCEnabled { get { return false; } }
         internal bool GetQuickSplitEnabled { get { return false; } }
-        internal bool BandGENSelected { get { return panelBandGN != null && panelBandGN.Visible; } }
-        internal bool BandHFSelected { get { return panelBandHF != null && panelBandHF.Visible; } }
-        internal bool BandVHFSelected { get { return panelBandVHF != null && panelBandVHF.Visible; } }
+        internal bool BandGENSelected
+        {
+            get { return panelBandGN != null && panelBandGN.Visible; }
+            set { if (value) btnBandGEN_Click(radBandGEN, EventArgs.Empty); }
+        }
+        internal bool BandHFSelected
+        {
+            get { return panelBandHF != null && panelBandHF.Visible; }
+            set { if (value) btnBandHF_Click(btnBandHF, EventArgs.Empty); }
+        }
+        internal bool BandVHFSelected
+        {
+            get { return panelBandVHF != null && panelBandVHF.Visible; }
+            set { if (value) btnBandVHF_Click(btnBandVHF, EventArgs.Empty); }
+        }
         internal bool QSOTimerEnabled { get { return false; } }
-        internal double QSOTimerSeconds { get { return 0.0; } }
+        internal int QSOTimerSeconds { get { return 0; } }
         internal string LastNFRX1 { get { return ""; } }
         internal string LastNFRX2 { get { return ""; } }
         internal string PAProfile { get { return TXProfile; } }

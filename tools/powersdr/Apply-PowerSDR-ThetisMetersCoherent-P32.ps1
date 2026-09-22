@@ -81,8 +81,8 @@ $resourceAnchor='        public static Image resizegrab { get { return Load("res
 if(!$bridge.Contains($resourceAnchor)){throw 'P32 coherent resource anchor missing'}
 foreach($line in @(
  '        public static Image gear { get { return Load("gear"); } }',
- '        public static Image Lock_64 { get { return Load("Lock-64"); } }',
- '        public static Image Link_64 { get { return Load("Link-64"); } }'
+ '        public static Bitmap Lock_64 { get { return Load("Lock-64") as Bitmap; } }',
+ '        public static Bitmap Link_64 { get { return Load("Link-64") as Bitmap; } }'
 ))
 {
     if(!$bridge.Contains($line)){$bridge=$bridge.Replace($resourceAnchor,$resourceAnchor+$nl+$line)}
@@ -346,6 +346,7 @@ namespace PowerSDR
 # Mechanical substitutions for APIs whose PowerSDR equivalents differ in name.
 $mm=[IO.File]::ReadAllText($mmPath)
 $mm=$mm.Replace('_console.BandPreChangeHandlers?.Invoke(1, b);','_console.P32SetRX1Band(b);')
+$mm=$mm.Replace('_console.BandPreChangeHandlers?.Invoke(1, band);','_console.P32SetRX1Band(band);')
 $mm=$mm.Replace('_console.SetupRX2Band(b, false);','_console.P32SetRX2Band(b);')
 $mm=$mm.Replace('_console.SetupRX2Band(b);','_console.P32SetRX2Band(b);')
 $mm=$mm.Replace('_console.PopupFilterContextMenu(_owningmeter.RX, e);','_console.P32PopupFilterMenu(_owningmeter.RX);')
