@@ -125,13 +125,13 @@ if($enumBlock -notmatch 'VFO_DISPLAY')
 # AddMeter switch.
 if($mm -notmatch 'case MeterType\.VFO_DISPLAY:')
 {
-    $a='                    case MeterType.CROSS: AddCross(nMSupdate, fTop, out fBottom, restoreIg); break;'
+    $a='                    case MeterType.CROSS: AddCrossNeedle(nDelay, 0, out bBottom, restoreIg); break;'
     if(!$mm.Contains($a)){throw 'P32 AddMeter CROSS anchor missing'}
     $x=@'
-                    case MeterType.VFO_DISPLAY: AddVFODisplay(nMSupdate, fTop, out fBottom, restoreIg); break;
-                    case MeterType.BAND_BUTTONS: AddBandButtons(nMSupdate, fTop, out fBottom, restoreIg); break;
-                    case MeterType.MODE_BUTTONS: AddModeButtons(nMSupdate, fTop, out fBottom, restoreIg); break;
-                    case MeterType.TUNESTEP_BUTTONS: AddTunestepButtons(nMSupdate, fTop, out fBottom, restoreIg); break;
+                    case MeterType.VFO_DISPLAY: AddVFODisplay(nDelay, 0, out bBottom, restoreIg); break;
+                    case MeterType.BAND_BUTTONS: AddBandButtons(nDelay, 0, out bBottom, restoreIg); break;
+                    case MeterType.MODE_BUTTONS: AddModeButtons(nDelay, 0, out bBottom, restoreIg); break;
+                    case MeterType.TUNESTEP_BUTTONS: AddTunestepButtons(nDelay, 0, out bBottom, restoreIg); break;
 '@
     $mm=$mm.Replace($a,$a+$nl+$x.TrimEnd())
 }
