@@ -241,9 +241,7 @@ namespace PowerSDR
                 int i = ButtonIndex;
                 _console.BeginInvoke(new MethodInvoker(delegate
                 {
-                    // PowerSDR uses VFO frequency as the authoritative band-selection path.
-                    // This is the target adapter replacing Thetis BandPreChangeHandlers.
-                    _console.VFOAFreq = P31CentersMHz[i];
+                    _console.RX1Band = P31Bands[i];
                 }));
             }
         }
@@ -553,7 +551,9 @@ namespace PowerSDR
 
                     if (!bb.GetEnabled(i)) bg = Color.FromArgb(255, bg.R / 3, bg.G / 3, bg.B / 3);
 
-                    bool over = bb.P31MouseEntered && r.Contains(new SharpDX.Point((int)bb.P31MouseMovePoint.X, (int)bb.P31MouseMovePoint.Y));
+                    bool over = bb.P31MouseEntered &&
+                                bb.P31MouseMovePoint.X >= r.Left && bb.P31MouseMovePoint.X <= r.Right &&
+                                bb.P31MouseMovePoint.Y >= r.Top && bb.P31MouseMovePoint.Y <= r.Bottom;
                     if (over)
                     {
                         bg = bb.GetHoverColour(i);
@@ -626,6 +626,11 @@ namespace PowerSDR
                     kv.Value.P31MouseEntered = false;
             }
 
+            private void P31MouseUp(object sender, MouseEventArgs e)
+            {
+                P31DispatchMouse(sender, e, 3);
+            }
+
             internal void P31DispatchMouseUp(object sender, MouseEventArgs e)
             {
                 P31DispatchMouse(sender, e, 3);
@@ -656,7 +661,7 @@ namespace PowerSDR
                     float w = root.Width * (mi.Size.Width / m.XRatio);
                     float h = root.Height * (mi.Size.Height / m.YRatio);
                     SharpDX.RectangleF hit = new SharpDX.RectangleF(x, y, w, h);
-                    bool inside = hit.Contains(new SharpDX.Point(e.X, e.Y));
+                    bool inside = e.X >= hit.Left && e.X <= hit.Right && e.Y >= hit.Top && e.Y <= hit.Bottom;
 
                     mi.P31MouseEntered = inside;
                     if (inside) mi.P31MouseMovePoint = new PointF(e.X, e.Y);
