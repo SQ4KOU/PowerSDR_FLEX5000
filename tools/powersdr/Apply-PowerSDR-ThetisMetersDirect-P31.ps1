@@ -10,19 +10,22 @@ Set-StrictMode -Version Latest
 $consoleDir=Join-Path $SourceRoot 'Console'
 $projPath=Join-Path $consoleDir 'PowerSDR.csproj'
 $mmPath=Join-Path $consoleDir 'P25_MeterManager.cs'
-$ucPath=Join-Path $consoleDir 'P25_ucMeter.cs'
+$bridgePath=Join-Path $consoleDir 'P25ThetisMetersBridge.cs'
 $configPath=Join-Path $consoleDir 'P27ThetisMetersConfigForm.cs'
 $srcModern=Join-Path $PSScriptRoot 'P31ModernThetisGadgets.cs'
 $dstModern=Join-Path $consoleDir 'P31ModernThetisGadgets.cs'
+$srcContainer=Join-Path $PSScriptRoot 'P31MeterContainerControls.cs'
+$dstContainer=Join-Path $consoleDir 'P31MeterContainerControls.cs'
 $utf8=New-Object Text.UTF8Encoding($true)
 $utf8NoBom=New-Object Text.UTF8Encoding($false)
 $nl=[Environment]::NewLine
 
-foreach($p in @($mmPath,$ucPath,$configPath,$projPath,$srcModern))
+foreach($p in @($mmPath,$bridgePath,$configPath,$projPath,$srcModern,$srcContainer))
 {
     if(!(Test-Path $p)){throw "P31 required file missing: $p"}
 }
 Copy-Item $srcModern $dstModern -Force
+Copy-Item $srcContainer $dstContainer -Force
 
 # ---------- MeterManager: only the four later Thetis gadget types ----------
 $mm=[IO.File]::ReadAllText($mmPath)
@@ -127,116 +130,24 @@ if(!$mm.Contains('_displayTarget.MouseDown += P31MouseDown;'))
 
 [IO.File]::WriteAllText($mmPath,$mm,$utf8)
 
-# ---------- ucMeter: lock + no-title-bar, persisted backward-compatibly ----------
-$uc=[IO.File]::ReadAllText($ucPath)
+# ---------- Container controls: isolated partial class + P31 persistence ----------
+$bridge=[IO.File]::ReadAllText($bridgePath)
 
-$ctorAnchor='            _border = true;'
-if(!$uc.Contains($ctorAnchor)){throw 'P31 ucMeter constructor anchor missing'}
-$uc=$uc.Replace($ctorAnchor,$ctorAnchor+$nl+'            _locked = false;'+$nl+'            _noControls = false;')
-
-$fieldAnchor='        private bool _border;'
-if(!$uc.Contains($fieldAnchor)){throw 'P31 ucMeter field anchor missing'}
-$uc=$uc.Replace($fieldAnchor,$fieldAnchor+$nl+'        private bool _locked;'+$nl+'        private bool _noControls;')
-
-foreach($handler in @(
-    'pnlBar_MouseDown',
-    'pnlBar_MouseMove',
-    'pbGrab_MouseDown',
-    'pbGrab_MouseMove',
-    'lblRX_MouseDown',
-    'lblRX_MouseMove'
-))
+$restoreAnchor='                if (settings.Count > 0) MeterManager.RestoreSettings(ref settings);'
+if(!$bridge.Contains($restoreAnchor)){throw 'P31 bridge restore anchor missing'}
+if(!$bridge.Contains('P31RestoreContainerOptions(stored);'))
 {
-    $pattern='(?m)(\s*private void '+[regex]::Escape($handler)+'\(object sender, MouseEventArgs e\)\s*\r?\n\s*\{)'
-    if(-not [regex]::IsMatch($uc,$pattern)){throw "P31 ucMeter lock handler anchor missing: $handler"}
-    $uc=[regex]::Replace($uc,$pattern,'$1'+$nl+'            if (_locked) return;',1)
+    $bridge=$bridge.Replace($restoreAnchor,$restoreAnchor+$nl+'                P31RestoreContainerOptions(stored);')
 }
 
-$movePattern='(?m)(\s*private void picContainer_MouseMove\(object sender, MouseEventArgs e\)\s*\r?\n\s*\{)\s*\r?\n(\s*)bool bContains;'
-if(-not [regex]::IsMatch($uc,$movePattern)){throw 'P31 NoControls hover anchor missing'}
-$moveReplace='$1'+$nl+
-             '            if (_noControls && (ModifierKeys & Keys.Shift) != Keys.Shift)'+$nl+
-             '            {'+$nl+
-             '                pnlBar.Hide();'+$nl+
-             '                pbGrab.Hide();'+$nl+
-             '                return;'+$nl+
-             '            }'+$nl+$nl+
-             '            bool bContains;'
-$uc=[regex]::Replace($uc,$movePattern,$moveReplace,1)
+$saveAnchor='            MeterManager.StoreSettings(ref a);'
+if(!$bridge.Contains($saveAnchor)){throw 'P31 bridge save anchor missing'}
+if(!$bridge.Contains('P31AppendContainerOptions(a);'))
+{
+    $bridge=$bridge.Replace($saveAnchor,$saveAnchor+$nl+'            P31AppendContainerOptions(a);')
+}
 
-$propertyAnchor='        private void btnAxis_Click(object sender, EventArgs e)'
-$properties=@'
-        [Browsable(false), EditorBrowsable(EditorBrowsableState.Never)]
-        public bool Locked
-        {
-            get { return _locked; }
-            set
-            {
-                _locked = value;
-                if (_locked)
-                {
-                    _dragging = false;
-                    _resizing = false;
-                    pbGrab.Hide();
-                }
-            }
-        }
-
-        [Browsable(false), EditorBrowsable(EditorBrowsableState.Never)]
-        public bool NoControls
-        {
-            get { return _noControls; }
-            set
-            {
-                _noControls = value;
-                if (_noControls)
-                {
-                    pnlBar.Hide();
-                    pbGrab.Hide();
-                }
-            }
-        }
-
-'@
-if(!$uc.Contains($propertyAnchor)){throw 'P31 ucMeter property insertion anchor missing'}
-$uc=$uc.Replace($propertyAnchor,$properties+$propertyAnchor)
-
-$oldTail='                Common.ColourToString(this.BackColor);'
-$newTail='                Common.ColourToString(this.BackColor) + "|" +'+$nl+
-         '                NoControls.ToString() + "|" +'+$nl+
-         '                Locked.ToString();'
-if(!$uc.Contains($oldTail)){throw 'P31 ucMeter ToString anchor missing'}
-$uc=$uc.Replace($oldTail,$newTail)
-
-$oldLen='                if(tmp.Length == 13)'
-if(!$uc.Contains($oldLen)){throw 'P31 ucMeter TryParse length anchor missing'}
-$uc=$uc.Replace($oldLen,'                if(tmp.Length == 13 || tmp.Length == 15)')
-
-$parseAnchor=@'
-                    Color c = Common.ColourFromString(tmp[12]);
-                    bOk = c != System.Drawing.Color.Transparent;
-                    if(bOk) this.BackColor = c;
-'@
-$parseNew=@'
-                    Color c = Common.ColourFromString(tmp[12]);
-                    bOk = c != System.Drawing.Color.Transparent;
-                    if(bOk) this.BackColor = c;
-
-                    // P31 fields are appended, so all P30/P28 13-field records remain valid.
-                    if (bOk && tmp.Length >= 15)
-                    {
-                        bool noControls = false;
-                        bool locked = false;
-                        bOk = bool.TryParse(tmp[13], out noControls);
-                        if (bOk) NoControls = noControls;
-                        if (bOk) bOk = bool.TryParse(tmp[14], out locked);
-                        if (bOk) Locked = locked;
-                    }
-'@
-if(!$uc.Contains($parseAnchor)){throw 'P31 ucMeter TryParse body anchor missing'}
-$uc=$uc.Replace($parseAnchor,$parseNew)
-
-[IO.File]::WriteAllText($ucPath,$uc,$utf8)
+[IO.File]::WriteAllText($bridgePath,$bridge,$utf8)
 
 # ---------- P27 configuration surface: add the later container controls ----------
 $cfg=[IO.File]::ReadAllText($configPath)
@@ -339,13 +250,20 @@ if(!$proj.Contains('<Compile Include="P31ModernThetisGadgets.cs" />'))
 {
     $proj=$proj.Replace($compileAnchor,$compileAnchor+$nl+'    <Compile Include="P31ModernThetisGadgets.cs" />')
 }
+if(!$proj.Contains('<Compile Include="P31MeterContainerControls.cs" />'))
+{
+    $proj=$proj.Replace('<Compile Include="P31ModernThetisGadgets.cs" />',
+        '<Compile Include="P31ModernThetisGadgets.cs" />'+$nl+
+        '    <Compile Include="P31MeterContainerControls.cs" />')
+}
 [IO.File]::WriteAllText($projPath,$proj,$utf8NoBom)
 
 # ---------- Hard scope/regression gates ----------
 $verifyMM=[IO.File]::ReadAllText($mmPath)
-$verifyUC=[IO.File]::ReadAllText($ucPath)
+$verifyBridge=[IO.File]::ReadAllText($bridgePath)
 $verifyCfg=[IO.File]::ReadAllText($configPath)
 $verifyModern=[IO.File]::ReadAllText($dstModern)
+$verifyContainer=[IO.File]::ReadAllText($dstContainer)
 
 foreach($token in @(
     'P30ReadTxForwardWatts',
@@ -368,10 +286,17 @@ foreach($token in @(
 foreach($token in @(
     'public bool Locked',
     'public bool NoControls',
-    'tmp.Length == 13 || tmp.Length == 15',
-    'ModifierKeys & Keys.Shift'
+    'ModifierKeys & Keys.Shift',
+    'P31AppendContainerOptions',
+    'P31RestoreContainerOptions'
 )){
-    if(!$verifyUC.Contains($token)){throw "P31 container gate missing: $token"}
+    if(!$verifyContainer.Contains($token)){throw "P31 container gate missing: $token"}
+}
+foreach($token in @(
+    'P31AppendContainerOptions(a);',
+    'P31RestoreContainerOptions(stored);'
+)){
+    if(!$verifyBridge.Contains($token)){throw "P31 persistence bridge gate missing: $token"}
 }
 foreach($token in @(
     'chkContainerLocked',
