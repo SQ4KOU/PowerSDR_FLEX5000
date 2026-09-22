@@ -131,33 +131,33 @@ $txBlock=@'
             {
                 // Native PowerSDR DttSP TX telemetry (main TX DSP = thread 1).
                 if (_readings[1].RequiresUpdate(Reading.MIC))
-                    _readings[1].SetReading(Reading.MIC, _console.P30ReadTxDsp(DttSP.MeterType.MIC));
+                    _readings[1].SetReading(Reading.MIC, _console.P30ReadTxAverage(DttSP.MeterType.MIC));
                 if (_readings[1].RequiresUpdate(Reading.MIC_PK))
-                    _readings[1].SetReading(Reading.MIC_PK, _console.P30ReadTxDsp(DttSP.MeterType.MIC_PK));
+                    _readings[1].SetReading(Reading.MIC_PK, _console.P30ReadTxPeak(DttSP.MeterType.MIC_PK));
 
                 if (_readings[1].RequiresUpdate(Reading.EQ))
-                    _readings[1].SetReading(Reading.EQ, _console.P30ReadTxDsp(DttSP.MeterType.EQ));
+                    _readings[1].SetReading(Reading.EQ, _console.P30ReadTxAverage(DttSP.MeterType.EQ));
                 if (_readings[1].RequiresUpdate(Reading.EQ_PK))
-                    _readings[1].SetReading(Reading.EQ_PK, _console.P30ReadTxDsp(DttSP.MeterType.EQ_PK));
+                    _readings[1].SetReading(Reading.EQ_PK, _console.P30ReadTxPeak(DttSP.MeterType.EQ_PK));
 
                 if (_readings[1].RequiresUpdate(Reading.LEVELER))
-                    _readings[1].SetReading(Reading.LEVELER, _console.P30ReadTxDsp(DttSP.MeterType.LEVELER));
+                    _readings[1].SetReading(Reading.LEVELER, _console.P30ReadTxAverage(DttSP.MeterType.LEVELER));
                 if (_readings[1].RequiresUpdate(Reading.LEVELER_PK))
-                    _readings[1].SetReading(Reading.LEVELER_PK, _console.P30ReadTxDsp(DttSP.MeterType.LEVELER_PK));
+                    _readings[1].SetReading(Reading.LEVELER_PK, _console.P30ReadTxPeak(DttSP.MeterType.LEVELER_PK));
                 if (_readings[1].RequiresUpdate(Reading.LVL_G))
-                    _readings[1].SetReading(Reading.LVL_G, _console.P30ReadTxDsp(DttSP.MeterType.LVL_G));
+                    _readings[1].SetReading(Reading.LVL_G, _console.P30ReadLevelerGain());
 
                 if (_readings[1].RequiresUpdate(Reading.ALC))
-                    _readings[1].SetReading(Reading.ALC, _console.P30ReadTxDsp(DttSP.MeterType.ALC));
+                    _readings[1].SetReading(Reading.ALC, _console.P30ReadTxAverage(DttSP.MeterType.ALC));
                 if (_readings[1].RequiresUpdate(Reading.ALC_PK))
-                    _readings[1].SetReading(Reading.ALC_PK, _console.P30ReadTxDsp(DttSP.MeterType.ALC_PK));
+                    _readings[1].SetReading(Reading.ALC_PK, _console.P30ReadTxPeak(DttSP.MeterType.ALC_PK));
                 if (_readings[1].RequiresUpdate(Reading.ALC_G))
-                    _readings[1].SetReading(Reading.ALC_G, _console.P30ReadTxDsp(DttSP.MeterType.ALC_G));
+                    _readings[1].SetReading(Reading.ALC_G, _console.P30ReadAlcGain());
 
                 if (_readings[1].RequiresUpdate(Reading.COMP))
-                    _readings[1].SetReading(Reading.COMP, _console.P30ReadTxDsp(DttSP.MeterType.COMP));
+                    _readings[1].SetReading(Reading.COMP, _console.P30ReadTxAverage(DttSP.MeterType.COMP));
                 if (_readings[1].RequiresUpdate(Reading.COMP_PK))
-                    _readings[1].SetReading(Reading.COMP_PK, _console.P30ReadTxDsp(DttSP.MeterType.COMP_PK));
+                    _readings[1].SetReading(Reading.COMP_PK, _console.P30ReadTxPeak(DttSP.MeterType.COMP_PK));
 
                 // Native FLEX-5000 PA ADC/calibration path.
                 if (_readings[1].RequiresUpdate(Reading.PWR))
@@ -208,9 +208,9 @@ foreach($token in @(
     if(!$verifyMM.Contains($token)){throw "P30 RX1 regression gate missing: $token"}
 }
 foreach($token in @(
-    'P30ReadTxDsp(DttSP.MeterType.MIC)',
-    'P30ReadTxDsp(DttSP.MeterType.ALC)',
-    'P30ReadTxDsp(DttSP.MeterType.COMP)',
+    'P30ReadTxAverage(DttSP.MeterType.MIC)',
+    'P30ReadTxAverage(DttSP.MeterType.ALC)',
+    'P30ReadTxAverage(DttSP.MeterType.COMP)',
     'P30ReadTxForwardWatts',
     'P30ReadTxReverseWatts',
     'P30ReadTxSWR',
@@ -220,9 +220,10 @@ foreach($token in @(
 }
 foreach($token in @(
     'DttSP.CalculateTXMeter(1, meter)',
-    'FWC.ReadPAADC(5, out fwd)',
-    'FWC.ReadPAADC(4, out rev)',
-    'FWC.ReadPAADC(2, out volts)'
+    'FWCPAPower(pa_fwd_power)',
+    'FWCPAPower(pa_rev_power) * swr_table[(int)tx_band]',
+    'FWCSWR(pa_fwd_power, pa_rev_power)',
+    'Volts_Value'
 )){
     if(!$verifyTx.Contains($token)){throw "P30 TX adapter gate missing: $token"}
 }
@@ -236,10 +237,11 @@ if(!$verifyBridge.Contains('MeterManager.P30ConfigureFlex5000();'))
 }
 
 Write-Host 'P30_RX1=UNCHANGED_FROM_P29'
-Write-Host 'P30_TX_DSP=POWERSDR_DTTSP_THREAD1'
-Write-Host 'P30_TX_RF=FLEX5000_FWC_PA_ADC'
+Write-Host 'P30_TX_DSP=POWERSDR_NATIVE_DTTSP_THREAD1_FORMULAS'
+Write-Host 'P30_TX_RF=POWERSDR_NATIVE_FLEX5000_PA_FIELDS_ADC7_ADC6'
 Write-Host 'P30_TX_SUPPORTED=MIC,MIC_PK,EQ,EQ_PK,LEVELER,LEVELER_PK,LVL_G,ALC,ALC_PK,ALC_G,COMP,COMP_PK,PWR,REVERSE_PWR,SWR,VOLTS'
 Write-Host 'P30_TX_UNAVAILABLE_NATIVE=CFC,CFC_GAIN,ALC_GROUP,AMPS'
 Write-Host 'P30_POWER_SCALE=FLEX5000_100W'
-Write-Host 'P30_DARK_SKINS=OFFICIAL_DEFAULT_METERS_ALL_IMAGES'`nWrite-Host 'P30_DARK_MISSING_VARIANT_FALLBACK=NORMAL_IMAGE_ONLY_IF_OFFICIAL_DARK_ABSENT'
+Write-Host 'P30_DARK_SKINS=OFFICIAL_DEFAULT_METERS_ALL_IMAGES'
+Write-Host 'P30_DARK_MISSING_VARIANT_FALLBACK=NORMAL_IMAGE_ONLY_IF_OFFICIAL_DARK_ABSENT'
 Write-Host "P30_THETIS_SKINS_SHA=$ThetisSkinsSha"
