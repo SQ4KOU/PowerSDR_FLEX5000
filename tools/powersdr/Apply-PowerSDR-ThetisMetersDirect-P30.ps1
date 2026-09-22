@@ -187,7 +187,7 @@ $mm=$mm.Replace($oldGate,$txBlock)
 
 # Configure 100 W FLEX-5000 scaling after MeterManager.Init but before restore.
 $bridge=[IO.File]::ReadAllText($bridgePath)
-$initAnchor='                MeterManager.Init(this, Path.Combine(Application.StartupPath, "MeterSkins"));'
+$initAnchor='MeterManager.Init(this, Path.Combine(Application.StartupPath, "MeterSkins"));'
 if(!$bridge.Contains($initAnchor)){throw 'P30 MeterManager.Init bridge anchor missing'}
 if(!$bridge.Contains('MeterManager.P30ConfigureFlex5000();'))
 {
