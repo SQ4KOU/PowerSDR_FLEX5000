@@ -213,13 +213,17 @@ namespace PowerSDR
                 if (settings.Count > 0) MeterManager.RestoreSettings(ref settings);
             }
 
+            // Thetis source-of-truth startup order:
+            // 1) start every renderer reconstructed by RestoreSettings(),
+            // 2) create the default runtime container only when restore produced none,
+            // 3) release the display gate with FinishSetupAndDisplay().
+            // Runtime AddMeterContainer(int, bool) starts its own renderer, therefore
+            // RunAllRendererDisplays() must precede the fallback container creation.
+            MeterManager.RunAllRendererDisplays();
+
             if (MeterManager.TotalMeterContainers == 0)
                 P25AddRx1SignalMeter();
 
-            // Thetis source-of-truth: after restore/default container creation the
-            // manager must leave its startup gate and display restored/new forms.
-            // Without this, setMeterFloating()/returnMeterFromFloating() stop at
-            // _finishedSetup == false and no meter window can ever become visible.
             MeterManager.FinishSetupAndDisplay();
 
             p25MetersMenu = new ToolStripMenuItem("Meters/Gadgets");
