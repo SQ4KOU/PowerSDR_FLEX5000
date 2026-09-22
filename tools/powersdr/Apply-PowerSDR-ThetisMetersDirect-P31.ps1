@@ -130,11 +130,10 @@ $uc=$uc.Replace($fieldAnchor,
     '        private bool _locked = false;'
 )
 
-foreach($handler in @(
-    '        private void pnlBar_MouseDown(object sender, MouseEventArgs e)'+$nl+'        {',
-    '        private void pbGrab_MouseDown(object sender, MouseEventArgs e)'+$nl+'        {',
-    '        private void lblRX_MouseDown(object sender, MouseEventArgs e)'+$nl+'        {'
-)){
+$lockHandler1='        private void pnlBar_MouseDown(object sender, MouseEventArgs e)'+$nl+'        {'
+$lockHandler2='        private void pbGrab_MouseDown(object sender, MouseEventArgs e)'+$nl+'        {'
+$lockHandler3='        private void lblRX_MouseDown(object sender, MouseEventArgs e)'+$nl+'        {'
+foreach($handler in @($lockHandler1,$lockHandler2,$lockHandler3)){
     if(!$uc.Contains($handler)){throw "P31 ucMeter lock handler anchor missing: $handler"}
     $uc=$uc.Replace($handler,$handler+$nl+'            if (_locked) return;')
 }
