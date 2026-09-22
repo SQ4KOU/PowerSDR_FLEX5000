@@ -30,8 +30,7 @@ $required=@(
     'ananMM-bg',
     'ananMM-bg-tx',
     'cross-needle',
-    'cross-needle-bg',
-    'eye-bezel-glass'
+    'cross-needle-bg'
 )
 
 $copied=@()
@@ -80,5 +79,4 @@ Write-Host "P29_THETIS_SKINS_SHA=$ThetisSkinsSha"
 Write-Host 'P29_METER_SKINS=OFFICIAL_DEFAULT_METERS'
 Write-Host 'P29_ANANMM_SKINS=ananMM,ananMM-bg,ananMM-bg-tx'
 Write-Host 'P29_CROSS_SKINS=cross-needle,cross-needle-bg'
-Write-Host 'P29_MAGIC_EYE_SKIN=eye-bezel-glass'
 Write-Host 'P29_P28_CODE=UNCHANGED'
