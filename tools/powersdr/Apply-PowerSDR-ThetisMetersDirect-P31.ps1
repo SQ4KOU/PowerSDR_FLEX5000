@@ -138,27 +138,23 @@ $fieldAnchor='        private bool _border;'
 if(!$uc.Contains($fieldAnchor)){throw 'P31 ucMeter field anchor missing'}
 $uc=$uc.Replace($fieldAnchor,$fieldAnchor+$nl+'        private bool _locked;'+$nl+'        private bool _noControls;')
 
-foreach($pair in @(
-    @('        private void pnlBar_MouseDown(object sender, MouseEventArgs e)'+$nl+'        {',
-      '        private void pnlBar_MouseDown(object sender, MouseEventArgs e)'+$nl+'        {'+$nl+'            if (_locked) return;'),
-    @('        private void pnlBar_MouseMove(object sender, MouseEventArgs e)'+$nl+'        {',
-      '        private void pnlBar_MouseMove(object sender, MouseEventArgs e)'+$nl+'        {'+$nl+'            if (_locked) return;'),
-    @('        private void pbGrab_MouseDown(object sender, MouseEventArgs e)'+$nl+'        {',
-      '        private void pbGrab_MouseDown(object sender, MouseEventArgs e)'+$nl+'        {'+$nl+'            if (_locked) return;'),
-    @('        private void pbGrab_MouseMove(object sender, MouseEventArgs e)'+$nl+'        {',
-      '        private void pbGrab_MouseMove(object sender, MouseEventArgs e)'+$nl+'        {'+$nl+'            if (_locked) return;'),
-    @('        private void lblRX_MouseDown(object sender, MouseEventArgs e)'+$nl+'        {',
-      '        private void lblRX_MouseDown(object sender, MouseEventArgs e)'+$nl+'        {'+$nl+'            if (_locked) return;'),
-    @('        private void lblRX_MouseMove(object sender, MouseEventArgs e)'+$nl+'        {',
-      '        private void lblRX_MouseMove(object sender, MouseEventArgs e)'+$nl+'        {'+$nl+'            if (_locked) return;')
+foreach($handler in @(
+    'pnlBar_MouseDown',
+    'pnlBar_MouseMove',
+    'pbGrab_MouseDown',
+    'pbGrab_MouseMove',
+    'lblRX_MouseDown',
+    'lblRX_MouseMove'
 ))
 {
-    if(!$uc.Contains($pair[0])){throw "P31 ucMeter lock handler anchor missing: $($pair[0].Split([Environment]::NewLine)[0])"}
-    $uc=$uc.Replace($pair[0],$pair[1])
+    $pattern='(?m)(\s*private void '+[regex]::Escape($handler)+'\(object sender, MouseEventArgs e\)\s*\r?\n\s*\{)'
+    if(-not [regex]::IsMatch($uc,$pattern)){throw "P31 ucMeter lock handler anchor missing: $handler"}
+    $uc=[regex]::Replace($uc,$pattern,'$1'+$nl+'            if (_locked) return;',1)
 }
 
-$moveAnchor='        private void picContainer_MouseMove(object sender, MouseEventArgs e)'+$nl+'        {'+$nl+'            bool bContains;'
-$moveReplace='        private void picContainer_MouseMove(object sender, MouseEventArgs e)'+$nl+'        {'+$nl+
+$movePattern='(?m)(\s*private void picContainer_MouseMove\(object sender, MouseEventArgs e\)\s*\r?\n\s*\{)\s*\r?\n(\s*)bool bContains;'
+if(-not [regex]::IsMatch($uc,$movePattern)){throw 'P31 NoControls hover anchor missing'}
+$moveReplace='$1'+$nl+
              '            if (_noControls && (ModifierKeys & Keys.Shift) != Keys.Shift)'+$nl+
              '            {'+$nl+
              '                pnlBar.Hide();'+$nl+
@@ -166,8 +162,7 @@ $moveReplace='        private void picContainer_MouseMove(object sender, MouseEv
              '                return;'+$nl+
              '            }'+$nl+$nl+
              '            bool bContains;'
-if(!$uc.Contains($moveAnchor)){throw 'P31 NoControls hover anchor missing'}
-$uc=$uc.Replace($moveAnchor,$moveReplace)
+$uc=[regex]::Replace($uc,$movePattern,$moveReplace,1)
 
 $propertyAnchor='        private void btnAxis_Click(object sender, EventArgs e)'
 $properties=@'
