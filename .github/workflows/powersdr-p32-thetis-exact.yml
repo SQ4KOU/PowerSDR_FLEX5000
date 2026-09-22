@@ -1,0 +1,78 @@
+name: Build PowerSDR FLEX5000 P32 Thetis Exact Meters MSI
+
+on:
+  push:
+    branches:
+      - feature/flex5000-p32-thetis-exact
+  workflow_dispatch:
+
+jobs:
+  build-msi:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Ensure build tools
+        shell: pwsh
+        run: |
+          if (!(Get-Command innoextract.exe -ErrorAction SilentlyContinue) -and !(Get-Command innoextract -ErrorAction SilentlyContinue)) {
+            choco install innoextract -y --no-progress
+          }
+          if (!(Get-Command nuget.exe -ErrorAction SilentlyContinue) -and !(Get-Command nuget -ErrorAction SilentlyContinue)) {
+            choco install nuget.commandline -y --no-progress
+          }
+          if (!(Get-Command candle.exe -ErrorAction SilentlyContinue)) {
+            choco install wixtoolset -y --no-progress
+          }
+
+      - name: Locate WiX
+        shell: pwsh
+        run: |
+          $candle = Get-Command candle.exe -ErrorAction SilentlyContinue
+          if (!$candle) {
+            $candle = Get-ChildItem 'C:\Program Files (x86)' -Recurse -Filter candle.exe -ErrorAction SilentlyContinue | Select-Object -First 1
+          }
+          if (!$candle) { throw 'candle.exe not found' }
+          $path = Split-Path $candle.Source -Parent
+          "WIXBIN=$path" | Out-File -FilePath $env:GITHUB_ENV -Append
+
+      - name: Build P32 exact Thetis MSI
+        shell: pwsh
+        run: |
+          ./tools/powersdr/Build-PowerSDR-MSI-P32-THETIS-EXACT.ps1 -WixBin "$env:WIXBIN"
+
+      - name: Verify P32 MSI
+        shell: pwsh
+        run: |
+          $msi = Get-ChildItem ./artifacts/powersdr -Filter '*P32-THETIS-EXACT-METERS*.msi' -File | Select-Object -First 1
+          if (!$msi) { throw 'P32 MSI artifact missing' }
+          $manifest = Join-Path $msi.Directory.FullName 'POWERSDR_BUILD_MANIFEST.txt'
+          if (!(Test-Path $manifest)) { throw 'P32 manifest missing' }
+          $m = Get-Content $manifest -Raw
+          foreach($required in @(
+            'FLEX5000_BACKEND=POWERSDR_NATIVE_PAL_FWC_FIREWIRE_ASIO',
+            'P32_THETIS_SOURCE_SHA=6388c61d3c484eb7f72b0f03d0ec4cab14058c6e',
+            'P32_SOURCE_OF_TRUTH=THETIS_ONLY',
+            'P32_GADGETS=VFO_DISPLAY,BAND_BUTTONS,MODE_BUTTONS,TUNESTEP_BUTTONS',
+            'P32_RENDERER=THETIS_EXACT',
+            'P32_ADAPTER=POWERSDR_NATIVE_API_ONLY',
+            'P32_RX2=NOT_EXPOSED'
+          )) {
+            if(!$m.Contains($required)) { throw "Manifest gate missing: $required" }
+          }
+          $sha = (Get-FileHash -Algorithm SHA256 $msi.FullName).Hash.ToLowerInvariant()
+          "MSI=$($msi.Name)" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+          "SHA256=$sha" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+          "P32=Thetis exact source + PowerSDR native adapter only" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+
+      - name: Upload P32 artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: PowerSDR-FLEX5000-P32-THETIS-EXACT-METERS
+          path: |
+            artifacts/powersdr/*.msi
+            artifacts/powersdr/*.sha256
+            artifacts/powersdr/POWERSDR_BUILD_MANIFEST.txt
+            artifacts/powersdr/logs/**
+          if-no-files-found: error
