@@ -60,8 +60,8 @@ $getBounds = Slice-Between $thetisMeter '            internal System.Drawing.Rec
 
 # Exact Thetis renderer and interaction path.
 $renderBlock = Slice-Between $thetisMeter '            private void renderFadeCover(' '            private void renderClock('
-$mouseBlock = Slice-Between $thetisMeter '            private void OnMouseEnter(' '            //            '+$nl+'            private int drawMeters('
-$fadeMethod = Slice-Between $thetisMeter '            private int fade(clsMeterItem mi, clsMeter m)' '            //'+$nl+'            private void renderNeedleScale('
+$mouseBlock = Slice-Between $thetisMeter '            private void OnMouseEnter(' '            private int drawMeters('
+$fadeMethod = Slice-Between $thetisMeter '            private int fade(clsMeterItem mi, clsMeter m)' '            private void renderNeedleScale('
 $measureMethod = Slice-Between $thetisMeter '            private SizeF measureString(string sText, string sFontFamily, FontStyle style, float emSize, bool ignore_caching = false)' '            private void renderScale('
 
 # Exact BandToColour / BandToString and luminance helpers, moved only to adapter class names.
