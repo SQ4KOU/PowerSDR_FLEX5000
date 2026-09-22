@@ -98,16 +98,35 @@ $bridge=$bridge.Replace(
 
 $mm=[IO.File]::ReadAllText($mmPath)
 
-# Thetis event bus is not copied into PowerSDR. State is polled through the single
-# adapter below, while native Thetis meter/item state machines remain intact.
-$eventRx='(?s)        private static void addDelegates\(\).*?        private static void OnTransverterIndexChanged'
-$eventReplacement=@'
-        private static void addDelegates()
+# PowerSDR does not expose the complete Thetis event bus. Keep every Thetis
+# handler/helper method intact and replace ONLY the two subscription method bodies.
+function Replace-CSharpMethodBody([string]$Text,[string]$Signature,[string]$NewBody)
+{
+    $sig=$Text.IndexOf($Signature,[StringComparison]::Ordinal)
+    if($sig -lt 0){throw "P32 C# method signature missing: $Signature"}
+    $open=$Text.IndexOf('{',$sig+$Signature.Length)
+    if($open -lt 0){throw "P32 C# method opening brace missing: $Signature"}
+    $depth=0
+    $close=-1
+    for($i=$open;$i -lt $Text.Length;$i++)
+    {
+        if($Text[$i] -eq '{'){$depth++}
+        elseif($Text[$i] -eq '}')
         {
+            $depth--
+            if($depth -eq 0){$close=$i;break}
+        }
+    }
+    if($close -lt 0){throw "P32 C# method closing brace missing: $Signature"}
+    return $Text.Substring(0,$open)+$NewBody+$Text.Substring($close+1)
+}
+$mm=Replace-CSharpMethodBody $mm 'private static void addDelegates()' @'
+{
             _delegatesAdded = true;
         }
-        private static void removeDelegates()
-        {
+'@
+$mm=Replace-CSharpMethodBody $mm 'private static void removeDelegates()' @'
+{
             if (_lstUCMeters != null)
             {
                 foreach (KeyValuePair<string, ucMeter> kvp in _lstUCMeters)
@@ -115,11 +134,7 @@ $eventReplacement=@'
             }
             _delegatesAdded = false;
         }
-        private static void OnTransverterIndexChanged
 '@
-$mm2=[regex]::Replace($mm,$eventRx,$eventReplacement,1)
-if($mm2 -eq $mm){throw 'P32 coherent failed to replace Thetis event bus'}
-$mm=$mm2
 
 # Installed meter skin directory instead of OpenHPSDR AppData skin tree.
 $mm=$mm.Replace(
