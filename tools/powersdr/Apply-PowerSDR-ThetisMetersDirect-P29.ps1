@@ -37,49 +37,11 @@ $required=@(
 $copied=@()
 foreach($name in $required)
 {
-    $matches=@(Get-ChildItem $extractDir -Recurse -File | Where-Object {
-        $_.BaseName -ieq $name -and $_.Extension -match '^\.(png|jpg|jpeg|bmp)
-    {
-        throw "P29 required meter skin asset not found in DefaultMeters.zip: $name"
-    }
-
-    $src=$matches | Select-Object -First 1
-    $dst=Join-Path $skinDir $src.Name
-    Copy-Item $src.FullName $dst -Force
-    $copied += Get-Item $dst
-}
-
-$proj=[IO.File]::ReadAllText($projPath)
-foreach($f in $copied)
-{
-    $rel='MeterSkins\'+$f.Name
-    if($proj -notmatch ('Content Include="'+[regex]::Escape($rel)+'"'))
-    {
-        $item='    <Content Include="'+$rel+'">'+$nl+
-              '      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>'+$nl+
-              '    </Content>'+$nl
-        $igPos=$proj.IndexOf('</ItemGroup>')
-        if($igPos -lt 0){throw 'P29 csproj ItemGroup close missing'}
-        $proj=$proj.Insert($igPos,$item)
-    }
-}
-[IO.File]::WriteAllText($projPath,$proj,$utf8NoBom)
-
-# Hard gates: exact image names used by the pinned Thetis MeterManager must be present.
-foreach($name in $required)
-{
-    $found=Get-ChildItem $skinDir -File | Where-Object { $_.BaseName -ieq $name }
-    if(!$found){throw "P29 MeterSkins packaging gate missing: $name"}
-}
-
-Write-Host "P29_THETIS_SKINS_SHA=$ThetisSkinsSha"
-Write-Host 'P29_METER_SKINS=OFFICIAL_DEFAULT_METERS'
-Write-Host 'P29_ANANMM_SKINS=ananMM,ananMM-bg,ananMM-bg-tx'
-Write-Host 'P29_CROSS_SKINS=cross-needle,cross-needle-bg'
-Write-Host 'P29_MAGIC_EYE_SKIN=eye-bezel-glass'
-Write-Host 'P29_P28_CODE=UNCHANGED'
-
-    })
+    $matches=@(
+        Get-ChildItem $extractDir -Recurse -File | Where-Object {
+            $_.BaseName -ieq $name -and $_.Extension -match '^\.(png|jpg|jpeg|bmp)$'
+        }
+    )
 
     if($matches.Count -lt 1)
     {
@@ -108,11 +70,10 @@ foreach($f in $copied)
 }
 [IO.File]::WriteAllText($projPath,$proj,$utf8NoBom)
 
-# Hard gates: exact image names used by the pinned Thetis MeterManager must be present.
 foreach($name in $required)
 {
-    $found=Get-ChildItem $skinDir -File | Where-Object { $_.BaseName -ieq $name }
-    if(!$found){throw "P29 MeterSkins packaging gate missing: $name"}
+    $found=@(Get-ChildItem $skinDir -File | Where-Object { $_.BaseName -ieq $name })
+    if($found.Count -lt 1){throw "P29 MeterSkins packaging gate missing: $name"}
 }
 
 Write-Host "P29_THETIS_SKINS_SHA=$ThetisSkinsSha"
