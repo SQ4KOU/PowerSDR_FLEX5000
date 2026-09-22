@@ -57,7 +57,7 @@ jobs:
             'THETIS_METER_PERSISTENCE=REPLACE_ALL',
             'THETIS_METER_SKINS=OFFICIAL_DEFAULT_METERS',
             'THETIS_METER_SKIN_SOURCE=ramdor/ThetisSkins@601018a9486359b3bdb661063f4687b4c75ad917',
-            'THETIS_METER_SKIN_ASSETS=ananMM,ananMM-bg,ananMM-bg-tx,cross-needle,cross-needle-bg,eye-bezel-glass',
+            'THETIS_METER_SKIN_ASSETS=ananMM,ananMM-bg,ananMM-bg-tx,cross-needle,cross-needle-bg',
             'RX2_METER=NOT_EXPOSED',
             'FLEXMETERS_HELPER_DLL=ABSENT'
           )) {
