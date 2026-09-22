@@ -42,6 +42,7 @@ jobs:
         run: |
           foreach($p in @(
             './tools/powersdr/Apply-PowerSDR-ThetisMetersCoherent-P32.ps1',
+            './tools/powersdr/Apply-PowerSDR-LegacyItems-P39.ps1',
             './tools/powersdr/Build-PowerSDR-MSI-P32-THETIS-EXACT.ps1'
           )) {
             $tokens=$null; $errors=$null
@@ -75,7 +76,11 @@ jobs:
             'P32_METER_TYPES=FULL_A53B192_GENERATION',
             'P32_RENDERER=THETIS_EXACT',
             'P32_ADAPTER=POWERSDR_NATIVE_API_ONLY',
-            'P32_RX2=NOT_EXPOSED'
+            'P32_RX2=NOT_EXPOSED',
+            'P39_LEGACY_ITEMS=STAGE1_VISIBILITY_ONLY',
+            'P39_CONTROLS=METERS_BAND_MODE_FILTER_VFOA_VFOB_VFOSYNC',
+            'P39_PERSISTENCE=POWERSDR_DB_SQ4KOU_LEGACYITEMS',
+            'P39_SPECTRUM_GEOMETRY=UNCHANGED'
           )) {
             if(!$m.Contains($required)) { throw "Manifest gate missing: $required" }
           }
