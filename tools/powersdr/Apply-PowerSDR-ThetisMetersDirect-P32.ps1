@@ -73,6 +73,7 @@ $getFadeCover=Get-BracedBlock $thetis 'private clsFadeCover getFadeCover('
 $renderFade=Get-BracedBlock $thetis 'private void renderFadeCover('
 $highlightBox=Get-BracedBlock $thetis 'private void highlightBox('
 $measureString5=Get-BracedBlock $thetis 'private SizeF measureString(string sText, string sFontFamily, FontStyle style, float emSize, bool ignore_caching = false)'
+$fade=Get-BracedBlock $thetis 'private int fade(clsMeterItem mi, clsMeter m)'
 $getBandGroup=Get-BracedBlock $thetis 'public BandGroups GetBandGroupFromBand('
 $setBandPanel=Get-BracedBlock $thetis 'public void SetBandPanel('
 
@@ -234,8 +235,12 @@ namespace PowerSDR
             private PointF _p32MouseMovePoint;
             private bool _p32MouseEntered;
             private bool _p32Visible = true;
+            private int _p32FadeValue = 255;
+            private bool _p32Disabled = false;
 
             public bool Visible { get { return _p32Visible; } set { _p32Visible = value; } }
+            public int FadeValue { get { return _p32FadeValue; } set { _p32FadeValue = value; } }
+            public bool Disabled { get { return _p32Disabled; } set { _p32Disabled = value; } }
             public virtual void MouseDown(MouseEventArgs e) { }
             public virtual void MouseUp(MouseEventArgs e) { }
             public virtual void MouseWheel(int number_of_moves) { }
@@ -294,6 +299,34 @@ namespace PowerSDR
             public bool VFOSync { get { return _p32Sync; } set { _p32Sync=value; } }
             public bool QuickSplitEnabled { get { return _p32QuickSplit; } set { _p32QuickSplit=value; } }
             public int TuneStepIndex { get { return _p32TuneStep; } set { _p32TuneStep=value; } }
+
+            internal System.Drawing.RectangleF getBounds(string sId)
+            {
+                lock (_objMeterItemLock)
+                {
+                    if (_meterItems == null) return System.Drawing.RectangleF.Empty;
+                    Dictionary<string, clsMeterItem> items = new Dictionary<string, clsMeterItem>();
+                    foreach (KeyValuePair<string, clsMeterItem> kvp in _meterItems.Where(o => o.Value.ParentID == sId))
+                        items.Add(kvp.Key, kvp.Value);
+                    if (items.Count == 0) return System.Drawing.RectangleF.Empty;
+
+                    float x = float.MaxValue;
+                    float y = float.MaxValue;
+                    float brx = float.MinValue;
+                    float bry = float.MinValue;
+
+                    foreach (KeyValuePair<string, clsMeterItem> kvp in items)
+                    {
+                        clsMeterItem mi = kvp.Value;
+                        if (mi.TopLeft.X < x) x = mi.TopLeft.X;
+                        if (mi.TopLeft.Y < y) y = mi.TopLeft.Y;
+                        if (mi.TopLeft.X + mi.Size.Width > brx) brx = mi.TopLeft.X + mi.Size.Width;
+                        if (mi.TopLeft.Y + mi.Size.Height > bry) bry = mi.TopLeft.Y + mi.Size.Height;
+                    }
+
+                    return new System.Drawing.RectangleF(x, y, brx - x, bry - y);
+                }
+            }
 
 @@GET_FADE_COVER@@
 @@GET_BAND_GROUP@@
@@ -376,6 +409,7 @@ namespace PowerSDR
 @@DRAW_SAFE@@
 @@CONTRAST@@
 @@ADJUST_CONTRAST@@
+@@FADE@@
 @@HIGHLIGHT_BOX@@
 @@DRAW_BAND@@
 @@DRAW_MODE@@
@@ -559,6 +593,7 @@ $map=[ordered]@{
  '@@DRAW_SAFE@@'=$drawSafe
  '@@CONTRAST@@'=$contrast
  '@@ADJUST_CONTRAST@@'=$adjustContrast
+ '@@FADE@@'=$fade
  '@@HIGHLIGHT_BOX@@'=$highlightBox
  '@@DRAW_BAND@@'=$drawBand
  '@@DRAW_MODE@@'=$drawMode
