@@ -201,6 +201,10 @@ $uc=$uc.Replace($toStringAnchor,
     '                Locked.ToString();'
 )
 
+$parseBoolAnchor='            bool border = false;'
+if(!$uc.Contains($parseBoolAnchor)){throw 'P31 ucMeter parse bool anchor missing'}
+$uc=$uc.Replace($parseBoolAnchor,$parseBoolAnchor+$nl+'            bool tmpBool = false;')
+
 $parseLen='                if(tmp.Length == 13)'
 if(!$uc.Contains($parseLen)){throw 'P31 ucMeter parse length anchor missing'}
 $uc=$uc.Replace($parseLen,'                if(tmp.Length == 13 || tmp.Length == 15)')
