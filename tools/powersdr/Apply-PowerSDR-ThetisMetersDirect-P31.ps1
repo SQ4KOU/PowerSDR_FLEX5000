@@ -62,88 +62,68 @@ if(!$mm.Contains('                VFO_DISPLAY,'))
         $itemEnumMarker)
 }
 
-$oldTypeClass=@'
-                case MeterType.CROSS: return 2;
-                //case MeterType.HISTORY: return 2;
-'@
-$newTypeClass=@'
-                case MeterType.CROSS: return 2;
-                case MeterType.VFO_DISPLAY: return 2;
-                case MeterType.BAND_BUTTONS: return 2;
-                case MeterType.MODE_BUTTONS: return 2;
-                case MeterType.TUNESTEP_BUTTONS: return 2;
-                //case MeterType.HISTORY: return 2;
-'@
-if(!$mm.Contains($oldTypeClass)){throw 'P31 GetMeterTXRXType anchor missing'}
-$mm=$mm.Replace($oldTypeClass,$newTypeClass)
 
-$oldNames=@'
-                case MeterType.CROSS: return "Cross Meter";
-                case MeterType.SWR: return "SWR";
-'@
-$newNames=@'
-                case MeterType.CROSS: return "Cross Meter";
-                case MeterType.VFO_DISPLAY: return "VFO Display";
-                case MeterType.BAND_BUTTONS: return "Band Buttons";
-                case MeterType.MODE_BUTTONS: return "Mode Buttons";
-                case MeterType.TUNESTEP_BUTTONS: return "Tune Step Buttons";
-                case MeterType.SWR: return "SWR";
-'@
-if(!$mm.Contains($oldNames)){throw 'P31 MeterName anchor missing'}
-$mm=$mm.Replace($oldNames,$newNames)
+$typeMarker='                case MeterType.CROSS: return 2;'
+if(!$mm.Contains($typeMarker)){throw 'P31 GetMeterTXRXType anchor missing'}
+if(!$mm.Contains('                case MeterType.VFO_DISPLAY: return 2;'))
+{
+    $mm=$mm.Replace($typeMarker,$typeMarker+$nl+
+        '                case MeterType.VFO_DISPLAY: return 2;'+$nl+
+        '                case MeterType.BAND_BUTTONS: return 2;'+$nl+
+        '                case MeterType.MODE_BUTTONS: return 2;'+$nl+
+        '                case MeterType.TUNESTEP_BUTTONS: return 2;')
+}
 
-$oldAdd=@'
-                    case MeterType.CROSS: AddCrossNeedle(nDelay, 0, out bBottom, restoreIg); break;
-                    case MeterType.SWR: AddSWRBar(nDelay, 0, out bBottom, restoreIg); break;
-'@
-$newAdd=@'
-                    case MeterType.CROSS: AddCrossNeedle(nDelay, 0, out bBottom, restoreIg); break;
-                    case MeterType.VFO_DISPLAY: P31AddVFODisplay(nDelay, 0, out bBottom, restoreIg); break;
-                    case MeterType.BAND_BUTTONS: P31AddBandButtons(nDelay, 0, out bBottom, restoreIg); break;
-                    case MeterType.MODE_BUTTONS: P31AddModeButtons(nDelay, 0, out bBottom, restoreIg); break;
-                    case MeterType.TUNESTEP_BUTTONS: P31AddTunestepButtons(nDelay, 0, out bBottom, restoreIg); break;
-                    case MeterType.SWR: AddSWRBar(nDelay, 0, out bBottom, restoreIg); break;
-'@
-if(!$mm.Contains($oldAdd)){throw 'P31 AddMeter switch anchor missing'}
-$mm=$mm.Replace($oldAdd,$newAdd)
+$nameMarker='                case MeterType.CROSS: return "Cross Meter";'
+if(!$mm.Contains($nameMarker)){throw 'P31 MeterName anchor missing'}
+if(!$mm.Contains('                case MeterType.VFO_DISPLAY: return "VFO Display";'))
+{
+    $mm=$mm.Replace($nameMarker,$nameMarker+$nl+
+        '                case MeterType.VFO_DISPLAY: return "VFO Display";'+$nl+
+        '                case MeterType.BAND_BUTTONS: return "Band Buttons";'+$nl+
+        '                case MeterType.MODE_BUTTONS: return "Mode Buttons";'+$nl+
+        '                case MeterType.TUNESTEP_BUTTONS: return "Tune Step Buttons";')
+}
 
-$oldRender=@'
-                                case clsMeterItem.MeterItemType.MAGIC_EYE:
-                                    renderEye(rect, mi, m);
-                                    break;
-'@
-$newRender=@'
-                                case clsMeterItem.MeterItemType.MAGIC_EYE:
-                                    renderEye(rect, mi, m);
-                                    break;
-                                case clsMeterItem.MeterItemType.VFO_DISPLAY:
-                                    P31RenderVfoDisplay(rect, mi, m);
-                                    break;
-                                case clsMeterItem.MeterItemType.BAND_BUTTONS:
-                                case clsMeterItem.MeterItemType.MODE_BUTTONS:
-                                case clsMeterItem.MeterItemType.TUNESTEP_BUTTONS:
-                                    P31RenderButtonBox(rect, mi, m);
-                                    break;
-'@
-if(!$mm.Contains($oldRender)){throw 'P31 drawMeters switch anchor missing'}
-$mm=$mm.Replace($oldRender,$newRender)
+$addMarker='                    case MeterType.CROSS: AddCrossNeedle(nDelay, 0, out bBottom, restoreIg); break;'
+if(!$mm.Contains($addMarker)){throw 'P31 AddMeter switch anchor missing'}
+if(!$mm.Contains('                    case MeterType.VFO_DISPLAY: P31AddVFODisplay'))
+{
+    $mm=$mm.Replace($addMarker,$addMarker+$nl+
+        '                    case MeterType.VFO_DISPLAY: P31AddVFODisplay(nDelay, 0, out bBottom, restoreIg); break;'+$nl+
+        '                    case MeterType.BAND_BUTTONS: P31AddBandButtons(nDelay, 0, out bBottom, restoreIg); break;'+$nl+
+        '                    case MeterType.MODE_BUTTONS: P31AddModeButtons(nDelay, 0, out bBottom, restoreIg); break;'+$nl+
+        '                    case MeterType.TUNESTEP_BUTTONS: P31AddTunestepButtons(nDelay, 0, out bBottom, restoreIg); break;')
+}
 
-$oldEvents=@'
-                _displayTarget.Resize += target_Resize;
-                _displayTarget.MouseUp += OnMouseUp;
-'@
-$newEvents=@'
-                _displayTarget.Resize += target_Resize;
-                _displayTarget.MouseUp += OnMouseUp;
-                _displayTarget.MouseDown += P31MouseDown;
-                _displayTarget.MouseUp += P31MouseUp;
-                _displayTarget.MouseMove += P31MouseMove;
-                _displayTarget.MouseWheel += P31MouseWheel;
-                _displayTarget.MouseEnter += P31MouseEnter;
-                _displayTarget.MouseLeave += P31MouseLeave;
-'@
-if(!$mm.Contains($oldEvents)){throw 'P31 DXRenderer event anchor missing'}
-$mm=$mm.Replace($oldEvents,$newEvents)
+$renderPattern='(?ms)(\s*case clsMeterItem\.MeterItemType\.MAGIC_EYE:\s*\r?\n\s*renderEye\(rect, mi, m\);\s*\r?\n\s*break;)'
+if(-not [regex]::IsMatch($mm,$renderPattern)){throw 'P31 drawMeters switch anchor missing'}
+if(!$mm.Contains('case clsMeterItem.MeterItemType.VFO_DISPLAY:'))
+{
+    $renderAdd='$1'+$nl+
+        '                                case clsMeterItem.MeterItemType.VFO_DISPLAY:'+$nl+
+        '                                    P31RenderVfoDisplay(rect, mi, m);'+$nl+
+        '                                    break;'+$nl+
+        '                                case clsMeterItem.MeterItemType.BAND_BUTTONS:'+$nl+
+        '                                case clsMeterItem.MeterItemType.MODE_BUTTONS:'+$nl+
+        '                                case clsMeterItem.MeterItemType.TUNESTEP_BUTTONS:'+$nl+
+        '                                    P31RenderButtonBox(rect, mi, m);'+$nl+
+        '                                    break;'
+    $mm=[regex]::Replace($mm,$renderPattern,$renderAdd,1)
+}
+
+$eventMarker='                _displayTarget.MouseUp += OnMouseUp;'
+if(!$mm.Contains($eventMarker)){throw 'P31 DXRenderer event anchor missing'}
+if(!$mm.Contains('_displayTarget.MouseDown += P31MouseDown;'))
+{
+    $mm=$mm.Replace($eventMarker,$eventMarker+$nl+
+        '                _displayTarget.MouseDown += P31MouseDown;'+$nl+
+        '                _displayTarget.MouseUp += P31MouseUp;'+$nl+
+        '                _displayTarget.MouseMove += P31MouseMove;'+$nl+
+        '                _displayTarget.MouseWheel += P31MouseWheel;'+$nl+
+        '                _displayTarget.MouseEnter += P31MouseEnter;'+$nl+
+        '                _displayTarget.MouseLeave += P31MouseLeave;')
+}
 
 [IO.File]::WriteAllText($mmPath,$mm,$utf8)
 
