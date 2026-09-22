@@ -251,7 +251,13 @@ $adapter=@'
                     DSPMode oldMode = meter.ModeVfoA;
                     int oldStep = meter.TuneStepIndex;
 
+                    bool previousMOX = meter.MOX;
                     meter.MOX = mox;
+                    if (mox && !previousMOX)
+                        meter.ZeroOut(true, false);
+                    else if (!mox && previousMOX)
+                        meter.ZeroOut(false, true);
+
                     meter.Split = _console.VFOSplit;
                     meter.TXVFOb = _console.VFOBTX;
                     meter.RX2Enabled = false;
