@@ -1,0 +1,78 @@
+name: Build PowerSDR FLEX5000 P32 Thetis 1to1 MSI
+
+on:
+  push:
+    branches:
+      - feature/flex5000-p32-thetis-1to1
+  workflow_dispatch:
+
+jobs:
+  build-msi:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Ensure build tools
+        shell: pwsh
+        run: |
+          if (!(Get-Command innoextract.exe -ErrorAction SilentlyContinue) -and !(Get-Command innoextract -ErrorAction SilentlyContinue)) {
+            choco install innoextract -y --no-progress
+          }
+          if (!(Get-Command nuget.exe -ErrorAction SilentlyContinue) -and !(Get-Command nuget -ErrorAction SilentlyContinue)) {
+            choco install nuget.commandline -y --no-progress
+          }
+          if (!(Get-Command candle.exe -ErrorAction SilentlyContinue)) {
+            choco install wixtoolset -y --no-progress
+          }
+
+      - name: Locate WiX
+        shell: pwsh
+        run: |
+          $candle = Get-Command candle.exe -ErrorAction SilentlyContinue
+          if (!$candle) {
+            $candle = Get-ChildItem 'C:\Program Files (x86)' -Recurse -Filter candle.exe -ErrorAction SilentlyContinue | Select-Object -First 1
+          }
+          if (!$candle) { throw 'candle.exe not found' }
+          $path = Split-Path $candle.Source -Parent
+          "WIXBIN=$path" | Out-File -FilePath $env:GITHUB_ENV -Append
+
+      - name: Build P32 MSI
+        shell: pwsh
+        run: |
+          ./tools/powersdr/Build-PowerSDR-MSI-P32-THETIS-1TO1.ps1 -WixBin "$env:WIXBIN"
+
+      - name: Verify P32 MSI
+        shell: pwsh
+        run: |
+          $msi = Get-ChildItem ./artifacts/powersdr -Filter '*P32-THETIS-1TO1*.msi' -File | Select-Object -First 1
+          if (!$msi) { throw 'P32 MSI artifact missing' }
+          $manifest = Join-Path $msi.Directory.FullName 'POWERSDR_BUILD_MANIFEST.txt'
+          if (!(Test-Path $manifest)) { throw 'P32 manifest missing' }
+          $m = Get-Content $manifest -Raw
+          foreach($required in @(
+            'FLEX5000_BACKEND=POWERSDR_NATIVE_PAL_FWC_FIREWIRE_ASIO',
+            'P32_BASE=P30_SAFE_5fb179f357771f2c6aebcfdd7f13136d8c5f1e72',
+            'P32_THETIS_SOURCE_SHA=3dbd787eaef30eca66d089ccfb4c4ccb8c0cfb7e',
+            'P32_GADGETS=VFO_DISPLAY,BAND_BUTTONS,MODE_BUTTONS,TUNESTEP_BUTTONS',
+            'P32_RENDERER=THETIS_EXACT_SOURCE_BLOCKS',
+            'P32_MOUSE=THETIS_EXACT_SOURCE_DISPATCH',
+            'P32_RX2=NOT_EXPOSED_BY_PROJECT_REQUIREMENT'
+          )) {
+            if(!$m.Contains($required)) { throw "Manifest gate missing: $required" }
+          }
+          $sha = (Get-FileHash -Algorithm SHA256 $msi.FullName).Hash.ToLowerInvariant()
+          "MSI=$($msi.Name)" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+          "SHA256=$sha" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+          "THETIS_SHA=3dbd787eaef30eca66d089ccfb4c4ccb8c0cfb7e" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+
+      - name: Upload P32 artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: PowerSDR-FLEX5000-P32-THETIS-1TO1
+          path: |
+            artifacts/powersdr/*.msi
+            artifacts/powersdr/*.sha256
+            artifacts/powersdr/POWERSDR_BUILD_MANIFEST.txt
+            artifacts/powersdr/logs/**
+          if-no-files-found: error
