@@ -1,0 +1,111 @@
+name: Build PowerSDR FLEX5000 P24 Native Thetis Meters
+
+on:
+  push:
+    branches:
+      - feature/flex5000-thetis-meters-gadgets-1to1
+  pull_request:
+    branches:
+      - feature/flex5000-thetis-meters-gadgets-1to1
+  workflow_dispatch:
+
+concurrency:
+  group: p24-native-thetis-meters-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-native-p24:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Ensure build tools
+        shell: pwsh
+        run: |
+          if (!(Get-Command innoextract.exe -ErrorAction SilentlyContinue) -and !(Get-Command innoextract -ErrorAction SilentlyContinue)) {
+            choco install innoextract -y --no-progress
+          }
+          if (!(Get-Command nuget.exe -ErrorAction SilentlyContinue) -and !(Get-Command nuget -ErrorAction SilentlyContinue)) {
+            choco install nuget.commandline -y --no-progress
+          }
+          if (!(Get-Command candle.exe -ErrorAction SilentlyContinue)) {
+            choco install wixtoolset -y --no-progress
+          }
+
+      - name: Locate WiX
+        shell: pwsh
+        run: |
+          $candle = Get-Command candle.exe -ErrorAction SilentlyContinue
+          if (!$candle) {
+            $candle = Get-ChildItem 'C:\Program Files (x86)' -Recurse -Filter candle.exe -ErrorAction SilentlyContinue | Select-Object -First 1
+          }
+          if (!$candle) { throw 'candle.exe not found' }
+          $path = Split-Path $candle.Source -Parent
+          "WIXBIN=$path" | Out-File -FilePath $env:GITHUB_ENV -Append
+
+      - name: PowerShell syntax diagnostics
+        shell: pwsh
+        run: |
+          $tokens=$null
+          $errors=$null
+          [System.Management.Automation.Language.Parser]::ParseFile(
+            (Join-Path $env:GITHUB_WORKSPACE 'tools\powersdr\Apply-PowerSDR-ThetisMeters-P24-Native.ps1'),
+            [ref]$tokens,
+            [ref]$errors
+          ) | Out-Null
+          if($errors.Count -gt 0) {
+            foreach($e in $errors) {
+              Write-Host ("PS_PARSE_ERROR line={0} col={1}: {2}" -f $e.Extent.StartLineNumber,$e.Extent.StartColumnNumber,$e.Message)
+            }
+            throw 'PowerShell syntax gate failed'
+          }
+          Write-Host 'POWERSHELL_SYNTAX=PASS'
+
+      - name: Roslyn syntax diagnostics
+        shell: pwsh
+        run: |
+          $diag = Join-Path $env:RUNNER_TEMP 'p24syntax'
+          if(Test-Path $diag){Remove-Item $diag -Recurse -Force}
+          dotnet new console --framework net8.0 --output $diag --force | Out-Null
+          Push-Location $diag
+          try {
+            dotnet add package Microsoft.CodeAnalysis.CSharp --version 5.0.0 | Out-Null
+            @'
+          using System;
+          using System.IO;
+          using System.Linq;
+          using Microsoft.CodeAnalysis.CSharp;
+
+          var src = File.ReadAllText(args[0]);
+          var tree = CSharpSyntaxTree.ParseText(src);
+          Console.WriteLine("--- ROSLYN DIAGNOSTICS ---");
+          foreach (var d in tree.GetDiagnostics()) Console.WriteLine(d.ToString());
+          Console.WriteLine("--- MISSING TOKENS ---");
+          foreach (var t in tree.GetRoot().DescendantTokens().Where(t => t.IsMissing))
+          {
+              var p = t.GetLocation().GetLineSpan().StartLinePosition;
+              Console.WriteLine($"MISSING kind={t.Kind()} line={p.Line + 1} col={p.Character + 1} span={t.SpanStart}");
+          }
+          '@ | Set-Content -LiteralPath (Join-Path $diag 'Program.cs') -Encoding UTF8
+            dotnet run --no-restore -- (Join-Path $env:GITHUB_WORKSPACE 'tools\powersdr\P24SetupNativeMeters.cs')
+          }
+          finally { Pop-Location }
+
+      - name: Build P24 native Thetis meters
+        shell: pwsh
+        run: |
+          ./tools/powersdr/Build-PowerSDR-MSI-P24-NATIVE-THETIS-METERS.ps1 -WixBin "$env:WIXBIN"
+
+      - name: Upload diagnostics or MSI
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: PowerSDR-P24-NATIVE-THETIS-METERS
+          path: |
+            artifacts/powersdr/**
+            .work/powersdr-ke9ns/Console/P24_*.cs
+            .work/powersdr-ke9ns/Console/P24Thetis*.cs
+            .work/powersdr-ke9ns/Console/P24SetupNativeMeters.cs
+            .work/powersdr-ke9ns/Console/PowerSDR.csproj
+          if-no-files-found: warn
