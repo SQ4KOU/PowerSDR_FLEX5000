@@ -74,6 +74,7 @@ $luminance = Slice-Between $thetisCommon '        public static int GetLuminance
 foreach($name in @('fadeClass','tuneClass','modeClass','bandClass','buttonClass','vfoClass','addBand','addMode','addTune','addVfo','getFadeCover','getBounds','renderBlock','mouseBlock','fadeMethod','measureMethod')) {
     $v=Get-Variable $name -ValueOnly
     $v=$v.Replace('BandStackManager.','P32ThetisBandStackManager.')
+    $v=$v.Replace('Common.GetLuminance(','P32Common.GetLuminance(')
     $v=$v.Replace('lock (_meterItemsLock)','lock (P32MeterItemsLock)')
     $v=$v.Replace('lock (m._meterItemsLock)','lock (m.P32MeterItemsLock)')
     Set-Variable -Name $name -Value $v
@@ -359,7 +360,7 @@ $bandColour
 $bandString
     }
 
-    public static partial class Common
+    internal static class P32Common
     {
 $luminance
     }
