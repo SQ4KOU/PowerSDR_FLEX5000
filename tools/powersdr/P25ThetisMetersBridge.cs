@@ -216,6 +216,12 @@ namespace PowerSDR
             if (MeterManager.TotalMeterContainers == 0)
                 P25AddRx1SignalMeter();
 
+            // Thetis source-of-truth: after restore/default container creation the
+            // manager must leave its startup gate and display restored/new forms.
+            // Without this, setMeterFloating()/returnMeterFromFloating() stop at
+            // _finishedSetup == false and no meter window can ever become visible.
+            MeterManager.FinishSetupAndDisplay();
+
             p25MetersMenu = new ToolStripMenuItem("Meters/Gadgets");
             p25AddRx1Menu = new ToolStripMenuItem("Add RX1 Signal Meter");
             p25AddRx1Menu.Click += delegate { P25AddRx1SignalMeter(); };
