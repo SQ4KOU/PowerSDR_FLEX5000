@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Windows.Forms;
-using SharpDX.Mathematics.Interop;
 
 namespace PowerSDR
 {
@@ -210,11 +209,6 @@ namespace PowerSDR
             {
                 "160", "80", "60", "40", "30", "20", "17", "15", "12", "10", "6"
             };
-            private static readonly double[] P31CentersMHz = new double[]
-            {
-                1.900, 3.750, 5.350, 7.100, 10.125, 14.200, 18.100, 21.200, 24.950, 28.400, 50.100
-            };
-
             public clsBandButtonBox()
             {
                 ItemType = MeterItemType.BAND_BUTTONS;
@@ -241,9 +235,9 @@ namespace PowerSDR
                 int i = ButtonIndex;
                 _console.BeginInvoke(new MethodInvoker(delegate
                 {
-                    // PowerSDR uses VFO frequency as the authoritative band-selection path.
-                    // This is the target adapter replacing Thetis BandPreChangeHandlers.
-                    _console.VFOAFreq = P31CentersMHz[i];
+                    // Target adapter: invoke PowerSDR's own band-button path so its
+                    // band-stack, filter, mode and waterfall semantics remain native.
+                    _console.P31SelectBand(P31Bands[i]);
                 }));
             }
         }
@@ -611,6 +605,7 @@ namespace PowerSDR
                 string id = pb.Tag.ToString();
                 if (!_meters.ContainsKey(id)) return;
                 clsMeter m = _meters[id];
+                if (m.SortedMeterItemsForZOrder == null) return;
                 foreach (KeyValuePair<string, clsMeterItem> kv in m.SortedMeterItemsForZOrder)
                     kv.Value.P31MouseEntered = true;
             }
@@ -622,6 +617,7 @@ namespace PowerSDR
                 string id = pb.Tag.ToString();
                 if (!_meters.ContainsKey(id)) return;
                 clsMeter m = _meters[id];
+                if (m.SortedMeterItemsForZOrder == null) return;
                 foreach (KeyValuePair<string, clsMeterItem> kv in m.SortedMeterItemsForZOrder)
                     kv.Value.P31MouseEntered = false;
             }
@@ -704,6 +700,26 @@ namespace PowerSDR
                     v++;
                 }
                 bb.ButtonIndex = n;
+            }
+        }
+    }
+    public partial class Console
+    {
+        internal void P31SelectBand(Band b)
+        {
+            switch (b)
+            {
+                case Band.B160M: radBand160_Click(this, EventArgs.Empty); break;
+                case Band.B80M:  radBand80_Click(this, EventArgs.Empty); break;
+                case Band.B60M:  radBand60_Click(this, EventArgs.Empty); break;
+                case Band.B40M:  radBand40_Click(this, EventArgs.Empty); break;
+                case Band.B30M:  radBand30_Click(this, EventArgs.Empty); break;
+                case Band.B20M:  radBand20_Click(this, EventArgs.Empty); break;
+                case Band.B17M:  radBand17_Click(this, EventArgs.Empty); break;
+                case Band.B15M:  radBand15_Click(this, EventArgs.Empty); break;
+                case Band.B12M:  radBand12_Click(this, EventArgs.Empty); break;
+                case Band.B10M:  radBand10_Click(this, EventArgs.Empty); break;
+                case Band.B6M:   radBand6_Click(this, EventArgs.Empty); break;
             }
         }
     }
