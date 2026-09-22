@@ -123,7 +123,7 @@ if($enumBlock -notmatch 'VFO_DISPLAY')
     $m=$rx.Match($mm)
     if(!$m.Success){throw 'P32 ITEM_GROUP anchor missing'}
     $i=$m.Groups['indent'].Value
-    $r=$i+'ITEM_GROUP,'+$nl+$i+'VFO_DISPLAY,'+$nl+$i+'BAND_BUTTONS,'+$nl+$i+'MODE_BUTTONS,'+$nl+$i+'TUNESTEP_BUTTONS'
+    $r=$i+'ITEM_GROUP,'+$nl+$i+'VFO_DISPLAY,'+$nl+$i+'FADE_COVER,'+$nl+$i+'BAND_BUTTONS,'+$nl+$i+'MODE_BUTTONS,'+$nl+$i+'TUNESTEP_BUTTONS'
     $mm=$mm.Substring(0,$m.Index)+$r+$mm.Substring($m.Index+$m.Length)
 }
 
@@ -181,6 +181,9 @@ if($mm -notmatch 'case clsMeterItem\.MeterItemType\.VFO_DISPLAY:')
                             case clsMeterItem.MeterItemType.VFO_DISPLAY:
                                 renderVfoDisplay(rect, mi, m);
                                 break;
+                            case clsMeterItem.MeterItemType.FADE_COVER:
+                                renderFadeCover(rect, mi, m);
+                                break;
                             case clsMeterItem.MeterItemType.BAND_BUTTONS:
                             case clsMeterItem.MeterItemType.MODE_BUTTONS:
                             case clsMeterItem.MeterItemType.TUNESTEP_BUTTONS:
@@ -230,7 +233,9 @@ namespace PowerSDR
             private PointF _p32MouseUpPoint;
             private PointF _p32MouseMovePoint;
             private bool _p32MouseEntered;
+            private bool _p32Visible = true;
 
+            public bool Visible { get { return _p32Visible; } set { _p32Visible = value; } }
             public virtual void MouseDown(MouseEventArgs e) { }
             public virtual void MouseUp(MouseEventArgs e) { }
             public virtual void MouseWheel(int number_of_moves) { }
@@ -254,6 +259,7 @@ namespace PowerSDR
 @@CLS_MODE@@
 @@CLS_STEP@@
 @@CLS_VFO@@
+@@CLS_FADE_COVER@@
 
         public partial class clsMeter
         {
@@ -289,6 +295,7 @@ namespace PowerSDR
             public bool QuickSplitEnabled { get { return _p32QuickSplit; } set { _p32QuickSplit=value; } }
             public int TuneStepIndex { get { return _p32TuneStep; } set { _p32TuneStep=value; } }
 
+@@GET_FADE_COVER@@
 @@GET_BAND_GROUP@@
 @@SET_BAND_PANEL@@
 @@ADD_BAND@@
@@ -350,13 +357,18 @@ namespace PowerSDR
         {
             internal IEnumerable<clsMeterItem> P32MeterItems()
             {
-                lock (_meterItemsLock) return _meterItems.Values.ToArray();
+                lock (_objMeterItemLock) return _meterItems.Values.ToArray();
             }
         }
 
         private partial class DXRenderer
         {
             private Dictionary<string, BitmapBrush> _bitmap_brushes = new Dictionary<string, BitmapBrush>();
+
+            private SizeF measureString(string sText, string sFontFamily, FontStyle style, float emSize, bool ignore_cache)
+            {
+                return measureString(sText, sFontFamily, style, emSize);
+            }
 
 @@GET_PARTS@@
 @@PLOT_TEXT@@
@@ -366,12 +378,14 @@ namespace PowerSDR
 @@DRAW_SAFE@@
 @@CONTRAST@@
 @@ADJUST_CONTRAST@@
+@@HIGHLIGHT_BOX@@
 @@DRAW_BAND@@
 @@DRAW_MODE@@
 @@DRAW_FILTER@@
 @@DRAW_STEP@@
 @@RENDER_VFO@@
 @@RENDER_BUTTON@@
+@@RENDER_FADE_COVER@@
         }
     }
 
@@ -407,6 +421,33 @@ namespace PowerSDR
             if(b>=Band.B120M && b<=Band.B11M) return System.Drawing.Color.Coral;
             if(b>=Band.VHF0 && b<=Band.VHF13) return System.Drawing.Color.Gold;
             return System.Drawing.Color.White;
+        }
+    }
+
+    public partial class Common
+    {
+        public static int GetLuminance(Color c)
+        {
+            int r = P32RGBtoLin(c.R);
+            int g = P32RGBtoLin(c.G);
+            int b = P32RGBtoLin(c.B);
+            return (r + r + b + g + g + g) / 6;
+        }
+        private static int P32RGBtoLin(int col)
+        {
+            float colorChannel = col / 255f;
+            if (colorChannel <= 0.04045f) return (int)((colorChannel / 12.92f) * 255f);
+            return (int)(Math.Pow(((colorChannel + 0.055f) / 1.055f), 2.4) * 255f);
+        }
+    }
+
+    internal static class P32StringExtensions
+    {
+        public static string Left(this string source, int length)
+        {
+            if (source == null) throw new ArgumentNullException("source");
+            if (length < 0) throw new ArgumentOutOfRangeException("length", "Length cannot be negative.");
+            return source.Length > length ? source.Substring(0, length) : source;
         }
     }
 
@@ -446,8 +487,10 @@ namespace PowerSDR
             set { CATVFOLockAB = value ? (CATVFOLockAB | 2) : (CATVFOLockAB & ~2); }
         }
 
+        public Action<int, Band> BandPreChangeHandlers { get { return delegate(int rx, Band band) { if(rx==1) P32SetRX1Band(band); else P32SetVFOBBand(band); }; } }
         public void P32SetRX1Band(Band band) { RX1Band=band; }
         public void P32SetVFOBBand(Band band) { RX2Band=band; }
+        public void SetupRX2Band(Band band) { P32SetVFOBBand(band); }
 
         public Band P32BandFromFrequency(double mhz)
         {
@@ -494,6 +537,8 @@ $map=[ordered]@{
  '@@CLS_MODE@@'=$clsMode
  '@@CLS_STEP@@'=$clsStep
  '@@CLS_VFO@@'=$clsVfo
+ '@@CLS_FADE_COVER@@'=$clsFadeCover
+ '@@GET_FADE_COVER@@'=$getFadeCover
  '@@GET_BAND_GROUP@@'=$getBandGroup
  '@@SET_BAND_PANEL@@'=$setBandPanel
  '@@ADD_BAND@@'=$addBand
@@ -508,15 +553,18 @@ $map=[ordered]@{
  '@@DRAW_SAFE@@'=$drawSafe
  '@@CONTRAST@@'=$contrast
  '@@ADJUST_CONTRAST@@'=$adjustContrast
+ '@@HIGHLIGHT_BOX@@'=$highlightBox
  '@@DRAW_BAND@@'=$drawBand
  '@@DRAW_MODE@@'=$drawMode
  '@@DRAW_FILTER@@'=$drawFilter
  '@@DRAW_STEP@@'=$drawStep
  '@@RENDER_VFO@@'=$renderVfo
  '@@RENDER_BUTTON@@'=$renderButton
+ '@@RENDER_FADE_COVER@@'=$renderFadeCover
 }
 $source=$template
 foreach($kv in $map.GetEnumerator()){$source=$source.Replace($kv.Key,[string]$kv.Value)}
+$source=$source.Replace('BandStackManager.','P32ThetisBandStack.')
 [IO.File]::WriteAllText($dstExact,$source,$utf8)
 
 # Add exact source to project.
