@@ -1,0 +1,42 @@
+name: Audit P30 TX and Dark Meter Assets
+
+on:
+  push:
+    branches:
+      - audit/p30-tx-dark
+
+jobs:
+  audit:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout harness
+        uses: actions/checkout@v4
+
+      - name: Clone pinned PowerSDR and inspect TX meter paths
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          git clone --no-tags https://github.com/ke9ns/PowerSDR-KE9NS-v2.8.0.git src
+          cd src
+          git checkout --detach d558979570c4c2e4572b63ac218d3d4477926cb8
+          $p='Console/console.cs'
+          $lines=Get-Content $p
+          foreach($pat in @('pa_fwd_power','pa_rev_power','FWCPAPower','FWCSWR','CalculateTXMeter','CurrentMeterTXMode','ReadPAADC'))
+          {
+            Write-Host "===== $pat ====="
+            Select-String -Path $p -Pattern $pat -Context 8,18 | ForEach-Object {
+              $_.Context.PreContext
+              $_.Line
+              $_.Context.PostContext
+              Write-Host '---'
+            }
+          }
+
+      - name: Inspect official DefaultMeters ZIP
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $sha='601018a9486359b3bdb661063f4687b4c75ad917'
+          Invoke-WebRequest -UseBasicParsing -Uri "https://raw.githubusercontent.com/ramdor/ThetisSkins/$sha/DefaultMeters.zip" -OutFile meters.zip
+          Expand-Archive meters.zip meters -Force
+          Get-ChildItem meters -Recurse -File | Sort-Object Name | ForEach-Object { Write-Host $_.Name }
