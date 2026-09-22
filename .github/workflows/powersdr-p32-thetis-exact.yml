@@ -37,6 +37,21 @@ jobs:
           $path = Split-Path $candle.Source -Parent
           "WIXBIN=$path" | Out-File -FilePath $env:GITHUB_ENV -Append
 
+      - name: Parse-check P32 scripts
+        shell: pwsh
+        run: |
+          foreach($p in @(
+            './tools/powersdr/Apply-PowerSDR-ThetisMetersDirect-P32.ps1',
+            './tools/powersdr/Build-PowerSDR-MSI-P32-THETIS-EXACT.ps1'
+          )) {
+            $tokens=$null; $errors=$null
+            [System.Management.Automation.Language.Parser]::ParseFile((Resolve-Path $p), [ref]$tokens, [ref]$errors) | Out-Null
+            if($errors.Count -gt 0) {
+              $errors | ForEach-Object { Write-Host ("PARSE_ERROR " + $_.Extent.StartLineNumber + ":" + $_.Extent.StartColumnNumber + " " + $_.Message) }
+              throw "PowerShell parse failed: $p"
+            }
+          }
+
       - name: Build P32 exact Thetis MSI
         shell: pwsh
         run: |
