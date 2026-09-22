@@ -440,9 +440,11 @@ namespace PowerSDR
 
         public void SetupRX2Band(Band band, bool vfoBOnly)
         {
-            // RX2 is intentionally not exposed in this target. In the exact Thetis
-            // RX2-disabled path this operation changes the VFO-B frequency only.
-            VFOBFreq=BandToFreq(band);
+            // Adapter only: use the native KE9NS VFO-B band selector and its native
+            // band-stack restore path. No synthetic centre frequencies are introduced.
+            RX2BandButton = true;
+            comboRX2Band.Text = BandToString(band);
+            comboRX2Band_SelectedIndexChanged(this, EventArgs.Empty);
         }
 
         public void PopupBandstack(int rx, Band band, bool topMost)
@@ -545,14 +547,15 @@ $mm=$mm.Replace($oldEvent,$newEvents)
 [IO.File]::WriteAllText($mmPath,$mm,$utf8)
 
 # Keep VFO/BAND/MODE/STEP state current using the existing P25 PowerSDR polling bridge.
-$bridge=[IO.File]::ReadAllText($bridgePath)
-$refreshAnchor='        internal void P25RefreshPowerSDR()'+$nl+'        {'
-if(!$bridge.Contains($refreshAnchor)){throw 'P32 P25RefreshPowerSDR anchor missing'}
-if(!$bridge.Contains('MeterManager.P32RefreshNativeState();'))
+# Keep VFO/BAND/MODE/STEP state current from the already-existing MeterManager worker.
+# P25 has no P25RefreshPowerSDR method; adding a second timer would be an invented mechanism.
+$updateLoopRx=[regex]::new('(?m)^(\s*while \(_meterThreadRunning\)\s*\r?\n\s*\{)')
+if($updateLoopRx.Matches($mm).Count -ne 1){throw 'P32 MeterManager UpdateMeters loop anchor missing or ambiguous'}
+if(!$mm.Contains('P32RefreshNativeState();'))
 {
-    $bridge=$bridge.Replace($refreshAnchor,$refreshAnchor+$nl+'            MeterManager.P32RefreshNativeState();')
+    $mm=$updateLoopRx.Replace($mm,'$1'+$nl+'                P32RefreshNativeState();',1)
 }
-[IO.File]::WriteAllText($bridgePath,$bridge,$utf8)
+[IO.File]::WriteAllText($mmPath,$mm,$utf8)
 
 # Add generated exact source and API adapter.
 $proj=[IO.File]::ReadAllText($projPath)
