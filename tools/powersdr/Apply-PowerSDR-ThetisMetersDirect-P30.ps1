@@ -80,7 +80,7 @@ Write-Host ('P30_SKIN_LIST='+($skinBaseNames -join ','))
 
 # These are the exact basenames selected by MeterManager.renderImage when
 # DarkMode is enabled on the primary ANANMM/CROSS image items.
-foreach($required in @('ananMM-dark','ananMM-bg-tx-dark','cross-needle-dark'))
+foreach($required in @('ananMM-dark','cross-needle-dark'))
 {
     if(-not ($skinBaseNames -contains $required))
     {
@@ -91,6 +91,17 @@ foreach($required in @('ananMM-dark','ananMM-bg-tx-dark','cross-needle-dark'))
 # Tell the unmodified Thetis scale builder that FLEX-5000 is a 100 W PA before
 # restored/new PWR/CROSS/ANAN meter groups are constructed.
 $mm=[IO.File]::ReadAllText($meterManagerPath)
+
+# P30 compatibility adaptation: the official DefaultMeters pack has dark primary
+# artwork for ANANMM and CROSS, but no ananMM-bg-tx-dark. The pinned 2023
+# renderer blindly appends "-dark" to every Primary clsImage. Fall back to the
+# corresponding normal image only when the requested dark basename is absent.
+$renderOld='                string sImage = img.ImageName + (img.DarkMode ? "-dark" : "");'
+$renderNew='                string sImage = img.ImageName + (img.DarkMode ? "-dark" : "");'+$nl+
+           '                if (img.DarkMode && !MeterManager.ContainsBitmap(sImage)) sImage = img.ImageName;'
+if(!$mm.Contains($renderOld)){throw 'P30 renderImage dark fallback anchor missing'}
+$mm=$mm.Replace($renderOld,$renderNew)
+
 $powerAnchor='        public static int GetMeterTXRXType(MeterType meter)'
 if(!$mm.Contains($powerAnchor)){throw 'P30 MeterManager power-rating anchor missing'}
 if(!$mm.Contains('internal static void P30ConfigureFlex5000()'))
@@ -230,5 +241,5 @@ Write-Host 'P30_TX_RF=FLEX5000_FWC_PA_ADC'
 Write-Host 'P30_TX_SUPPORTED=MIC,MIC_PK,EQ,EQ_PK,LEVELER,LEVELER_PK,LVL_G,ALC,ALC_PK,ALC_G,COMP,COMP_PK,PWR,REVERSE_PWR,SWR,VOLTS'
 Write-Host 'P30_TX_UNAVAILABLE_NATIVE=CFC,CFC_GAIN,ALC_GROUP,AMPS'
 Write-Host 'P30_POWER_SCALE=FLEX5000_100W'
-Write-Host 'P30_DARK_SKINS=OFFICIAL_DEFAULT_METERS_ALL_IMAGES'
+Write-Host 'P30_DARK_SKINS=OFFICIAL_DEFAULT_METERS_ALL_IMAGES'`nWrite-Host 'P30_DARK_MISSING_VARIANT_FALLBACK=NORMAL_IMAGE_ONLY_IF_OFFICIAL_DARK_ABSENT'
 Write-Host "P30_THETIS_SKINS_SHA=$ThetisSkinsSha"
