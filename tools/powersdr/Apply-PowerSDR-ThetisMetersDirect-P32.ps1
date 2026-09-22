@@ -424,7 +424,7 @@ namespace PowerSDR
 
     public partial class Common
     {
-        public static int GetLuminance(Color c)
+        public static int GetLuminance(System.Drawing.Color c)
         {
             int r = rGBtoLin(c.R);
             int g = rGBtoLin(c.G);
