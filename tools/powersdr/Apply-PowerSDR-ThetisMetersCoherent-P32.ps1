@@ -327,13 +327,13 @@ namespace PowerSDR
     {
         internal bool P32VFOALock
         {
-            get { return (CATVFOLockAB & 1) != 0; }
-            set { CATVFOLockAB = value ? (CATVFOLockAB | 1) : (CATVFOLockAB & ~1); }
+            get { return VFOLock; }
+            set { VFOLock = value; }
         }
         internal bool P32VFOBLock
         {
-            get { return (CATVFOLockAB & 2) != 0; }
-            set { CATVFOLockAB = value ? (CATVFOLockAB | 2) : (CATVFOLockAB & ~2); }
+            get { return VFOLockB; }
+            set { VFOLockB = value; }
         }
 
         internal void P32SetRX1Band(Band band) { SetCATBand(band); }
