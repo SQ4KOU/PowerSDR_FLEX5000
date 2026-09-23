@@ -292,8 +292,6 @@ namespace PowerSDR
                 p39LegacyUiLoading = false;
             }
 
-            if (console != null)
-                console.P39InitLegacyItemsController();
         }
 
         private CheckBox P39MakeCheckBox(string text, int x, int y)
