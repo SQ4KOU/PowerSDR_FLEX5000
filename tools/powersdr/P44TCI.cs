@@ -432,6 +432,7 @@ namespace PowerSDR
                     added = true;
                 }
 
+                P46TCIStreaming.RegisterClient(client);
                 P44TCILog.Write("CLIENT CONNECT " + ClientEndpoint(client));
                 SendInitial(client);
 
@@ -450,6 +451,11 @@ namespace PowerSDR
                         client.SendFrame(10, frame.Payload);
                         continue;
                     }
+                    if (frame.Opcode == 2)
+                    {
+                        P46TCIStreaming.HandleBinary(client, frame.Payload);
+                        continue;
+                    }
                     if (frame.Opcode != 1) continue;
 
                     string text = Encoding.UTF8.GetString(frame.Payload ?? new byte[0]);
@@ -466,6 +472,7 @@ namespace PowerSDR
                 {
                     lock (clientsGate) clients.Remove(client);
                 }
+                P46TCIStreaming.UnregisterClient(client);
                 P44TCILog.Write("CLIENT DISCONNECT " + ClientEndpoint(client));
                 client.Close();
             }
@@ -653,6 +660,7 @@ namespace PowerSDR
             client.SendText("modulations_list:AM,SAM,DSB,LSB,USB,NFM,FM,DIGL,DIGU,CWL,CWU" + cwModes + ";");
             client.SendText("iq_samplerate:" + s.SampleRate.ToString(CultureInfo.InvariantCulture) + ";");
             client.SendText("audio_samplerate:48000;");
+            P46TCIStreaming.SendInitial(client);
 
             if (P44TCISettings.SendInitialStateOnConnect)
             {
@@ -750,7 +758,11 @@ namespace PowerSDR
                 string argText = colon >= 0 ? command.Substring(colon + 1).Trim() : String.Empty;
                 string[] args = argText.Length == 0 ? new string[0] : argText.Split(',');
 
-                try { HandleCommand(client, name, args); }
+                try
+                {
+                    if (!P46TCIStreaming.HandleCommand(client, name, args))
+                        HandleCommand(client, name, args);
+                }
                 catch (Exception ex) { P44TCILog.Write("CMD " + name + " ERROR " + ex.Message); }
             }
         }
