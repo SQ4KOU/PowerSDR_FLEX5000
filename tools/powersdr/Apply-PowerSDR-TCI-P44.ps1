@@ -62,8 +62,17 @@ $verify=[IO.File]::ReadAllText($dst)
 foreach($token in @(
     'TcpListener',
     'Sec-WebSocket-Accept',
-    'protocol:ExpertSDR3,2.0;',
-    'device:FLEX-5000;',
+    'EmulateExpertSDR3Protocol',
+    'EmulateSunSDR2Pro',
+    'string protocol =',
+    'string device =',
+    'SendInitialStateOnConnect',
+    'CWLUbecomesCW',
+    'CWBecomesCWUAbove10MHz',
+    'BindAddress',
+    'Rate Limit (ms)',
+    'TCIServer Running',
+    'Show Log',
     'trx_count:1;',
     'channels_count:2;',
     'vfo:0,0,',
@@ -103,3 +112,6 @@ Write-Host 'P44_TCI_BIND_DEFAULT=0.0.0.0'
 Write-Host 'P44_TCI_RX=RX1_VFOA_VFOB'
 Write-Host 'P44_TCI_RX2=NOT_EXPOSED'
 Write-Host 'P44_TCI_AUDIO_IQ=DEFERRED'
+Write-Host 'P45_TCI_CONFIG=THETIS_STYLE_EXTENDED'
+Write-Host 'P45_TCI_RX2_CONTROLS=VISIBLE_DISABLED'
+Write-Host 'P45_TCI_SPOTS=VISIBLE_DISABLED_UNTIL_NATIVE_RENDERER'
