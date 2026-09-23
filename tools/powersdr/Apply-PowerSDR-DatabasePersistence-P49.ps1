@@ -63,11 +63,375 @@ function Replace-ExactOnce([string]$Text,[string]$Old,[string]$New,[string]$Labe
     return $Text.Substring(0,$first)+$New+$Text.Substring($first+$Old.Length)
 }
 
+
+$newTryLoadDatabaseFile=@'
+        private static bool TryLoadDatabaseFile(string path, out DataSet loaded, out string error)
+        {
+            loaded = null;
+            error = "";
+            last_logical_repair_summary = "";
+
+            if (String.IsNullOrEmpty(path) || !File.Exists(path))
+            {
+                error = "File does not exist: " + path;
+                return false;
+            }
+
+            try
+            {
+                DataSet candidate = new DataSet("Data");
+                using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read))
+                {
+                    candidate.ReadXml(stream, XmlReadMode.ReadSchema);
+                }
+
+                string repairs;
+                string fatal;
+                if (!P49ValidateLogicalDatabase(candidate, out repairs, out fatal))
+                    throw new InvalidDataException("Logical database validation failed: " + fatal);
+
+                last_logical_repair_summary = repairs;
+                loaded = candidate;
+                return true;
+            }
+            catch (Exception ex)
+            {
+                error = path + ": " + ex.Message;
+                return false;
+            }
+        }
+'@
+$db = Replace-CSharpMethod $db '        private static bool TryLoadDatabaseFile(string path, out DataSet loaded, out string error)' $newTryLoadDatabaseFile 'P49 logical TryLoadDatabaseFile'
+
+$newDbInit=@'
+        public static bool Init(Model model)
+        {
+            if (file_name.Contains("database_F") || file_name.Contains("database_D"))
+            {
+                file_name1 = file_name;
+                file_name = file_name.Replace("database_", "database-RevQ_");
+            }
+
+            bool database_exists = false;
+            bool loaded_from_legacy = false;
+            ds = new DataSet("Data");
+
+            if (File.Exists(file_name))
+            {
+                DataSet loaded;
+                string loadError;
+                if (TryLoadDatabaseFile(file_name, out loaded, out loadError))
+                {
+                    string logicalRepairs = last_logical_repair_summary;
+                    ds = loaded;
+                    database_exists = true;
+
+                    if (!String.IsNullOrEmpty(logicalRepairs))
+                    {
+                        PreserveCorruptDatabase(file_name);
+                        MessageBox.Show(
+                            "Logical database damage was detected even though the XML file was readable.\n\n" +
+                            "PowerSDR repaired the database in memory and preserved the pre-repair file for diagnosis.\n\n" +
+                            logicalRepairs,
+                            "Database Logical Repair",
+                            MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    }
+                }
+                else
+                {
+                    PreserveCorruptDatabase(file_name);
+
+                    DataSet recovered;
+                    string recoverySource;
+                    string recoveryErrors;
+                    if (TryLoadFirstValidBackup(out recovered, out recoverySource, out recoveryErrors))
+                    {
+                        ds = recovered;
+                        database_exists = true;
+                        MessageBox.Show(
+                            "The active database failed structural/logical validation and has been preserved for diagnosis.\n\n" +
+                            "PowerSDR recovered the most recent valid backup:\n" + recoverySource +
+                            (String.IsNullOrEmpty(last_logical_repair_summary) ? "" :
+                                "\n\nThe backup also required safe key/value repair:\n" + last_logical_repair_summary),
+                            "Database Recovered",
+                            MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    }
+                    else
+                    {
+                        MessageBox.Show(
+                            "The active database is unusable and no structurally/logically valid backup could be loaded.\n\n" +
+                            "Primary error:\n" + loadError +
+                            (recoveryErrors.Length > 0 ? "\n\nBackup errors:\n" + recoveryErrors : "") +
+                            "\n\nThe unreadable database was preserved. A new default database will be created.",
+                            "ERROR: Database Recovery Failed",
+                            MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        ds = new DataSet("Data");
+                    }
+                }
+            }
+            else if (!String.IsNullOrEmpty(file_name1) && File.Exists(file_name1))
+            {
+                DataSet legacy;
+                string legacyError;
+                if (TryLoadDatabaseFile(file_name1, out legacy, out legacyError))
+                {
+                    ds = legacy;
+                    database_exists = true;
+                    loaded_from_legacy = true;
+                }
+                else
+                {
+                    PreserveCorruptDatabase(file_name1);
+                    MessageBox.Show(
+                        "The legacy PowerSDR database failed structural/logical validation.\n\n" + legacyError +
+                        "\n\nThe original file was left unchanged and a new default RevQ database will be created.",
+                        "ERROR: Legacy Database Import Failed",
+                        MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            }
+
+            if (loaded_from_legacy)
+                AddBandStackSWL();
+
+            VerifyTables(model);
+            CheckBandTextValid();
+
+            if (database_exists)
+            {
+                try
+                {
+                    lock (db_io_lock)
+                    {
+                        CreateValidatedSessionBackup();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(
+                        "A database backup operation failed.\n\n" + ex.Message +
+                        "\n\nThe active database remains in use and existing valid backups are left intact.",
+                        "ERROR: Database Backup Creation Error",
+                        MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            }
+
+            return database_exists;
+        }
+'@
+$db = Replace-CSharpMethod $db '        public static bool Init(Model model)' $newDbInit 'P49 logical Init'
+
+$newDbUpdate=@'
+        public static void Update()
+        {
+            if (ds == null || String.IsNullOrEmpty(file_name)) return;
+
+            try
+            {
+                lock (db_io_lock)
+                {
+                    string repairs;
+                    string fatal;
+                    if (!P49ValidateLogicalDatabase(ds, out repairs, out fatal))
+                        throw new InvalidDataException("Logical database validation failed before write: " + fatal);
+
+                    if (!String.IsNullOrEmpty(repairs))
+                        Debug.WriteLine("P49 repaired logical database before write: " + repairs);
+
+                    AtomicWriteDataSet(ds, file_name);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(
+                    "A database write operation was blocked because the database could not be safely validated/written.\n\n" +
+                    "The previous database file was not intentionally deleted.\n\n" +
+                    ex.Message,
+                    "ERROR: Database Write Error",
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+'@
+$db = Replace-CSharpMethod $db '        public static void Update()' $newDbUpdate 'P49 logical Update'
+
 # ---------------------------------------------------------------------------
 # 1. Database API: one lock for DataSet mutation, reads, disk snapshots and exit.
 #    P03 already provides atomic disk writes; P49 removes races before serialization.
 # ---------------------------------------------------------------------------
 $db = Normalize ([IO.File]::ReadAllText($dbPath))
+
+# P49 logical-integrity layer. The P03 reliability patch validated only that
+# XML could be parsed and contained tables. That misses syntactically-valid
+# logical damage such as duplicate Key rows, broken key/value table schemas,
+# and malformed core tables.
+$dbLogicalAnchor='        private static bool TryLoadDatabaseFile(string path, out DataSet loaded, out string error)'
+if(!$db.Contains($dbLogicalAnchor)){ throw 'P49 logical DB loader anchor missing' }
+
+$dbLogicalHelpers=@'
+        private static string last_logical_repair_summary = "";
+
+        private static bool P49HasColumns(DataTable table, params string[] names)
+        {
+            if (table == null) return false;
+            foreach (string name in names)
+                if (!table.Columns.Contains(name)) return false;
+            return true;
+        }
+
+        private static bool P49IsKnownKeyValueTableName(string name)
+        {
+            if (String.IsNullOrEmpty(name)) return false;
+            if (name == "State" ||
+                name == "Options" ||
+                name == "SQ4KOU_TCI" ||
+                name == "SQ4KOU_LegacyItems" ||
+                name == "SQ4KOU_ThetisMeters")
+                return true;
+
+            if (name.StartsWith("MeterDisplay_", StringComparison.Ordinal))
+                return true;
+
+            return false;
+        }
+
+        private static bool P49ValidateLogicalDatabase(
+            DataSet candidate,
+            out string repairSummary,
+            out string fatalError)
+        {
+            repairSummary = "";
+            fatalError = "";
+
+            if (candidate == null)
+            {
+                fatalError = "Database DataSet is null.";
+                return false;
+            }
+
+            if (candidate.Tables.Count == 0)
+            {
+                fatalError = "Database contains no tables.";
+                return false;
+            }
+
+            // Core tables may be absent in an older database and VerifyTables()
+            // will create them. If present, however, their structural schema must
+            // be usable or the database is logically corrupt.
+            DataTable t;
+            if (candidate.Tables.Contains("BandText"))
+            {
+                t = candidate.Tables["BandText"];
+                if (!P49HasColumns(t, "Low", "High", "Name", "TX"))
+                {
+                    fatalError = "BandText table schema is incomplete.";
+                    return false;
+                }
+            }
+
+            if (candidate.Tables.Contains("BandStack"))
+            {
+                t = candidate.Tables["BandStack"];
+                if (!P49HasColumns(t, "BandName", "Mode", "Filter", "Freq"))
+                {
+                    fatalError = "BandStack table schema is incomplete.";
+                    return false;
+                }
+            }
+
+            if (candidate.Tables.Contains("TXProfile"))
+            {
+                t = candidate.Tables["TXProfile"];
+                if (!t.Columns.Contains("Name"))
+                {
+                    fatalError = "TXProfile table has no Name column.";
+                    return false;
+                }
+            }
+
+            if (candidate.Tables.Contains("TXProfileDef"))
+            {
+                t = candidate.Tables["TXProfileDef"];
+                if (!t.Columns.Contains("Name"))
+                {
+                    fatalError = "TXProfileDef table has no Name column.";
+                    return false;
+                }
+            }
+
+            int duplicateRowsRemoved = 0;
+            int emptyKeysRemoved = 0;
+            int keyValueTablesChecked = 0;
+
+            foreach (DataTable table in candidate.Tables)
+            {
+                bool hasKey = table.Columns.Contains("Key");
+                bool hasValue = table.Columns.Contains("Value");
+                bool knownKeyValue = P49IsKnownKeyValueTableName(table.TableName);
+
+                if (knownKeyValue && (!hasKey || !hasValue))
+                {
+                    fatalError = "Key/value table '" + table.TableName +
+                        "' has a damaged schema (Key/Value column missing).";
+                    return false;
+                }
+
+                if (!hasKey || !hasValue)
+                    continue;
+
+                keyValueTablesChecked++;
+
+                System.Collections.Generic.Dictionary<string, DataRow> lastByKey =
+                    new System.Collections.Generic.Dictionary<string, DataRow>(
+                        System.StringComparer.Create(table.Locale, !table.CaseSensitive));
+
+                System.Collections.Generic.List<DataRow> remove =
+                    new System.Collections.Generic.List<DataRow>();
+
+                foreach (DataRow row in table.Rows)
+                {
+                    if (row.RowState == DataRowState.Deleted ||
+                        row.RowState == DataRowState.Detached)
+                        continue;
+
+                    if (row.IsNull("Key") || String.IsNullOrEmpty(row["Key"].ToString()))
+                    {
+                        remove.Add(row);
+                        emptyKeysRemoved++;
+                        continue;
+                    }
+
+                    string key = row["Key"].ToString();
+                    DataRow previous;
+                    if (lastByKey.TryGetValue(key, out previous))
+                    {
+                        // Keep the most recently appended row. This matches the
+                        // only deterministic ordering available in legacy XML.
+                        remove.Add(previous);
+                        duplicateRowsRemoved++;
+                    }
+                    lastByKey[key] = row;
+                }
+
+                foreach (DataRow row in remove)
+                {
+                    if (row.RowState != DataRowState.Detached &&
+                        row.RowState != DataRowState.Deleted)
+                        table.Rows.Remove(row);
+                }
+            }
+
+            if (duplicateRowsRemoved > 0 || emptyKeysRemoved > 0)
+            {
+                repairSummary =
+                    "key/value tables checked=" + keyValueTablesChecked.ToString() +
+                    ", duplicate rows removed=" + duplicateRowsRemoved.ToString() +
+                    ", empty-key rows removed=" + emptyKeysRemoved.ToString();
+            }
+
+            return true;
+        }
+
+'@
+$db=$db.Replace($dbLogicalAnchor,$dbLogicalHelpers+$dbLogicalAnchor)
 
 $newSaveVars = @'
         public static void SaveVars(string tableName, ref ArrayList list)
@@ -85,27 +449,29 @@ $newSaveVars = @'
                 System.Collections.Generic.Dictionary<string, DataRow> rowsByKey =
                     new System.Collections.Generic.Dictionary<string, DataRow>(keyComparer);
 
-                System.Collections.Generic.HashSet<string> duplicateKeys =
-                    new System.Collections.Generic.HashSet<string>(keyComparer);
+                System.Collections.Generic.List<DataRow> duplicateRows =
+                    new System.Collections.Generic.List<DataRow>();
 
                 foreach (DataRow row in table.Rows)
                 {
                     if (row.RowState == DataRowState.Deleted ||
                         row.RowState == DataRowState.Detached ||
-                        row.IsNull(0))
+                        row.IsNull(0) ||
+                        String.IsNullOrEmpty(row[0].ToString()))
                         continue;
 
                     string key = row[0].ToString();
                     DataRow existing;
                     if (rowsByKey.TryGetValue(key, out existing))
-                    {
-                        rowsByKey.Remove(key);
-                        duplicateKeys.Add(key);
-                    }
-                    else if (!duplicateKeys.Contains(key))
-                    {
-                        rowsByKey.Add(key, row);
-                    }
+                        duplicateRows.Add(existing); // keep the newest row
+                    rowsByKey[key] = row;
+                }
+
+                foreach (DataRow duplicate in duplicateRows)
+                {
+                    if (duplicate.RowState != DataRowState.Deleted &&
+                        duplicate.RowState != DataRowState.Detached)
+                        table.Rows.Remove(duplicate);
                 }
 
                 foreach (string s in list)
@@ -116,8 +482,6 @@ $newSaveVars = @'
 
                     string key = s.Substring(0, separator);
                     string value = s.Substring(separator + 1);
-
-                    if (duplicateKeys.Contains(key)) continue;
 
                     DataRow row;
                     if (rowsByKey.TryGetValue(key, out row))
@@ -801,7 +1165,7 @@ $waveRestoreNew=@'
                 Common.RestoreForm(this, "WaveOptions", false); // one-time migration fallback
 '@
 if(!$wave.Contains($waveRestore)){ throw 'P49 wave restore collision anchor missing' }
-$wave=$wave.Replace($waveRestore,Normalize $waveRestoreNew)
+$wave=$wave.Replace($waveRestore,(Normalize $waveRestoreNew))
 if(!$wave.Contains('Common.SaveForm(this, "WaveOptions");')){ throw 'P49 wave save collision anchor missing' }
 $wave=$wave.Replace('Common.SaveForm(this, "WaveOptions");','Common.SaveForm(this, "WaveForm");')
 [IO.File]::WriteAllText($wavePath,$wave.Replace($lf,$crlf),$utf8)
@@ -816,7 +1180,7 @@ $spotRestoreNew=@'
                 Common.RestoreForm(this, "SpotOptions", false); // one-time migration fallback
 '@
 if(!$spotDecoder.Contains($spotRestore)){ throw 'P49 spot decoder restore collision anchor missing' }
-$spotDecoder=$spotDecoder.Replace($spotRestore,Normalize $spotRestoreNew)
+$spotDecoder=$spotDecoder.Replace($spotRestore,(Normalize $spotRestoreNew))
 if(!$spotDecoder.Contains('Common.SaveForm(this, "SpotOptions");')){ throw 'P49 spot decoder save collision anchor missing' }
 $spotDecoder=$spotDecoder.Replace('Common.SaveForm(this, "SpotOptions");','Common.SaveForm(this, "SpotDecoder");')
 [IO.File]::WriteAllText($spotDecoderPath,$spotDecoder.Replace($lf,$crlf),$utf8)
@@ -847,7 +1211,7 @@ $filterNew=@'
             this.FormClosing += new FormClosingEventHandler(FilterForm_FormClosing);
 '@
 if(!$filter.Contains($filterAnchor)){ throw 'P49 FilterForm restore anchor missing' }
-$filter=$filter.Replace($filterAnchor,Normalize $filterNew)
+$filter=$filter.Replace($filterAnchor,(Normalize $filterNew))
 $classEnd=$filter.LastIndexOf($lf+'    }'+$lf+'}',[StringComparison]::Ordinal)
 if($classEnd -lt 0){ throw 'P49 FilterForm class end anchor missing' }
 $filterMethod=@'
@@ -870,7 +1234,7 @@ $legacyNew=@'
             DB.Update();
 '@
 if(!$legacy.Contains($legacyOld)){ throw 'P49 LegacyItems save anchor missing' }
-$legacy=$legacy.Replace($legacyOld,Normalize $legacyNew)
+$legacy=$legacy.Replace($legacyOld,(Normalize $legacyNew))
 [IO.File]::WriteAllText($legacyPath,$legacy.Replace($lf,$crlf),$utf8)
 
 $tci=Normalize ([IO.File]::ReadAllText($tciPath))
@@ -880,7 +1244,7 @@ $tciNew=@'
             DB.Update();
 '@
 if(!$tci.Contains($tciOld)){ throw 'P49 TCI save anchor missing' }
-$tci=$tci.Replace($tciOld,Normalize $tciNew)
+$tci=$tci.Replace($tciOld,(Normalize $tciNew))
 [IO.File]::WriteAllText($tciPath,$tci.Replace($lf,$crlf),$utf8)
 
 # ---------------------------------------------------------------------------
@@ -904,7 +1268,10 @@ foreach($token in @(
     'public static ArrayList GetVars(string tableName)',
     'public static void ReplaceVars(string tableName, ref ArrayList list)',
     'public static bool ImportDatabase(string filename)',
-    'public static void Exit()'
+    'public static void Exit()',
+    'P49ValidateLogicalDatabase',
+    'last_logical_repair_summary',
+    'Logical database validation failed before write'
 )){
     if(!$verifyDb.Contains($token)){ throw "P49 DB gate missing: $token" }
 }
@@ -952,6 +1319,10 @@ if(!$verifyTCI.Contains('DB.ReplaceVars("SQ4KOU_TCI", ref a);') -or !$verifyTCI.
 Write-Host 'P49_DATABASE_PERSISTENCE=FULL_AUDIT_HARDENED'
 Write-Host 'P49_DB_DATASET_ACCESS=SYNCHRONIZED_SAVE_GET_REPLACE_IMPORT_EXIT'
 Write-Host 'P49_DB_DISK_WRITE=P03_ATOMIC_WRITE_THROUGH_RETAINED'
+Write-Host 'P49_DB_LOGICAL_VALIDATION=CORE_SCHEMA_PLUS_KEYVALUE_INTEGRITY'
+Write-Host 'P49_DB_DUPLICATE_KEYS=AUTO_DEDUPE_KEEP_LAST'
+Write-Host 'P49_DB_INVALID_XML_OR_SCHEMA=BACKUP_RECOVERY'
+Write-Host 'P49_DB_READABLE_BUT_LOGICALLY_DAMAGED=DETECT_REPAIR_PRESERVE_ORIGINAL'
 Write-Host 'P49_SETUP_SAVE=UI_THREAD_SYNCHRONOUS'
 Write-Host 'P49_SETUP_OPTIONS=TS_PLUS_STANDARD_WINFORMS_REPLACE_ALL'
 Write-Host 'P49_SETUP_OK_APPLY_X=DURABLE_DB_UPDATE'
