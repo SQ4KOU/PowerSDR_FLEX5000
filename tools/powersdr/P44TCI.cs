@@ -1582,7 +1582,7 @@ namespace PowerSDR
         private void P44TCIDefaultsClick(object sender, EventArgs e)
         {
             p44TCIBindSpec.Text = "0.0.0.0:50001";
-            P44TCIRate.Value = 100;
+            p44TCIRate.Value = 100;
             P44TCIBindLeave(sender, EventArgs.Empty);
         }
 
