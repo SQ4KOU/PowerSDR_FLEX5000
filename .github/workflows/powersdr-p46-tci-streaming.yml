@@ -37,7 +37,7 @@ jobs:
           $path = Split-Path $candle.Source -Parent
           "WIXBIN=$path" | Out-File -FilePath $env:GITHUB_ENV -Append
 
-      - name: Parse-check P32 scripts
+      - name: Parse-check P46 scripts
         shell: pwsh
         run: |
           foreach($p in @(
@@ -58,7 +58,7 @@ jobs:
       - name: Build P46 TCI streaming MSI
         shell: pwsh
         run: |
-          ./tools/powersdr/Build-PowerSDR-MSI-P32-THETIS-EXACT.ps1 -WixBin "$env:WIXBIN"
+          ./tools/powersdr/Build-PowerSDR-MSI-P46-TCI-STREAMING.ps1 -WixBin "$env:WIXBIN"
 
       - name: Verify P46 MSI
         shell: pwsh
