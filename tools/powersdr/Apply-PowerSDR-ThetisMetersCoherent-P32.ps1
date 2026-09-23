@@ -272,8 +272,9 @@ $adapter=@'
                     meter.BandVfoASub = _console.RX1Band;
                     meter.FilterVfoA = _console.RX1Filter;
                     meter.FilterVfoB = _console.RX1Filter;
-                    meter.FilterVfoAName = _console.RX1Filter.ToString();
-                    meter.FilterVfoBName = _console.RX1Filter.ToString();
+                    string filterName = _console.P32RX1FilterName;
+                    meter.FilterVfoAName = filterName;
+                    meter.FilterVfoBName = filterName;
                     meter.VFOALock = _console.P32VFOALock;
                     meter.VFOBLock = _console.P32VFOBLock;
                     meter.VFOSync = _console.VFOSync;
@@ -334,6 +335,29 @@ namespace PowerSDR
         {
             get { return VFOLockB; }
             set { VFOLockB = value; }
+        }
+
+        internal string P32RX1FilterName
+        {
+            get
+            {
+                try
+                {
+                    if (RX1DSPMode == DSPMode.FIRST || RX1DSPMode == DSPMode.LAST ||
+                        RX1Filter == Filter.FIRST || RX1Filter == Filter.LAST)
+                        return String.Empty;
+
+                    FilterPreset preset = rx1_filters[(int)RX1DSPMode];
+                    if (preset == null) return RX1Filter.ToString();
+
+                    string name = preset.GetName(RX1Filter);
+                    return String.IsNullOrEmpty(name) ? RX1Filter.ToString() : name;
+                }
+                catch
+                {
+                    return RX1Filter.ToString();
+                }
+            }
         }
 
         internal void P32SetRX1Band(Band band) { SetCATBand(band); }
