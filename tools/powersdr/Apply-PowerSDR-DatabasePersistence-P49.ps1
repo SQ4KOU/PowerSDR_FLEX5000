@@ -64,6 +64,186 @@ function Replace-ExactOnce([string]$Text,[string]$Old,[string]$New,[string]$Labe
 }
 
 
+# ---------------------------------------------------------------------------
+# 1. Database API: one lock for DataSet mutation, reads, disk snapshots and exit.
+#    P03 already provides atomic disk writes; P49 removes races before serialization.
+# ---------------------------------------------------------------------------
+$db = Normalize ([IO.File]::ReadAllText($dbPath))
+
+# P49 logical-integrity layer. The P03 reliability patch validated only that
+# XML could be parsed and contained tables. That misses syntactically-valid
+# logical damage such as duplicate Key rows, broken key/value table schemas,
+# and malformed core tables.
+$dbLogicalAnchor='        private static bool TryLoadDatabaseFile(string path, out DataSet loaded, out string error)'
+if(!$db.Contains($dbLogicalAnchor)){ throw 'P49 logical DB loader anchor missing' }
+
+$dbLogicalHelpers=@'
+        private static string last_logical_repair_summary = "";
+
+        private static bool P49HasColumns(DataTable table, params string[] names)
+        {
+            if (table == null) return false;
+            foreach (string name in names)
+                if (!table.Columns.Contains(name)) return false;
+            return true;
+        }
+
+        private static bool P49IsKnownKeyValueTableName(string name)
+        {
+            if (String.IsNullOrEmpty(name)) return false;
+            if (name == "State" ||
+                name == "Options" ||
+                name == "SQ4KOU_TCI" ||
+                name == "SQ4KOU_LegacyItems" ||
+                name == "SQ4KOU_ThetisMeters")
+                return true;
+
+            if (name.StartsWith("MeterDisplay_", StringComparison.Ordinal))
+                return true;
+
+            return false;
+        }
+
+        private static bool P49ValidateLogicalDatabase(
+            DataSet candidate,
+            out string repairSummary,
+            out string fatalError)
+        {
+            repairSummary = "";
+            fatalError = "";
+
+            if (candidate == null)
+            {
+                fatalError = "Database DataSet is null.";
+                return false;
+            }
+
+            if (candidate.Tables.Count == 0)
+            {
+                fatalError = "Database contains no tables.";
+                return false;
+            }
+
+            // Core tables may be absent in an older database and VerifyTables()
+            // will create them. If present, however, their structural schema must
+            // be usable or the database is logically corrupt.
+            DataTable t;
+            if (candidate.Tables.Contains("BandText"))
+            {
+                t = candidate.Tables["BandText"];
+                if (!P49HasColumns(t, "Low", "High", "Name", "TX"))
+                {
+                    fatalError = "BandText table schema is incomplete.";
+                    return false;
+                }
+            }
+
+            if (candidate.Tables.Contains("BandStack"))
+            {
+                t = candidate.Tables["BandStack"];
+                if (!P49HasColumns(t, "BandName", "Mode", "Filter", "Freq"))
+                {
+                    fatalError = "BandStack table schema is incomplete.";
+                    return false;
+                }
+            }
+
+            if (candidate.Tables.Contains("TXProfile"))
+            {
+                t = candidate.Tables["TXProfile"];
+                if (!t.Columns.Contains("Name"))
+                {
+                    fatalError = "TXProfile table has no Name column.";
+                    return false;
+                }
+            }
+
+            if (candidate.Tables.Contains("TXProfileDef"))
+            {
+                t = candidate.Tables["TXProfileDef"];
+                if (!t.Columns.Contains("Name"))
+                {
+                    fatalError = "TXProfileDef table has no Name column.";
+                    return false;
+                }
+            }
+
+            int duplicateRowsRemoved = 0;
+            int emptyKeysRemoved = 0;
+            int keyValueTablesChecked = 0;
+
+            foreach (DataTable table in candidate.Tables)
+            {
+                bool hasKey = table.Columns.Contains("Key");
+                bool hasValue = table.Columns.Contains("Value");
+                bool knownKeyValue = P49IsKnownKeyValueTableName(table.TableName);
+
+                if (knownKeyValue && (!hasKey || !hasValue))
+                {
+                    fatalError = "Key/value table '" + table.TableName +
+                        "' has a damaged schema (Key/Value column missing).";
+                    return false;
+                }
+
+                if (!hasKey || !hasValue)
+                    continue;
+
+                keyValueTablesChecked++;
+
+                System.Collections.Generic.Dictionary<string, DataRow> lastByKey =
+                    new System.Collections.Generic.Dictionary<string, DataRow>(
+                        System.StringComparer.Create(table.Locale, !table.CaseSensitive));
+
+                System.Collections.Generic.List<DataRow> remove =
+                    new System.Collections.Generic.List<DataRow>();
+
+                foreach (DataRow row in table.Rows)
+                {
+                    if (row.RowState == DataRowState.Deleted ||
+                        row.RowState == DataRowState.Detached)
+                        continue;
+
+                    if (row.IsNull("Key") || String.IsNullOrEmpty(row["Key"].ToString()))
+                    {
+                        remove.Add(row);
+                        emptyKeysRemoved++;
+                        continue;
+                    }
+
+                    string key = row["Key"].ToString();
+                    DataRow previous;
+                    if (lastByKey.TryGetValue(key, out previous))
+                    {
+                        // Keep the most recently appended row. This matches the
+                        // only deterministic ordering available in legacy XML.
+                        remove.Add(previous);
+                        duplicateRowsRemoved++;
+                    }
+                    lastByKey[key] = row;
+                }
+
+                foreach (DataRow row in remove)
+                {
+                    if (row.RowState != DataRowState.Detached &&
+                        row.RowState != DataRowState.Deleted)
+                        table.Rows.Remove(row);
+                }
+            }
+
+            if (duplicateRowsRemoved > 0 || emptyKeysRemoved > 0)
+            {
+                repairSummary =
+                    "key/value tables checked=" + keyValueTablesChecked.ToString() +
+                    ", duplicate rows removed=" + duplicateRowsRemoved.ToString() +
+                    ", empty-key rows removed=" + emptyKeysRemoved.ToString();
+            }
+
+            return true;
+        }
+
+'@
+$db=$db.Replace($dbLogicalAnchor,$dbLogicalHelpers+$dbLogicalAnchor)
+
 $newTryLoadDatabaseFile=@'
         private static bool TryLoadDatabaseFile(string path, out DataSet loaded, out string error)
         {
@@ -253,185 +433,7 @@ $newDbUpdate=@'
 '@
 $db = Replace-CSharpMethod $db '        public static void Update()' $newDbUpdate 'P49 logical Update'
 
-# ---------------------------------------------------------------------------
-# 1. Database API: one lock for DataSet mutation, reads, disk snapshots and exit.
-#    P03 already provides atomic disk writes; P49 removes races before serialization.
-# ---------------------------------------------------------------------------
-$db = Normalize ([IO.File]::ReadAllText($dbPath))
 
-# P49 logical-integrity layer. The P03 reliability patch validated only that
-# XML could be parsed and contained tables. That misses syntactically-valid
-# logical damage such as duplicate Key rows, broken key/value table schemas,
-# and malformed core tables.
-$dbLogicalAnchor='        private static bool TryLoadDatabaseFile(string path, out DataSet loaded, out string error)'
-if(!$db.Contains($dbLogicalAnchor)){ throw 'P49 logical DB loader anchor missing' }
-
-$dbLogicalHelpers=@'
-        private static string last_logical_repair_summary = "";
-
-        private static bool P49HasColumns(DataTable table, params string[] names)
-        {
-            if (table == null) return false;
-            foreach (string name in names)
-                if (!table.Columns.Contains(name)) return false;
-            return true;
-        }
-
-        private static bool P49IsKnownKeyValueTableName(string name)
-        {
-            if (String.IsNullOrEmpty(name)) return false;
-            if (name == "State" ||
-                name == "Options" ||
-                name == "SQ4KOU_TCI" ||
-                name == "SQ4KOU_LegacyItems" ||
-                name == "SQ4KOU_ThetisMeters")
-                return true;
-
-            if (name.StartsWith("MeterDisplay_", StringComparison.Ordinal))
-                return true;
-
-            return false;
-        }
-
-        private static bool P49ValidateLogicalDatabase(
-            DataSet candidate,
-            out string repairSummary,
-            out string fatalError)
-        {
-            repairSummary = "";
-            fatalError = "";
-
-            if (candidate == null)
-            {
-                fatalError = "Database DataSet is null.";
-                return false;
-            }
-
-            if (candidate.Tables.Count == 0)
-            {
-                fatalError = "Database contains no tables.";
-                return false;
-            }
-
-            // Core tables may be absent in an older database and VerifyTables()
-            // will create them. If present, however, their structural schema must
-            // be usable or the database is logically corrupt.
-            DataTable t;
-            if (candidate.Tables.Contains("BandText"))
-            {
-                t = candidate.Tables["BandText"];
-                if (!P49HasColumns(t, "Low", "High", "Name", "TX"))
-                {
-                    fatalError = "BandText table schema is incomplete.";
-                    return false;
-                }
-            }
-
-            if (candidate.Tables.Contains("BandStack"))
-            {
-                t = candidate.Tables["BandStack"];
-                if (!P49HasColumns(t, "BandName", "Mode", "Filter", "Freq"))
-                {
-                    fatalError = "BandStack table schema is incomplete.";
-                    return false;
-                }
-            }
-
-            if (candidate.Tables.Contains("TXProfile"))
-            {
-                t = candidate.Tables["TXProfile"];
-                if (!t.Columns.Contains("Name"))
-                {
-                    fatalError = "TXProfile table has no Name column.";
-                    return false;
-                }
-            }
-
-            if (candidate.Tables.Contains("TXProfileDef"))
-            {
-                t = candidate.Tables["TXProfileDef"];
-                if (!t.Columns.Contains("Name"))
-                {
-                    fatalError = "TXProfileDef table has no Name column.";
-                    return false;
-                }
-            }
-
-            int duplicateRowsRemoved = 0;
-            int emptyKeysRemoved = 0;
-            int keyValueTablesChecked = 0;
-
-            foreach (DataTable table in candidate.Tables)
-            {
-                bool hasKey = table.Columns.Contains("Key");
-                bool hasValue = table.Columns.Contains("Value");
-                bool knownKeyValue = P49IsKnownKeyValueTableName(table.TableName);
-
-                if (knownKeyValue && (!hasKey || !hasValue))
-                {
-                    fatalError = "Key/value table '" + table.TableName +
-                        "' has a damaged schema (Key/Value column missing).";
-                    return false;
-                }
-
-                if (!hasKey || !hasValue)
-                    continue;
-
-                keyValueTablesChecked++;
-
-                System.Collections.Generic.Dictionary<string, DataRow> lastByKey =
-                    new System.Collections.Generic.Dictionary<string, DataRow>(
-                        System.StringComparer.Create(table.Locale, !table.CaseSensitive));
-
-                System.Collections.Generic.List<DataRow> remove =
-                    new System.Collections.Generic.List<DataRow>();
-
-                foreach (DataRow row in table.Rows)
-                {
-                    if (row.RowState == DataRowState.Deleted ||
-                        row.RowState == DataRowState.Detached)
-                        continue;
-
-                    if (row.IsNull("Key") || String.IsNullOrEmpty(row["Key"].ToString()))
-                    {
-                        remove.Add(row);
-                        emptyKeysRemoved++;
-                        continue;
-                    }
-
-                    string key = row["Key"].ToString();
-                    DataRow previous;
-                    if (lastByKey.TryGetValue(key, out previous))
-                    {
-                        // Keep the most recently appended row. This matches the
-                        // only deterministic ordering available in legacy XML.
-                        remove.Add(previous);
-                        duplicateRowsRemoved++;
-                    }
-                    lastByKey[key] = row;
-                }
-
-                foreach (DataRow row in remove)
-                {
-                    if (row.RowState != DataRowState.Detached &&
-                        row.RowState != DataRowState.Deleted)
-                        table.Rows.Remove(row);
-                }
-            }
-
-            if (duplicateRowsRemoved > 0 || emptyKeysRemoved > 0)
-            {
-                repairSummary =
-                    "key/value tables checked=" + keyValueTablesChecked.ToString() +
-                    ", duplicate rows removed=" + duplicateRowsRemoved.ToString() +
-                    ", empty-key rows removed=" + emptyKeysRemoved.ToString();
-            }
-
-            return true;
-        }
-
-'@
-$db=$db.Replace($dbLogicalAnchor,$dbLogicalHelpers+$dbLogicalAnchor)
 
 $newSaveVars = @'
         public static void SaveVars(string tableName, ref ArrayList list)
