@@ -29,7 +29,7 @@ foreach($token in @(
     'panelBandHF','panelBandGN','panelBandVHF',
     'panelMode','panelFilter',
     'grpVFOA','grpVFOB','VFODialA','VFODialAA','VFODialB','VFODialBB',
-    'chkVFOSync'
+    'grpVFOBetween','chkVFOSync'
 )){
     if(!$designer.Contains($token)){throw "P39 native control gate missing: $token"}
 }
