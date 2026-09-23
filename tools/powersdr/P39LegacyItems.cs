@@ -90,7 +90,7 @@ namespace PowerSDR
                 p39FilterControls = new Control[] { panelFilter };
                 p39VFOAControls = new Control[] { grpVFOA, VFODialA, VFODialAA };
                 p39VFOBControls = new Control[] { grpVFOB, VFODialB, VFODialBB };
-                p39VFOSyncControls = new Control[] { chkVFOSync };
+                p39VFOSyncControls = new Control[] { grpVFOBetween };
 
                 P39RegisterControls(p39MeterControls);
                 P39RegisterControls(p39BandControls);
