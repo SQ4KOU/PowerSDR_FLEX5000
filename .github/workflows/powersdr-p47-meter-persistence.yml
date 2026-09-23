@@ -1,0 +1,126 @@
+name: Build PowerSDR FLEX5000 P47 Meters Persistence MSI
+
+on:
+  push:
+    branches:
+      - feature/flex5000-p47-meter-persistence
+  workflow_dispatch:
+
+jobs:
+  build-msi:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Ensure build tools
+        shell: pwsh
+        run: |
+          if (!(Get-Command innoextract.exe -ErrorAction SilentlyContinue) -and !(Get-Command innoextract -ErrorAction SilentlyContinue)) {
+            choco install innoextract -y --no-progress
+          }
+          if (!(Get-Command nuget.exe -ErrorAction SilentlyContinue) -and !(Get-Command nuget -ErrorAction SilentlyContinue)) {
+            choco install nuget.commandline -y --no-progress
+          }
+          if (!(Get-Command candle.exe -ErrorAction SilentlyContinue)) {
+            choco install wixtoolset -y --no-progress
+          }
+
+      - name: Locate WiX
+        shell: pwsh
+        run: |
+          $candle = Get-Command candle.exe -ErrorAction SilentlyContinue
+          if (!$candle) {
+            $candle = Get-ChildItem 'C:\Program Files (x86)' -Recurse -Filter candle.exe -ErrorAction SilentlyContinue | Select-Object -First 1
+          }
+          if (!$candle) { throw 'candle.exe not found' }
+          $path = Split-Path $candle.Source -Parent
+          "WIXBIN=$path" | Out-File -FilePath $env:GITHUB_ENV -Append
+
+      - name: Parse-check P47 scripts
+        shell: pwsh
+        run: |
+          foreach($p in @(
+            './tools/powersdr/Apply-PowerSDR-ThetisMetersCoherent-P32.ps1',
+            './tools/powersdr/Apply-PowerSDR-LegacyItems-P39.ps1',
+            './tools/powersdr/Apply-PowerSDR-TCI-P44.ps1',
+            './tools/powersdr/Apply-PowerSDR-TCI-Streaming-P46.ps1',
+            './tools/powersdr/Apply-PowerSDR-MetersPersistence-P47.ps1',
+            './tools/powersdr/Build-PowerSDR-MSI-P47-METERS-PERSISTENCE.ps1'
+          )) {
+            $tokens=$null; $errors=$null
+            [System.Management.Automation.Language.Parser]::ParseFile((Resolve-Path $p), [ref]$tokens, [ref]$errors) | Out-Null
+            if($errors.Count -gt 0) {
+              $errors | ForEach-Object { Write-Host ("PARSE_ERROR " + $_.Extent.StartLineNumber + ":" + $_.Extent.StartColumnNumber + " " + $_.Message) }
+              throw "PowerShell parse failed: $p"
+            }
+          }
+
+      - name: Build P47 Meters/Gadgets persistence MSI
+        shell: pwsh
+        run: |
+          ./tools/powersdr/Build-PowerSDR-MSI-P47-METERS-PERSISTENCE.ps1 -WixBin "$env:WIXBIN"
+
+      - name: Verify P47 MSI
+        shell: pwsh
+        run: |
+          $msi = Get-ChildItem ./artifacts/powersdr -Filter '*P47-METERS-PERSISTENCE*.msi' -File | Select-Object -First 1
+          if (!$msi) { throw 'P47 MSI artifact missing' }
+          $manifest = Join-Path $msi.Directory.FullName 'POWERSDR_BUILD_MANIFEST.txt'
+          if (!(Test-Path $manifest)) { throw 'P47 manifest missing' }
+          $m = Get-Content $manifest -Raw
+          foreach($required in @(
+            'FLEX5000_BACKEND=POWERSDR_NATIVE_PAL_FWC_FIREWIRE_ASIO',
+            'P32_THETIS_SOURCE_SHA=a53b19274e715182d8f386bfabbb2c4164287a0e',
+            'P32_SOURCE_OF_TRUTH=THETIS_ONLY',
+            'P32_SOURCE_COHERENCE=METER_MANAGER_UCMETER_DISPLAY_SAME_COMMIT',
+            'P32_CONTAINER=THETIS_NATIVE_21_FIELD_MODEL',
+            'P32_INPUT=THETIS_NATIVE_MOUSE_PIPELINE',
+            'P32_METER_TYPES=FULL_A53B192_GENERATION',
+            'P32_RENDERER=THETIS_EXACT',
+            'P32_ADAPTER=POWERSDR_NATIVE_API_ONLY',
+            'P32_RX2=NOT_EXPOSED',
+            'P39_LEGACY_ITEMS=STAGE1_VISIBILITY_ONLY',
+            'P39_CONTROLS=METERS_BAND_MODE_FILTER_VFOA_VFOB_VFOSYNC',
+            'P39_PERSISTENCE=POWERSDR_DB_SQ4KOU_LEGACYITEMS',
+            'P39_SPECTRUM_GEOMETRY=UNCHANGED',
+            'P44_TCI=CORE_CONTROL_WEBSOCKET',
+            'P44_TCI_PROTOCOL=EXPERTSDR3_2_0_COMPAT',
+            'P44_TCI_PORT_DEFAULT=50001',
+            'P44_TCI_BIND_DEFAULT=0.0.0.0',
+            'P44_TCI_RX=RX1_VFOA_VFOB',
+            'P44_TCI_RX2=NOT_EXPOSED',
+            'P44_TCI_AUDIO_IQ=SUPERSEDED_BY_P46',
+            'P46_TCI_STREAMING=RX_IQ_RX_AUDIO_TX_AUDIO',
+            'P46_TCI_IQ=RX1_PRE_DSP_FLOAT32',
+            'P46_TCI_RX_AUDIO=RX1_POST_DSP',
+            'P46_TCI_TX_AUDIO=TRX_TCI_OVERRIDE',
+            'P46_TCI_BINARY_HEADER=THETIS_64_BYTE',
+            'P46_TCI_NETWORK_IO=WORKER_THREAD_NOT_AUDIO_CALLBACK',
+            'P46_TCI_RX2=NOT_EXPOSED',
+            'P47_METER_PERSISTENCE=AUDITED_AND_HARDENED',
+            'P47_METER_MAIN_STORE=THETIS_STORESETTINGS2_REPLACE_ALL',
+            'P47_METER_DOCKED_GEOMETRY=ACTUAL_LOCATION_SIZE_NORMALIZED_BEFORE_STORE',
+            'P47_METER_FLOATING_GEOMETRY=AUTHORITATIVE_MAIN_TABLE_PLUS_LEGACY_FORM_TABLE',
+            'P47_METER_RESTORE=MAIN_TABLE_GEOMETRY_BEFORE_RENDERER_START',
+            'P47_METER_ITEMS=THETIS_METERDATA_METERIGDATA_METERIGSETTINGS2',
+            'P47_METER_STALE_KEYS=PURGED_BY_REPLACEVARS',
+            'P47_METER_SAVE_AUDIT=CONTAINER_FORM_GEOMETRY_COUNTS_REQUIRED'
+          )) {
+            if(!$m.Contains($required)) { throw "Manifest gate missing: $required" }
+          }
+          $sha = (Get-FileHash -Algorithm SHA256 $msi.FullName).Hash.ToLowerInvariant()
+          "MSI=$($msi.Name)" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+          "SHA256=$sha" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+          "P47=Meters/Gadgets audited persistence + P46 TCI streaming retained" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+
+      - name: Upload P47 artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: PowerSDR-FLEX5000-P47-METERS-PERSISTENCE
+          path: |
+            artifacts/powersdr/*.msi
+            artifacts/powersdr/*.sha256
+            artifacts/powersdr/POWERSDR_BUILD_MANIFEST.txt
+            artifacts/powersdr/logs/**
+          if-no-files-found: error
