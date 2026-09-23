@@ -16,9 +16,32 @@ namespace PowerSDR
     internal static class P44TCISettings
     {
         internal static bool Enabled = true;
+        internal static string BindAddress = "0.0.0.0";
         internal static int Port = 50001;
-        internal static bool BindAll = true;
         internal static int PollMs = 100;
+        internal static bool SendInitialStateOnConnect = true;
+        internal static bool UseRX1VFOAForRX2VFOA = false;
+        internal static bool CopyRX2VFOBToRX2VFOA = false;
+        internal static bool ForgetRX2VFOB = false;
+        internal static bool CWLUbecomesCW = false;
+        internal static bool CWBecomesCWUAbove10MHz = false;
+        internal static bool EmulateExpertSDR3Protocol = true;
+        internal static bool EmulateSunSDR2Pro = false;
+
+        // Stored now so the page follows the Thetis TCI layout. The current
+        // PowerSDR display core does not yet render TCI spots, so that group
+        // is shown but disabled until the native spot layer is ported.
+        internal static bool ShowSpots = false;
+        internal static int MaxSpots = 100;
+        internal static int SpotLifetimeMinutes = 10;
+        internal static bool SpotFlags = true;
+        internal static bool SpotFlashNew = true;
+        internal static int SpotBackPanelAlpha = 20;
+        internal static bool OwnCallAppearance = true;
+        internal static string OwnCall = "SQ4KOU";
+        internal static int OwnCallColorArgb = Color.Yellow.ToArgb();
+        internal static int CWSpotSideband = 0; // 0=default, 1=CWU, 2=CWL
+
         private static bool loaded;
 
         internal static void Load()
@@ -28,6 +51,9 @@ namespace PowerSDR
 
             ArrayList stored = DB.GetVars("SQ4KOU_TCI");
             if (stored == null) return;
+
+            bool hasBindAddress = false;
+            bool? legacyBindAll = null;
 
             foreach (object o in stored)
             {
@@ -46,27 +72,117 @@ namespace PowerSDR
                     case "Enabled":
                         if (Boolean.TryParse(value, out b)) Enabled = b;
                         break;
-                    case "Port":
-                        if (Int32.TryParse(value, out n) && n >= 1024 && n <= 65535) Port = n;
+                    case "BindAddress":
+                        if (IsIPv4(value))
+                        {
+                            BindAddress = value;
+                            hasBindAddress = true;
+                        }
                         break;
                     case "BindAll":
-                        if (Boolean.TryParse(value, out b)) BindAll = b;
+                        if (Boolean.TryParse(value, out b)) legacyBindAll = b;
+                        break;
+                    case "Port":
+                        if (Int32.TryParse(value, out n) && n >= 1024 && n <= 65535) Port = n;
                         break;
                     case "PollMs":
                         if (Int32.TryParse(value, out n) && n >= 25 && n <= 1000) PollMs = n;
                         break;
+                    case "SendInitialStateOnConnect":
+                        if (Boolean.TryParse(value, out b)) SendInitialStateOnConnect = b;
+                        break;
+                    case "UseRX1VFOAForRX2VFOA":
+                        if (Boolean.TryParse(value, out b)) UseRX1VFOAForRX2VFOA = b;
+                        break;
+                    case "CopyRX2VFOBToRX2VFOA":
+                        if (Boolean.TryParse(value, out b)) CopyRX2VFOBToRX2VFOA = b;
+                        break;
+                    case "ForgetRX2VFOB":
+                        if (Boolean.TryParse(value, out b)) ForgetRX2VFOB = b;
+                        break;
+                    case "CWLUbecomesCW":
+                        if (Boolean.TryParse(value, out b)) CWLUbecomesCW = b;
+                        break;
+                    case "CWBecomesCWUAbove10MHz":
+                        if (Boolean.TryParse(value, out b)) CWBecomesCWUAbove10MHz = b;
+                        break;
+                    case "EmulateExpertSDR3Protocol":
+                        if (Boolean.TryParse(value, out b)) EmulateExpertSDR3Protocol = b;
+                        break;
+                    case "EmulateSunSDR2Pro":
+                        if (Boolean.TryParse(value, out b)) EmulateSunSDR2Pro = b;
+                        break;
+                    case "ShowSpots":
+                        if (Boolean.TryParse(value, out b)) ShowSpots = b;
+                        break;
+                    case "MaxSpots":
+                        if (Int32.TryParse(value, out n) && n >= 1 && n <= 1000) MaxSpots = n;
+                        break;
+                    case "SpotLifetimeMinutes":
+                        if (Int32.TryParse(value, out n) && n >= 1 && n <= 1440) SpotLifetimeMinutes = n;
+                        break;
+                    case "SpotFlags":
+                        if (Boolean.TryParse(value, out b)) SpotFlags = b;
+                        break;
+                    case "SpotFlashNew":
+                        if (Boolean.TryParse(value, out b)) SpotFlashNew = b;
+                        break;
+                    case "SpotBackPanelAlpha":
+                        if (Int32.TryParse(value, out n)) SpotBackPanelAlpha = Math.Max(0, Math.Min(255, n));
+                        break;
+                    case "OwnCallAppearance":
+                        if (Boolean.TryParse(value, out b)) OwnCallAppearance = b;
+                        break;
+                    case "OwnCall":
+                        OwnCall = value ?? String.Empty;
+                        break;
+                    case "OwnCallColorArgb":
+                        if (Int32.TryParse(value, out n)) OwnCallColorArgb = n;
+                        break;
+                    case "CWSpotSideband":
+                        if (Int32.TryParse(value, out n) && n >= 0 && n <= 2) CWSpotSideband = n;
+                        break;
                 }
             }
+
+            if (!hasBindAddress && legacyBindAll.HasValue)
+                BindAddress = legacyBindAll.Value ? "0.0.0.0" : "127.0.0.1";
         }
 
         internal static void Save()
         {
             ArrayList a = new ArrayList();
             a.Add("Enabled/" + Enabled.ToString());
+            a.Add("BindAddress/" + BindAddress);
+            a.Add("BindAll/" + (BindAddress == "0.0.0.0").ToString());
             a.Add("Port/" + Port.ToString(CultureInfo.InvariantCulture));
-            a.Add("BindAll/" + BindAll.ToString());
             a.Add("PollMs/" + PollMs.ToString(CultureInfo.InvariantCulture));
+            a.Add("SendInitialStateOnConnect/" + SendInitialStateOnConnect.ToString());
+            a.Add("UseRX1VFOAForRX2VFOA/" + UseRX1VFOAForRX2VFOA.ToString());
+            a.Add("CopyRX2VFOBToRX2VFOA/" + CopyRX2VFOBToRX2VFOA.ToString());
+            a.Add("ForgetRX2VFOB/" + ForgetRX2VFOB.ToString());
+            a.Add("CWLUbecomesCW/" + CWLUbecomesCW.ToString());
+            a.Add("CWBecomesCWUAbove10MHz/" + CWBecomesCWUAbove10MHz.ToString());
+            a.Add("EmulateExpertSDR3Protocol/" + EmulateExpertSDR3Protocol.ToString());
+            a.Add("EmulateSunSDR2Pro/" + EmulateSunSDR2Pro.ToString());
+            a.Add("ShowSpots/" + ShowSpots.ToString());
+            a.Add("MaxSpots/" + MaxSpots.ToString(CultureInfo.InvariantCulture));
+            a.Add("SpotLifetimeMinutes/" + SpotLifetimeMinutes.ToString(CultureInfo.InvariantCulture));
+            a.Add("SpotFlags/" + SpotFlags.ToString());
+            a.Add("SpotFlashNew/" + SpotFlashNew.ToString());
+            a.Add("SpotBackPanelAlpha/" + SpotBackPanelAlpha.ToString(CultureInfo.InvariantCulture));
+            a.Add("OwnCallAppearance/" + OwnCallAppearance.ToString());
+            a.Add("OwnCall/" + (OwnCall ?? String.Empty));
+            a.Add("OwnCallColorArgb/" + OwnCallColorArgb.ToString(CultureInfo.InvariantCulture));
+            a.Add("CWSpotSideband/" + CWSpotSideband.ToString(CultureInfo.InvariantCulture));
             DB.SaveVars("SQ4KOU_TCI", ref a);
+        }
+
+        internal static bool IsIPv4(string value)
+        {
+            IPAddress ip;
+            return IPAddress.TryParse((value ?? String.Empty).Trim(), out ip) &&
+                ip.AddressFamily == AddressFamily.InterNetwork;
         }
     }
 
@@ -74,18 +190,25 @@ namespace PowerSDR
     {
         private static readonly object gate = new object();
 
-        internal static void Write(string text)
+        internal static string LogPath
         {
-            try
+            get
             {
                 string dir = Path.Combine(
                     Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
                     "PowerSDR-SQ4KOU");
                 Directory.CreateDirectory(dir);
-                string path = Path.Combine(dir, "P44_TCI.log");
+                return Path.Combine(dir, "P44_TCI.log");
+            }
+        }
+
+        internal static void Write(string text)
+        {
+            try
+            {
                 lock (gate)
                 {
-                    File.AppendAllText(path,
+                    File.AppendAllText(LogPath,
                         DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff", CultureInfo.InvariantCulture) +
                         " " + text + Environment.NewLine);
                 }
@@ -514,20 +637,29 @@ namespace PowerSDR
         {
             P44TCISnapshot s = console.P44ReadTCIState();
 
-            client.SendText("protocol:ExpertSDR3,2.0;");
-            client.SendText("device:FLEX-5000;");
+            string protocol = P44TCISettings.EmulateExpertSDR3Protocol ? "ExpertSDR3" : "Thetis";
+            string device = P44TCISettings.EmulateSunSDR2Pro ? "SunSDR2PRO" : "FLEX-5000";
+
+            client.SendText("protocol:" + protocol + ",2.0;");
+            client.SendText("device:" + device + ";");
             client.SendText("receive_only:false;");
             client.SendText("trx_count:1;");
             client.SendText("channels_count:2;");
             client.SendText("vfo_limits:0," + s.MaxHz.ToString(CultureInfo.InvariantCulture) + ";");
             client.SendText("if_limits:" + (-s.SampleRate / 2).ToString(CultureInfo.InvariantCulture) + "," +
                             (s.SampleRate / 2).ToString(CultureInfo.InvariantCulture) + ";");
-            client.SendText("modulations_list:AM,SAM,DSB,LSB,USB,NFM,FM,DIGL,DIGU,CWL,CWU;");
+
+            string cwModes = P44TCISettings.CWLUbecomesCW ? ",CW" : String.Empty;
+            client.SendText("modulations_list:AM,SAM,DSB,LSB,USB,NFM,FM,DIGL,DIGU,CWL,CWU" + cwModes + ";");
             client.SendText("iq_samplerate:" + s.SampleRate.ToString(CultureInfo.InvariantCulture) + ";");
             client.SendText("audio_samplerate:48000;");
 
-            List<string> all = BuildMessages(s, null, true);
-            foreach (string message in all) client.SendText(message);
+            if (P44TCISettings.SendInitialStateOnConnect)
+            {
+                List<string> all = BuildMessages(s, null, true);
+                foreach (string message in all) client.SendText(message);
+            }
+
             client.SendText("ready;");
         }
 
@@ -557,7 +689,12 @@ namespace PowerSDR
             if (all || old.VfoAHz != s.VfoAHz) m.Add("vfo:0,0," + s.VfoAHz.ToString(CultureInfo.InvariantCulture) + ";");
             if (all || old.VfoBHz != s.VfoBHz) m.Add("vfo:0,1," + s.VfoBHz.ToString(CultureInfo.InvariantCulture) + ";");
             if (all || old.TxHz != s.TxHz) m.Add("tx_frequency:" + s.TxHz.ToString(CultureInfo.InvariantCulture) + ";");
-            if (all || old.Mode != s.Mode) m.Add("modulation:0," + s.Mode + ";");
+            if (all || old.Mode != s.Mode)
+            {
+                string mode = s.Mode;
+                if (P44TCISettings.CWLUbecomesCW && (mode == "CWL" || mode == "CWU")) mode = "CW";
+                m.Add("modulation:0," + mode + ";");
+            }
             if (all || old.FilterLow != s.FilterLow || old.FilterHigh != s.FilterHigh)
                 m.Add("rx_filter_band:0," + s.FilterLow.ToString(CultureInfo.InvariantCulture) + "," +
                       s.FilterHigh.ToString(CultureInfo.InvariantCulture) + ";");
@@ -847,7 +984,10 @@ namespace PowerSDR
             {
                 if (p44TCIServer != null) p44TCIServer.Stop();
                 p44TCIServer = new P44TCIServer(this);
-                IPAddress address = P44TCISettings.BindAll ? IPAddress.Any : IPAddress.Loopback;
+                IPAddress address;
+                if (!IPAddress.TryParse(P44TCISettings.BindAddress, out address) ||
+                    address.AddressFamily != AddressFamily.InterNetwork)
+                    address = IPAddress.Any;
                 p44TCIServer.Start(address, P44TCISettings.Port);
                 FormClosed -= P44TCIFormClosed;
                 FormClosed += P44TCIFormClosed;
@@ -889,7 +1029,7 @@ namespace PowerSDR
             {
                 if (!P44TCISettings.Enabled) return "Disabled";
                 if (p44TCIServer == null || !p44TCIServer.Running) return "Enabled - server not running";
-                return "Listening on " + (P44TCISettings.BindAll ? "0.0.0.0" : "127.0.0.1") + ":" +
+                return "Listening on " + P44TCISettings.BindAddress + ":" +
                     P44TCISettings.Port.ToString(CultureInfo.InvariantCulture) +
                     " | clients: " + p44TCIServer.ClientCount.ToString(CultureInfo.InvariantCulture);
             }
@@ -1032,7 +1172,20 @@ namespace PowerSDR
         internal void P44SetVFO(int chan, long hz) { P44UI(delegate { if (chan == 0) VFOAFreq = hz / 1000000.0; else VFOBFreq = hz / 1000000.0; }); }
         internal void P44SetTXFrequency(long hz) { P44UI(delegate { TXFreq = hz / 1000000.0; }); }
         internal void P44SetFilter(int low, int high) { P44UI(delegate { UpdateRX1Filters(low, high); }); }
-        internal void P44SetMode(string mode) { P44UI(delegate { DSPMode m = P44ModeFromTCI(mode); if (m != DSPMode.FIRST) RX1DSPMode = m; }); }
+        internal void P44SetMode(string mode)
+        {
+            P44UI(delegate
+            {
+                DSPMode m;
+                if (P44TCISettings.CWBecomesCWUAbove10MHz &&
+                    String.Equals((mode ?? String.Empty).Trim(), "CW", StringComparison.OrdinalIgnoreCase))
+                    m = VFOAFreq >= 10.0 ? DSPMode.CWU : DSPMode.CWL;
+                else
+                    m = P44ModeFromTCI(mode);
+
+                if (m != DSPMode.FIRST) RX1DSPMode = m;
+            });
+        }
         internal void P44SetAgcMode(string mode) { P44UI(delegate { RX1AGCMode = P44AgcFromTCI(mode); }); }
         internal void P44SetAgcGain(int gain) { P44UI(delegate { RF = Math.Max(-20, Math.Min(120, gain)); }); }
         internal void P44SetSplit(bool v) { P44UI(delegate { VFOSplit = v; }); }
@@ -1100,11 +1253,31 @@ namespace PowerSDR
     public partial class Setup
     {
         private TabPage p44TCITab;
+        private TextBox p44TCIBindSpec;
+        private NumericUpDown p44TCIRate;
         private CheckBox p44TCIEnabled;
-        private NumericUpDown p44TCIPort;
-        private CheckBox p44TCIBindAll;
+        private CheckBox p44TCISendInitial;
+        private CheckBox p44TCIUseRx1ForRx2;
+        private CheckBox p44TCICopyRx2;
+        private CheckBox p44TCIForgetRx2;
+        private CheckBox p44TCICWLAsCW;
+        private CheckBox p44TCICWAbove10;
+        private CheckBox p44TCIEmulateExpert;
+        private CheckBox p44TCIEmulateSun;
         private Label p44TCIStatus;
+        private System.Windows.Forms.Timer p44TCIUiTimer;
+        private ToolTip p44TCIToolTip;
         private bool p44TCILoading;
+
+        private CheckBox P44MakeCheck(Control parent, string text, int x, int y)
+        {
+            CheckBox cb = new CheckBox();
+            cb.AutoSize = true;
+            cb.Text = text;
+            cb.Location = new Point(x, y);
+            parent.Controls.Add(cb);
+            return cb;
+        }
 
         internal void P44InitTCIUI()
         {
@@ -1120,68 +1293,318 @@ namespace PowerSDR
                 }
             }
 
+            p44TCIToolTip = new ToolTip();
+
             p44TCITab = new TabPage("TCI");
             p44TCITab.Name = "p44TCITab";
             p44TCITab.UseVisualStyleBackColor = true;
+            p44TCITab.AutoScroll = true;
             tcSetup.TabPages.Add(p44TCITab);
 
-            GroupBox group = new GroupBox();
-            group.Text = "TCI WebSocket server";
-            group.Location = new Point(18, 18);
-            group.Size = new Size(570, 190);
-            p44TCITab.Controls.Add(group);
+            GroupBox server = new GroupBox();
+            server.Text = "TCI Server";
+            server.Location = new Point(12, 10);
+            server.Size = new Size(610, 184);
+            p44TCITab.Controls.Add(server);
 
-            p44TCIEnabled = new CheckBox();
-            p44TCIEnabled.AutoSize = true;
-            p44TCIEnabled.Text = "Enable TCI";
-            p44TCIEnabled.Location = new Point(18, 30);
+            Label bindLabel = new Label();
+            bindLabel.AutoSize = true;
+            bindLabel.Text = "Bind IP:Port";
+            bindLabel.Location = new Point(16, 27);
+            server.Controls.Add(bindLabel);
+
+            p44TCIBindSpec = new TextBox();
+            p44TCIBindSpec.Location = new Point(92, 23);
+            p44TCIBindSpec.Size = new Size(150, 20);
+            p44TCIBindSpec.Leave += P44TCIBindLeave;
+            server.Controls.Add(p44TCIBindSpec);
+
+            Button def = new Button();
+            def.Text = "Def";
+            def.Location = new Point(248, 21);
+            def.Size = new Size(42, 24);
+            def.Click += P44TCIDefaultsClick;
+            server.Controls.Add(def);
+
+            Button ipv4 = new Button();
+            ipv4.Text = "IPv4";
+            ipv4.Location = new Point(296, 21);
+            ipv4.Size = new Size(48, 24);
+            ipv4.Click += P44TCIIPv4Click;
+            server.Controls.Add(ipv4);
+
+            Label rateLabel = new Label();
+            rateLabel.AutoSize = true;
+            rateLabel.Text = "Rate Limit (ms)";
+            rateLabel.Location = new Point(360, 27);
+            server.Controls.Add(rateLabel);
+
+            p44TCIRate = new NumericUpDown();
+            p44TCIRate.Minimum = 25;
+            p44TCIRate.Maximum = 1000;
+            p44TCIRate.Increment = 25;
+            p44TCIRate.Location = new Point(454, 23);
+            p44TCIRate.Size = new Size(72, 20);
+            p44TCIRate.ValueChanged += P44TCISettingChanged;
+            server.Controls.Add(p44TCIRate);
+
+            p44TCISendInitial = P44MakeCheck(server, "Send initial VFO state on connect (out)", 18, 54);
+            p44TCISendInitial.CheckedChanged += P44TCISettingChanged;
+
+            p44TCIUseRx1ForRx2 = P44MakeCheck(server, "Use RX1 VFOa for RX2 VFOa (in+out)", 18, 78);
+            p44TCIUseRx1ForRx2.Enabled = false;
+            p44TCICopyRx2 = P44MakeCheck(server, "Duplicate RX2 VFOb to RX2 VFOa (out)", 18, 102);
+            p44TCICopyRx2.Enabled = false;
+            p44TCIForgetRx2 = P44MakeCheck(server, "Forget RX2 VFOb", 266, 102);
+            p44TCIForgetRx2.Enabled = false;
+
+            p44TCICWLAsCW = P44MakeCheck(server, "CWL/CWU becomes CW (out)", 18, 126);
+            p44TCICWLAsCW.CheckedChanged += P44TCISettingChanged;
+            p44TCICWAbove10 = P44MakeCheck(server, "CW becomes CWU if 10MHz and above (in)", 18, 150);
+            p44TCICWAbove10.CheckedChanged += P44TCISettingChanged;
+
+            p44TCIEmulateExpert = P44MakeCheck(server, "Emulate ExpertSDR3 protocol", 342, 54);
+            p44TCIEmulateExpert.CheckedChanged += P44TCISettingChanged;
+            p44TCIEmulateSun = P44MakeCheck(server, "Emulate SunSDR2Pro device", 342, 78);
+            p44TCIEmulateSun.CheckedChanged += P44TCISettingChanged;
+
+            p44TCIToolTip.SetToolTip(p44TCIUseRx1ForRx2, "RX2 is intentionally not exposed in the current FLEX-5000 build.");
+            p44TCIToolTip.SetToolTip(p44TCICopyRx2, "RX2 is intentionally not exposed in the current FLEX-5000 build.");
+            p44TCIToolTip.SetToolTip(p44TCIForgetRx2, "RX2 is intentionally not exposed in the current FLEX-5000 build.");
+
+            GroupBox spots = new GroupBox();
+            spots.Text = "TCI Spots";
+            spots.Location = new Point(12, 202);
+            spots.Size = new Size(610, 174);
+            spots.Enabled = false;
+            p44TCITab.Controls.Add(spots);
+
+            CheckBox showSpots = P44MakeCheck(spots, "Show TCI Spots", 18, 24);
+            showSpots.Checked = P44TCISettings.ShowSpots;
+
+            Label maxLabel = new Label();
+            maxLabel.AutoSize = true;
+            maxLabel.Text = "Max Spots:";
+            maxLabel.Location = new Point(18, 52);
+            spots.Controls.Add(maxLabel);
+
+            NumericUpDown maxSpots = new NumericUpDown();
+            maxSpots.Minimum = 1;
+            maxSpots.Maximum = 1000;
+            maxSpots.Value = P44TCISettings.MaxSpots;
+            maxSpots.Location = new Point(82, 48);
+            maxSpots.Size = new Size(62, 20);
+            spots.Controls.Add(maxSpots);
+
+            Button clearNonSwl = new Button();
+            clearNonSwl.Text = "Clear non SWL";
+            clearNonSwl.Location = new Point(160, 44);
+            clearNonSwl.Size = new Size(86, 27);
+            spots.Controls.Add(clearNonSwl);
+
+            Button clearSwl = new Button();
+            clearSwl.Text = "Clear SWL";
+            clearSwl.Location = new Point(252, 44);
+            clearSwl.Size = new Size(72, 27);
+            spots.Controls.Add(clearSwl);
+
+            CheckBox flags = P44MakeCheck(spots, "Flags", 340, 50);
+            flags.Checked = P44TCISettings.SpotFlags;
+
+            Label lifeLabel = new Label();
+            lifeLabel.AutoSize = true;
+            lifeLabel.Text = "Spot Lifetime:";
+            lifeLabel.Location = new Point(18, 82);
+            spots.Controls.Add(lifeLabel);
+
+            NumericUpDown life = new NumericUpDown();
+            life.Minimum = 1;
+            life.Maximum = 1440;
+            life.Value = P44TCISettings.SpotLifetimeMinutes;
+            life.Location = new Point(92, 78);
+            life.Size = new Size(55, 20);
+            spots.Controls.Add(life);
+
+            Label mins = new Label();
+            mins.AutoSize = true;
+            mins.Text = "mins";
+            mins.Location = new Point(151, 82);
+            spots.Controls.Add(mins);
+
+            CheckBox flash = P44MakeCheck(spots, "Flash new", 205, 80);
+            flash.Checked = P44TCISettings.SpotFlashNew;
+
+            Button flashColour = new Button();
+            flashColour.Location = new Point(290, 77);
+            flashColour.Size = new Size(30, 22);
+            flashColour.BackColor = Color.White;
+            spots.Controls.Add(flashColour);
+
+            Label alphaLabel = new Label();
+            alphaLabel.AutoSize = true;
+            alphaLabel.Text = "Spot back panel alpha:";
+            alphaLabel.Location = new Point(18, 111);
+            spots.Controls.Add(alphaLabel);
+
+            TrackBar alpha = new TrackBar();
+            alpha.Minimum = 0;
+            alpha.Maximum = 255;
+            alpha.TickStyle = TickStyle.None;
+            alpha.Value = Math.Max(0, Math.Min(255, P44TCISettings.SpotBackPanelAlpha));
+            alpha.Location = new Point(145, 103);
+            alpha.Size = new Size(140, 28);
+            spots.Controls.Add(alpha);
+
+            CheckBox ownCall = P44MakeCheck(spots, "Own Call Appearance", 18, 139);
+            ownCall.Checked = P44TCISettings.OwnCallAppearance;
+
+            TextBox ownCallText = new TextBox();
+            ownCallText.Text = P44TCISettings.OwnCall;
+            ownCallText.Location = new Point(148, 136);
+            ownCallText.Size = new Size(90, 20);
+            spots.Controls.Add(ownCallText);
+
+            Button ownColour = new Button();
+            ownColour.Location = new Point(244, 134);
+            ownColour.Size = new Size(30, 24);
+            ownColour.BackColor = Color.FromArgb(P44TCISettings.OwnCallColorArgb);
+            spots.Controls.Add(ownColour);
+
+            GroupBox cwSpot = new GroupBox();
+            cwSpot.Text = "CW Spot sideband";
+            cwSpot.Location = new Point(345, 102);
+            cwSpot.Size = new Size(245, 58);
+            spots.Controls.Add(cwSpot);
+
+            RadioButton cwU = new RadioButton();
+            cwU.AutoSize = true;
+            cwU.Text = "Force to CWU";
+            cwU.Location = new Point(9, 24);
+            cwSpot.Controls.Add(cwU);
+
+            RadioButton cwL = new RadioButton();
+            cwL.AutoSize = true;
+            cwL.Text = "Force to CWL";
+            cwL.Location = new Point(91, 24);
+            cwSpot.Controls.Add(cwL);
+
+            RadioButton cwDefault = new RadioButton();
+            cwDefault.AutoSize = true;
+            cwDefault.Text = "Default";
+            cwDefault.Location = new Point(173, 24);
+            cwSpot.Controls.Add(cwDefault);
+
+            if (P44TCISettings.CWSpotSideband == 1) cwU.Checked = true;
+            else if (P44TCISettings.CWSpotSideband == 2) cwL.Checked = true;
+            else cwDefault.Checked = true;
+
+            p44TCIEnabled = P44MakeCheck(p44TCITab, "TCIServer Running", 18, 388);
             p44TCIEnabled.CheckedChanged += P44TCISettingChanged;
-            group.Controls.Add(p44TCIEnabled);
 
-            Label portLabel = new Label();
-            portLabel.AutoSize = true;
-            portLabel.Text = "Port:";
-            portLabel.Location = new Point(18, 64);
-            group.Controls.Add(portLabel);
-
-            p44TCIPort = new NumericUpDown();
-            p44TCIPort.Minimum = 1024;
-            p44TCIPort.Maximum = 65535;
-            p44TCIPort.Location = new Point(65, 60);
-            p44TCIPort.Width = 90;
-            p44TCIPort.ValueChanged += P44TCISettingChanged;
-            group.Controls.Add(p44TCIPort);
-
-            p44TCIBindAll = new CheckBox();
-            p44TCIBindAll.AutoSize = true;
-            p44TCIBindAll.Text = "Listen on LAN (0.0.0.0)";
-            p44TCIBindAll.Location = new Point(18, 94);
-            p44TCIBindAll.CheckedChanged += P44TCISettingChanged;
-            group.Controls.Add(p44TCIBindAll);
+            Button showLog = new Button();
+            showLog.Text = "Show Log";
+            showLog.Location = new Point(158, 383);
+            showLog.Size = new Size(76, 27);
+            showLog.Click += P44TCIShowLogClick;
+            p44TCITab.Controls.Add(showLog);
 
             p44TCIStatus = new Label();
             p44TCIStatus.AutoSize = true;
-            p44TCIStatus.Location = new Point(18, 128);
-            group.Controls.Add(p44TCIStatus);
-
-            Label scope = new Label();
-            scope.AutoSize = true;
-            scope.Text = "P44: TCI control/status. Audio and IQ streaming are not enabled in this build.";
-            scope.Location = new Point(18, 154);
-            group.Controls.Add(scope);
+            p44TCIStatus.Location = new Point(250, 390);
+            p44TCITab.Controls.Add(p44TCIStatus);
 
             p44TCILoading = true;
             try
             {
+                p44TCIBindSpec.Text = P44TCISettings.BindAddress + ":" +
+                    P44TCISettings.Port.ToString(CultureInfo.InvariantCulture);
+                p44TCIRate.Value = Math.Max(p44TCIRate.Minimum, Math.Min(p44TCIRate.Maximum, P44TCISettings.PollMs));
+                p44TCISendInitial.Checked = P44TCISettings.SendInitialStateOnConnect;
+                p44TCIUseRx1ForRx2.Checked = P44TCISettings.UseRX1VFOAForRX2VFOA;
+                p44TCICopyRx2.Checked = P44TCISettings.CopyRX2VFOBToRX2VFOA;
+                p44TCIForgetRx2.Checked = P44TCISettings.ForgetRX2VFOB;
+                p44TCICWLAsCW.Checked = P44TCISettings.CWLUbecomesCW;
+                p44TCICWAbove10.Checked = P44TCISettings.CWBecomesCWUAbove10MHz;
+                p44TCIEmulateExpert.Checked = P44TCISettings.EmulateExpertSDR3Protocol;
+                p44TCIEmulateSun.Checked = P44TCISettings.EmulateSunSDR2Pro;
                 p44TCIEnabled.Checked = P44TCISettings.Enabled;
-                p44TCIPort.Value = P44TCISettings.Port;
-                p44TCIBindAll.Checked = P44TCISettings.BindAll;
-                P44UpdateTCIStatus();
             }
             finally
             {
                 p44TCILoading = false;
             }
+
+            p44TCIUiTimer = new System.Windows.Forms.Timer();
+            p44TCIUiTimer.Interval = 500;
+            p44TCIUiTimer.Tick += delegate { P44UpdateTCIStatus(); };
+            p44TCIUiTimer.Start();
+            P44UpdateTCIStatus();
+        }
+
+        private bool P44TryReadBindSpec(out string address, out int port)
+        {
+            address = P44TCISettings.BindAddress;
+            port = P44TCISettings.Port;
+
+            string spec = (p44TCIBindSpec == null ? String.Empty : p44TCIBindSpec.Text).Trim();
+            int colon = spec.LastIndexOf(':');
+            if (colon <= 0 || colon >= spec.Length - 1) return false;
+
+            string ipText = spec.Substring(0, colon).Trim();
+            int p;
+            if (!P44TCISettings.IsIPv4(ipText)) return false;
+            if (!Int32.TryParse(spec.Substring(colon + 1), NumberStyles.Integer, CultureInfo.InvariantCulture, out p)) return false;
+            if (p < 1024 || p > 65535) return false;
+
+            address = ipText;
+            port = p;
+            return true;
+        }
+
+        private void P44TCIBindLeave(object sender, EventArgs e)
+        {
+            if (p44TCILoading) return;
+            string address;
+            int port;
+            if (!P44TryReadBindSpec(out address, out port))
+            {
+                p44TCIBindSpec.Text = P44TCISettings.BindAddress + ":" +
+                    P44TCISettings.Port.ToString(CultureInfo.InvariantCulture);
+                P44UpdateTCIStatus();
+                return;
+            }
+
+            P44TCISettings.BindAddress = address;
+            P44TCISettings.Port = port;
+            P44SaveAndRestartTCI();
+        }
+
+        private void P44TCIDefaultsClick(object sender, EventArgs e)
+        {
+            p44TCIBindSpec.Text = "0.0.0.0:50001";
+            P44TCIRate.Value = 100;
+            P44TCIBindLeave(sender, EventArgs.Empty);
+        }
+
+        private void P44TCIIPv4Click(object sender, EventArgs e)
+        {
+            string ip = "127.0.0.1";
+            try
+            {
+                IPAddress[] addresses = Dns.GetHostEntry(Dns.GetHostName()).AddressList;
+                foreach (IPAddress candidate in addresses)
+                {
+                    if (candidate.AddressFamily == AddressFamily.InterNetwork && !IPAddress.IsLoopback(candidate))
+                    {
+                        ip = candidate.ToString();
+                        break;
+                    }
+                }
+            }
+            catch { }
+
+            p44TCIBindSpec.Text = ip + ":" + P44TCISettings.Port.ToString(CultureInfo.InvariantCulture);
+            P44TCIBindLeave(sender, EventArgs.Empty);
         }
 
         private void P44TCISettingChanged(object sender, EventArgs e)
@@ -1189,18 +1612,36 @@ namespace PowerSDR
             if (p44TCILoading) return;
 
             P44TCISettings.Enabled = p44TCIEnabled.Checked;
-            P44TCISettings.Port = (int)p44TCIPort.Value;
-            P44TCISettings.BindAll = p44TCIBindAll.Checked;
-            P44TCISettings.Save();
+            P44TCISettings.PollMs = (int)p44TCIRate.Value;
+            P44TCISettings.SendInitialStateOnConnect = p44TCISendInitial.Checked;
+            P44TCISettings.CWLUbecomesCW = p44TCICWLAsCW.Checked;
+            P44TCISettings.CWBecomesCWUAbove10MHz = p44TCICWAbove10.Checked;
+            P44TCISettings.EmulateExpertSDR3Protocol = p44TCIEmulateExpert.Checked;
+            P44TCISettings.EmulateSunSDR2Pro = p44TCIEmulateSun.Checked;
+            P44SaveAndRestartTCI();
+        }
 
+        private void P44SaveAndRestartTCI()
+        {
+            P44TCISettings.Save();
             if (console != null) console.P44RestartTCI();
             P44UpdateTCIStatus();
+        }
+
+        private void P44TCIShowLogClick(object sender, EventArgs e)
+        {
+            try
+            {
+                P44TCILog.Write("LOG OPEN");
+                System.Diagnostics.Process.Start("notepad.exe", P44TCILog.LogPath);
+            }
+            catch { }
         }
 
         private void P44UpdateTCIStatus()
         {
             if (p44TCIStatus == null) return;
-            p44TCIStatus.Text = console == null ? "Status: console unavailable" : "Status: " + console.P44TCIStatusText;
+            p44TCIStatus.Text = console == null ? "Console unavailable" : console.P44TCIStatusText;
         }
     }
 }
