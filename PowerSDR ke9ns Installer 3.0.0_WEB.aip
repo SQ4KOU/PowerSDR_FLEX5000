@@ -10,6 +10,7 @@
     <ROW Property="AI_REQUIRED_DOTNET_VERSION" MultiBuildValue="AnyCPU_Release:4.5.2" ValueLocId="-"/>
     <ROW Property="AI_REQUIRED_WINDOWS_INSTALLER_DISPLAY" MultiBuildValue="AnyCPU_Release:5.0" ValueLocId="-"/>
     <ROW Property="AI_REQUIRED_WINDOWS_INSTALLER_VERSION" MultiBuildValue="AnyCPU_Release:5.0" ValueLocId="-"/>
+    <ROW Property="AI_UPGRADE" Value="No"/>
     <ROW Property="ALLUSERS" Value="1"/>
     <ROW Property="ARPCOMMENTS" Value="This installer database contains the logic and data required to install [|ProductName]." ValueLocId="*"/>
     <ROW Property="ARPCONTACT" Value="ke9ns@ke9ns.com"/>
@@ -19,10 +20,10 @@
     <ROW Property="ARPURLUPDATEINFO" Value="ke9ns.com/flexpage.html"/>
     <ROW Property="CTRLS" Value="1"/>
     <ROW Property="Manufacturer" Value="ke9ns"/>
-    <ROW Property="ProductCode" Value="1033:{75236B49-C737-4272-A6BD-32E77BB53C01} " Type="16"/>
+    <ROW Property="ProductCode" Value="1033:{2612454F-4724-4DE3-9052-0058C46E6F00} " Type="16"/>
     <ROW Property="ProductLanguage" Value="1033"/>
-    <ROW Property="ProductName" Value="PowerSDR v2.8.0.322"/>
-    <ROW Property="ProductVersion" Value="22.322.1.0" Type="32"/>
+    <ROW Property="ProductName" Value="PowerSDR v3.0.0.1"/>
+    <ROW Property="ProductVersion" Value="33.0.2" Type="32"/>
     <ROW Property="SecureCustomProperties" Value="OLDPRODUCTS;AI_NEWERPRODUCTFOUND"/>
     <ROW Property="UpgradeCode" Value="{A5226811-E4EA-414C-8491-CEFB1FC47B7C}"/>
     <ROW Property="WindowsType9X" MultiBuildValue="AnyCPU_Release:Windows 9x/ME" ValueLocId="-"/>
@@ -59,99 +60,73 @@
     <ROW Directory="KE9NS3_Spot_Dir" Directory_Parent="Skins_Dir" DefaultDir="KE9NS3~1|KE9NS3_Spot"/>
     <ROW Directory="KE9NS4_Plain_Dir" Directory_Parent="Skins_Dir" DefaultDir="KE9NS4~1|KE9NS4_Plain"/>
     <ROW Directory="KE9NS6_World_Dir" Directory_Parent="Skins_Dir" DefaultDir="KE9NS6~1|KE9NS6_World"/>
-    <ROW Directory="MEIPreload_Dir" Directory_Parent="chromewin_Dir" DefaultDir="MEIPRE~1|MEIPreload"/>
     <ROW Directory="PowerSDR_Dir" Directory_Parent="FlexRadioSystems_1_Dir" DefaultDir="PowerSDR"/>
-    <ROW Directory="PowerSDRv2.7.2_Dir" Directory_Parent="FlexRadioSystems_Dir" DefaultDir="POWERS~1.0|PowerSDR v2.8.0"/>
+    <ROW Directory="PowerSDRv2.7.2_Dir" Directory_Parent="FlexRadioSystems_Dir" DefaultDir="POWERS~2.0|PowerSDR v3.0.0"/>
     <ROW Directory="Skins_Dir" Directory_Parent="PowerSDR_Dir" DefaultDir="Skins"/>
     <ROW Directory="TARGETDIR" DefaultDir="SourceDir"/>
-    <ROW Directory="Win64848005_Dir" Directory_Parent="localchromium_Dir" DefaultDir="WIN64-~1|Win64-848005"/>
-    <ROW Directory="chromewin_Dir" Directory_Parent="Win64848005_Dir" DefaultDir="CHROME~1|chrome-win"/>
-    <ROW Directory="localchromium_Dir" Directory_Parent="APPDIR" DefaultDir="LOCAL-~1|.local-chromium"/>
-    <ROW Directory="locales_Dir" Directory_Parent="chromewin_Dir" DefaultDir="locales"/>
-    <ROW Directory="seleniummanager_Dir" Directory_Parent="APPDIR" DefaultDir="SELENI~1|selenium-manager"/>
-    <ROW Directory="swiftshader_Dir" Directory_Parent="chromewin_Dir" DefaultDir="SWIFTS~1|swiftshader"/>
-    <ROW Directory="windows_Dir" Directory_Parent="seleniummanager_Dir" DefaultDir="windows"/>
   </COMPONENT>
   <COMPONENT cid="caphyon.advinst.msicomp.MsiCompsComponent">
-    <ROW Component="ADODB.dll" ComponentId="{28AEEFEA-2322-414B-A1F7-F98C480D9D7D}" Directory_="APPDIR" Attributes="0" KeyPath="ADODB.dll"/>
-    <ROW Component="AutoItX3.Assembly.dll" ComponentId="{6F63835D-41A9-41B4-A917-5BE3EE0BEC68}" Directory_="APPDIR" Attributes="0" KeyPath="AutoItX3.Assembly.dll"/>
-    <ROW Component="AutoItX3.dll" ComponentId="{7EBA0F97-C230-49A8-8A24-2453EAAA8CA5}" Directory_="APPDIR" Attributes="0" KeyPath="AutoItX3.dll"/>
-    <ROW Component="AutoItX3_x64.dll" ComponentId="{1CF369F7-520F-4120-9D59-AB6F14691CC0}" Directory_="APPDIR" Attributes="256" KeyPath="AutoItX3_x64.dll"/>
-    <ROW Component="CUSTOM_MEM_SCANNER_EXAMPLE.txt" ComponentId="{152CD805-FB58-4181-9B73-3690937E42E9}" Directory_="CustomScannerList_Dir" Attributes="0" KeyPath="CUSTOM_MEM_SCANNER_EXAMPLE.txt" Type="0"/>
-    <ROW Component="D3DCompiler_47.dll" ComponentId="{212598D5-47ED-4511-B4EF-2950E57B2A0F}" Directory_="chromewin_Dir" Attributes="256" KeyPath="D3DCompiler_47.dll"/>
-    <ROW Component="DXLOC.txt" ComponentId="{0F598E98-4E6F-4866-A099-7DA5518AECF1}" Directory_="PowerSDRv2.7.2_Dir" Attributes="0" KeyPath="DXLOC.txt" Type="0"/>
-    <ROW Component="DttSP.dll" ComponentId="{DB14FCA4-616A-43B3-93BA-FA59C8F68B47}" Directory_="APPDIR" Attributes="0" KeyPath="DttSP.dll"/>
-    <ROW Component="FLEX1500_Firmware_ReadMe.txt" ComponentId="{16265A6F-8E32-444A-A69E-71534844988E}" Directory_="FLEX1500_Dir" Attributes="0" KeyPath="FLEX1500_Firmware_ReadMe.txt" Type="0"/>
-    <ROW Component="FLEX3000_Firmware_ReadMe.txt" ComponentId="{6DA01CD1-3D21-4C0E-A81D-506062356A74}" Directory_="FLEX3000_Dir" Attributes="0" KeyPath="FLEX3000_Firmware_ReadMe.txt" Type="0"/>
-    <ROW Component="FLEX5000_Firmware_ReadMe.txt" ComponentId="{A24384D1-B70C-4AE0-9A6C-E1210974BA23}" Directory_="FLEX5000_Dir" Attributes="0" KeyPath="FLEX5000_Firmware_ReadMe.txt" Type="0"/>
-    <ROW Component="LicenseAgreement.txt" ComponentId="{D78B6562-19CB-47E3-99C2-38E387A426DA}" Directory_="KE9NS3_Spot_Dir" Attributes="0" KeyPath="LicenseAgreement.txt" Type="0"/>
-    <ROW Component="LicenseAgreement.txt_1" ComponentId="{25F74E13-016D-49F6-96E8-91E42A3D281F}" Directory_="KE9NS4_Plain_Dir" Attributes="0" KeyPath="LicenseAgreement.txt_1" Type="0"/>
-    <ROW Component="LicenseAgreement.txt_2" ComponentId="{3DC0DC29-8896-43F6-885E-FD10E0666071}" Directory_="KE9NS6_World_Dir" Attributes="0" KeyPath="LicenseAgreement.txt_2" Type="0"/>
-    <ROW Component="Microsoft.AspNetCore.WebUtilities.dll" ComponentId="{1456E5B8-DEFA-4163-87BD-81135F7EE615}" Directory_="APPDIR" Attributes="0" KeyPath="Microsoft.AspNetCore.WebUtilities.dll"/>
-    <ROW Component="Microsoft.Bcl.AsyncInterfaces.dll" ComponentId="{5FCBD2DD-3599-4B01-AAE8-4DA0CA69648E}" Directory_="APPDIR" Attributes="0" KeyPath="Microsoft.Bcl.AsyncInterfaces.dll"/>
-    <ROW Component="Microsoft.Extensions.DependencyInjection.Abstractions.dll" ComponentId="{479B434F-46C2-4B91-82E2-ABB59489092A}" Directory_="APPDIR" Attributes="0" KeyPath="Microsoft.Extensions.DependencyInjection.Abstractions.dll"/>
-    <ROW Component="Microsoft.Extensions.DependencyInjection.dll" ComponentId="{8AE63BF4-6B9A-40D0-A257-C7EF6FFC0592}" Directory_="APPDIR" Attributes="0" KeyPath="Microsoft.Extensions.DependencyInjection.dll"/>
-    <ROW Component="Microsoft.Extensions.Logging.Abstractions.dll" ComponentId="{2382F987-7D74-4892-BCDA-4DC29F1B9A87}" Directory_="APPDIR" Attributes="0" KeyPath="Microsoft.Extensions.Logging.Abstractions.dll"/>
-    <ROW Component="Microsoft.Extensions.Logging.dll" ComponentId="{18197E22-2F5D-4249-8235-8DC07E6673F7}" Directory_="APPDIR" Attributes="0" KeyPath="Microsoft.Extensions.Logging.dll"/>
-    <ROW Component="Microsoft.Extensions.Options.dll" ComponentId="{D2264AD9-EC10-423A-AAD9-81606432CA40}" Directory_="APPDIR" Attributes="0" KeyPath="Microsoft.Extensions.Options.dll"/>
-    <ROW Component="Microsoft.Extensions.Primitives.dll" ComponentId="{555537FD-946F-4D28-8D25-64B0E6D0D158}" Directory_="APPDIR" Attributes="0" KeyPath="Microsoft.Extensions.Primitives.dll"/>
-    <ROW Component="Microsoft.Net.Http.Headers.dll" ComponentId="{6DAB61CB-9919-4C83-817B-25D3146EDE93}" Directory_="APPDIR" Attributes="0" KeyPath="Microsoft.Net.Http.Headers.dll"/>
-    <ROW Component="Microsoft.Vsa.dll" ComponentId="{68FD8FC3-89E1-4504-B0EF-AF8860DB2B36}" Directory_="APPDIR" Attributes="0" KeyPath="Microsoft.Vsa.dll"/>
-    <ROW Component="PdfiumViewer.dll" ComponentId="{4DE549C5-2A1C-4DC8-B437-F9AC6EBF74E7}" Directory_="APPDIR" Attributes="0" KeyPath="PdfiumViewer.dll"/>
-    <ROW Component="PowerMate.dll" ComponentId="{D16FD3B4-F721-4F4C-B293-24171467BDBE}" Directory_="APPDIR" Attributes="0" KeyPath="PowerMate.dll"/>
-    <ROW Component="PowerSDR.exe" ComponentId="{E779925D-7478-41F2-8853-DE4D372E2DBE}" Directory_="APPDIR" Attributes="0" KeyPath="PowerSDR.exe"/>
-    <ROW Component="PowerSDR_T9.exe.config" ComponentId="{A8309C92-B9C2-451D-82AF-895666E459B7}" Directory_="APPDIR" Attributes="0" KeyPath="CATStructs.xml" Type="0"/>
-    <ROW Component="ProductInformation" ComponentId="{3933C988-6CCF-4FE8-BB8B-EC864D0348C2}" Directory_="APPDIR" Attributes="4" KeyPath="Version"/>
-    <ROW Component="System.Buffers.dll" ComponentId="{B3F7E78A-C1A5-49AF-BE69-0B1D91B7B0E5}" Directory_="APPDIR" Attributes="0" KeyPath="System.Buffers.dll"/>
-    <ROW Component="System.Diagnostics.DiagnosticSource.dll" ComponentId="{CED9CFB7-ECAA-45ED-A3DC-C668F5F1A017}" Directory_="APPDIR" Attributes="0" KeyPath="System.Diagnostics.DiagnosticSource.dll"/>
-    <ROW Component="System.Json.dll" ComponentId="{29002346-D747-43AC-8190-C6A5D67D52D3}" Directory_="APPDIR" Attributes="0" KeyPath="System.Json.dll"/>
-    <ROW Component="System.Memory.dll" ComponentId="{4F151F89-CD27-4FCB-BBB1-5748B1E0E399}" Directory_="APPDIR" Attributes="0" KeyPath="System.Memory.dll"/>
-    <ROW Component="System.Numerics.Vectors.dll" ComponentId="{A4A8FDE1-AD3A-49D1-B5C3-17D9E62943CB}" Directory_="APPDIR" Attributes="0" KeyPath="System.Numerics.Vectors.dll"/>
-    <ROW Component="System.Runtime.CompilerServices.Unsafe.dll" ComponentId="{79BC13A8-23EA-480E-B1D4-F1A6AF909CAB}" Directory_="APPDIR" Attributes="0" KeyPath="System.Runtime.CompilerServices.Unsafe.dll"/>
-    <ROW Component="System.Text.Encodings.Web.dll" ComponentId="{7273D158-27E9-4A7E-B508-A85A935EB0BD}" Directory_="APPDIR" Attributes="0" KeyPath="System.Text.Encodings.Web.dll"/>
-    <ROW Component="System.Text.Json.dll" ComponentId="{85E6929F-64B9-42C2-88D9-6AE8A67CD805}" Directory_="APPDIR" Attributes="0" KeyPath="System.Text.Json.dll"/>
-    <ROW Component="System.Threading.Tasks.Extensions.dll" ComponentId="{F1FE773C-F1BC-490E-9139-A7BB5218691C}" Directory_="APPDIR" Attributes="0" KeyPath="System.Threading.Tasks.Extensions.dll"/>
-    <ROW Component="System.ValueTuple.dll" ComponentId="{20379DE2-BD12-42DB-A140-E825A9A52127}" Directory_="APPDIR" Attributes="0" KeyPath="System.ValueTuple.dll"/>
-    <ROW Component="System.Windows.Interactivity.dll" ComponentId="{B72E20BC-4AF7-4C23-B025-59A85BBE5A76}" Directory_="APPDIR" Attributes="0" KeyPath="System.Windows.Interactivity.dll"/>
-    <ROW Component="WebDriver.dll" ComponentId="{E18A5208-0B52-4145-B568-83ABCFFAD0B6}" Directory_="APPDIR" Attributes="0" KeyPath="WebDriver.dll"/>
-    <ROW Component="X20bttn0.png" ComponentId="{B5E7871E-9491-4829-A64C-5D8C2C8B4E97}" Directory_="Base_Dir" Attributes="0" KeyPath="X20bttn0.png" Type="0"/>
-    <ROW Component="X20bttn0.png_1" ComponentId="{1020E4CA-357C-4D75-A93B-815D41CF5910}" Directory_="Base_1_Dir" Attributes="0" KeyPath="X20bttn0.png_3" Type="0"/>
-    <ROW Component="X20bttn0.png_2" ComponentId="{0527EA61-2165-4577-A766-2F9448D5FE43}" Directory_="Base_2_Dir" Attributes="0" KeyPath="X20bttn0.png_6" Type="0"/>
-    <ROW Component="apimswincrtheapl110.dll" ComponentId="{2EA98ABA-DD8B-4228-874F-B07475E825F6}" Directory_="APPDIR" Attributes="0" KeyPath="apimswincrtheapl110.dll"/>
-    <ROW Component="apimswincrtruntimel110.dll" ComponentId="{9A7C081E-15EA-4558-A6C2-4F08E2F42512}" Directory_="APPDIR" Attributes="0" KeyPath="apimswincrtruntimel110.dll"/>
-    <ROW Component="ar.pak" ComponentId="{895F344E-B90F-4273-92C3-67FC96BB167C}" Directory_="locales_Dir" Attributes="0" KeyPath="ar.pak" Type="0"/>
-    <ROW Component="btnBandHF0.png" ComponentId="{097952A8-DBE8-4580-9733-6967F95C6D30}" Directory_="Console_Dir" Attributes="0" KeyPath="btnBandHF0.png" Type="0"/>
-    <ROW Component="btnBandHF0.png_1" ComponentId="{20CC27E9-5C41-4836-9885-F6CA8505CCA3}" Directory_="Console_1_Dir" Attributes="0" KeyPath="btnBandHF0.png_1" Type="0"/>
-    <ROW Component="btnBandHF0.png_2" ComponentId="{3F848119-ACC3-4743-83DB-62076BEF8D3B}" Directory_="Console_2_Dir" Attributes="0" KeyPath="btnBandHF0.png_2" Type="0"/>
-    <ROW Component="chrome.dll" ComponentId="{0E361E08-15F6-46E4-82A8-373DEF09384B}" Directory_="chromewin_Dir" Attributes="256" KeyPath="chrome.dll"/>
-    <ROW Component="chrome.exe" ComponentId="{9DA30318-919C-41F9-8A8C-C644FF73AC61}" Directory_="chromewin_Dir" Attributes="256" KeyPath="chrome.exe"/>
-    <ROW Component="chrome_elf.dll" ComponentId="{74D5BBFC-3B8E-4084-97B1-EBEC36709E63}" Directory_="APPDIR" Attributes="0" KeyPath="chrome_elf.dll"/>
-    <ROW Component="chrome_elf.dll_1" ComponentId="{E29C9903-D180-456D-AFA3-39EBB4F7B3F0}" Directory_="chromewin_Dir" Attributes="256" KeyPath="chrome_elf.dll_1"/>
-    <ROW Component="chrome_proxy.exe" ComponentId="{2ED7C462-5D4E-47AE-B91B-2FF2921242DC}" Directory_="chromewin_Dir" Attributes="256" KeyPath="chrome_proxy.exe"/>
-    <ROW Component="chrome_pwa_launcher.exe" ComponentId="{2F53CCFE-6103-43C5-B2E3-98F929FEFCAD}" Directory_="chromewin_Dir" Attributes="256" KeyPath="chrome_pwa_launcher.exe"/>
-    <ROW Component="elevation_service.exe" ComponentId="{AC80B1C4-5F3B-458F-A79D-4A280DFE3D7C}" Directory_="chromewin_Dir" Attributes="256" KeyPath="elevation_service.exe"/>
-    <ROW Component="eventlog_provider.dll" ComponentId="{EE87FED2-C2CF-4186-999E-E0DFC6D06B61}" Directory_="chromewin_Dir" Attributes="256" KeyPath="eventlog_provider.dll"/>
-    <ROW Component="libEGL.dll" ComponentId="{A44A73AF-AF31-45BE-892A-1EBDBFF1B741}" Directory_="chromewin_Dir" Attributes="256" KeyPath="libEGL.dll"/>
-    <ROW Component="libEGL.dll_1" ComponentId="{DD0D41A9-D411-4E7B-BCDF-5A3E55E2F575}" Directory_="swiftshader_Dir" Attributes="256" KeyPath="libEGL.dll_1"/>
-    <ROW Component="libGLESv2.dll" ComponentId="{FAB1645D-0188-497D-8209-C410771C242F}" Directory_="chromewin_Dir" Attributes="256" KeyPath="libGLESv2.dll"/>
-    <ROW Component="libGLESv2.dll_1" ComponentId="{362A99B9-1B4C-4730-B073-2C703DB43B32}" Directory_="swiftshader_Dir" Attributes="256" KeyPath="libGLESv2.dll_1"/>
-    <ROW Component="manifest" ComponentId="{BF403439-ACBD-4628-8EAE-1B906867EB7B}" Directory_="chromewin_Dir" Attributes="0" KeyPath="manifest" Type="0"/>
-    <ROW Component="manifest.json" ComponentId="{F7B137C9-D4B0-458A-B838-B2E0674A293A}" Directory_="MEIPreload_Dir" Attributes="0" KeyPath="manifest.json" Type="0"/>
-    <ROW Component="mcl_pm.dll" ComponentId="{A83CD0BB-ABEE-491E-B693-C99EB9D399CB}" Directory_="APPDIR" Attributes="0" KeyPath="mcl_pm.dll"/>
-    <ROW Component="mojo_core.dll" ComponentId="{CDC41C50-ED19-446E-8F7D-93AC43568286}" Directory_="chromewin_Dir" Attributes="256" KeyPath="mojo_core.dll"/>
-    <ROW Component="notification_helper.exe" ComponentId="{554961C4-DA48-47FD-9A8E-896CE6E3BE82}" Directory_="chromewin_Dir" Attributes="256" KeyPath="notification_helper.exe"/>
-    <ROW Component="pdfium.dll" ComponentId="{07FB934B-4ED7-44E4-B87B-EE3382C6727B}" Directory_="APPDIR" Attributes="0" KeyPath="pdfium.dll"/>
-    <ROW Component="pthreadVC.dll" ComponentId="{AFE5794E-451D-4D0C-91F9-32CC5FBDD6B0}" Directory_="APPDIR" Attributes="0" KeyPath="pthreadVC.dll"/>
-    <ROW Component="seleniummanager.exe" ComponentId="{A0F44C73-7F40-429A-A041-99AD5E06CE33}" Directory_="windows_Dir" Attributes="0" KeyPath="seleniummanager.exe"/>
-    <ROW Component="tool.exe" ComponentId="{34EEF2E5-0F00-469A-9DE3-B326E8D2BFF1}" Directory_="FlexRadioSystems_1_Dir" Attributes="0" KeyPath="tool.exe"/>
-    <ROW Component="tool.exe_1" ComponentId="{1E694E64-8514-4FE4-A85A-67C49C309D1D}" Directory_="FLEXFirmware_Dir" Attributes="0" KeyPath="tool.exe_1"/>
+    <ROW Component="ADODB.dll" ComponentId="{6EAE003C-941D-42D3-82F8-85110136E657}" Directory_="APPDIR" Attributes="0" KeyPath="ADODB.dll"/>
+    <ROW Component="AutoItX3.Assembly.dll" ComponentId="{5555AC39-454D-402F-900C-436FBD111918}" Directory_="APPDIR" Attributes="0" KeyPath="AutoItX3.Assembly.dll"/>
+    <ROW Component="AutoItX3.dll" ComponentId="{7C3E8A6E-EB20-4538-B3B1-BE065CCC05A6}" Directory_="APPDIR" Attributes="0" KeyPath="AutoItX3.dll"/>
+    <ROW Component="AutoItX3_x64.dll" ComponentId="{D625EA84-204B-47C0-A687-65EA53226F8E}" Directory_="APPDIR" Attributes="256" KeyPath="AutoItX3_x64.dll"/>
+    <ROW Component="CUSTOM_MEM_SCANNER_EXAMPLE.txt" ComponentId="{33A6392D-7F2E-4774-B5CA-5ADD5358478B}" Directory_="CustomScannerList_Dir" Attributes="0" KeyPath="CUSTOM_MEM_SCANNER_EXAMPLE.txt" Type="0"/>
+    <ROW Component="DXLOC.txt" ComponentId="{2CB5C9F5-AA70-4F15-88E6-C3B5411BB023}" Directory_="PowerSDRv2.7.2_Dir" Attributes="0" KeyPath="DXLOC.txt" Type="0"/>
+    <ROW Component="DttSP.dll" ComponentId="{52BE9514-ABB8-49D9-BFA0-D36E2E2AC46C}" Directory_="APPDIR" Attributes="0" KeyPath="DttSP.dll"/>
+    <ROW Component="FLEX1500_Firmware_ReadMe.txt" ComponentId="{D22D562D-8CE0-47A2-9721-8448E164D982}" Directory_="FLEX1500_Dir" Attributes="0" KeyPath="FLEX1500_Firmware_ReadMe.txt" Type="0"/>
+    <ROW Component="FLEX3000_Firmware_ReadMe.txt" ComponentId="{208B2CCB-A7F1-4A92-8896-F312BF020B39}" Directory_="FLEX3000_Dir" Attributes="0" KeyPath="FLEX3000_Firmware_ReadMe.txt" Type="0"/>
+    <ROW Component="FLEX5000_Firmware_ReadMe.txt" ComponentId="{27ED2B29-9787-4D17-B0C7-7C816D451686}" Directory_="FLEX5000_Dir" Attributes="0" KeyPath="FLEX5000_Firmware_ReadMe.txt" Type="0"/>
+    <ROW Component="LicenseAgreement.txt" ComponentId="{35B0A60E-DBB7-470B-B009-0C5FEE4D273D}" Directory_="KE9NS3_Spot_Dir" Attributes="0" KeyPath="LicenseAgreement.txt" Type="0"/>
+    <ROW Component="LicenseAgreement.txt_1" ComponentId="{C321707A-76D3-4921-A67F-5FBB2151276B}" Directory_="KE9NS4_Plain_Dir" Attributes="0" KeyPath="LicenseAgreement.txt_1" Type="0"/>
+    <ROW Component="LicenseAgreement.txt_2" ComponentId="{F33AD95D-F36A-4B57-99E7-04DCA1746073}" Directory_="KE9NS6_World_Dir" Attributes="0" KeyPath="LicenseAgreement.txt_2" Type="0"/>
+    <ROW Component="Microsoft.AspNetCore.WebUtilities.dll" ComponentId="{BA0A1E3C-DD1E-4878-B8AE-3D97C9D30442}" Directory_="APPDIR" Attributes="0" KeyPath="Microsoft.AspNetCore.WebUtilities.dll"/>
+    <ROW Component="Microsoft.Bcl.AsyncInterfaces.dll" ComponentId="{D80E34FC-FEB2-4F6B-8F4D-1AC0784B482B}" Directory_="APPDIR" Attributes="0" KeyPath="Microsoft.Bcl.AsyncInterfaces.dll"/>
+    <ROW Component="Microsoft.Extensions.DependencyInjection.Abstractions.dll" ComponentId="{6E9F74CA-FE7E-4980-8160-518905573269}" Directory_="APPDIR" Attributes="0" KeyPath="Microsoft.Extensions.DependencyInjection.Abstractions.dll"/>
+    <ROW Component="Microsoft.Extensions.DependencyInjection.dll" ComponentId="{57965F1F-EEDA-46A1-BF0C-6BE89A48FF7F}" Directory_="APPDIR" Attributes="0" KeyPath="Microsoft.Extensions.DependencyInjection.dll"/>
+    <ROW Component="Microsoft.Extensions.Logging.Abstractions.dll" ComponentId="{BAAFEAA8-3633-43C7-9A58-AF663035FCFE}" Directory_="APPDIR" Attributes="0" KeyPath="Microsoft.Extensions.Logging.Abstractions.dll"/>
+    <ROW Component="Microsoft.Extensions.Logging.dll" ComponentId="{C0FB9424-2C2F-4E92-B702-A692383D3817}" Directory_="APPDIR" Attributes="0" KeyPath="Microsoft.Extensions.Logging.dll"/>
+    <ROW Component="Microsoft.Extensions.Options.dll" ComponentId="{DBCFBBA6-C296-4672-98B0-044837EF2014}" Directory_="APPDIR" Attributes="0" KeyPath="Microsoft.Extensions.Options.dll"/>
+    <ROW Component="Microsoft.Extensions.Primitives.dll" ComponentId="{A5D0457D-0FB9-4B5E-9487-E78B28EB43D6}" Directory_="APPDIR" Attributes="0" KeyPath="Microsoft.Extensions.Primitives.dll"/>
+    <ROW Component="Microsoft.Net.Http.Headers.dll" ComponentId="{8E9F4630-CA6F-427E-9421-E333A76D52E2}" Directory_="APPDIR" Attributes="0" KeyPath="Microsoft.Net.Http.Headers.dll"/>
+    <ROW Component="Microsoft.Vsa.dll" ComponentId="{09BF72FE-5A29-4FD4-B8CC-31D4EA3004D4}" Directory_="APPDIR" Attributes="0" KeyPath="Microsoft.Vsa.dll"/>
+    <ROW Component="PdfiumViewer.dll" ComponentId="{D36C876A-D318-4B0E-AEF9-47ACA6C37938}" Directory_="APPDIR" Attributes="0" KeyPath="PdfiumViewer.dll"/>
+    <ROW Component="PowerMate.dll" ComponentId="{5FFA3382-514C-4785-A28A-A9F94BE43015}" Directory_="APPDIR" Attributes="0" KeyPath="PowerMate.dll"/>
+    <ROW Component="PowerSDR.exe" ComponentId="{0C5D990F-56B3-49A4-A972-12CFABBD880D}" Directory_="APPDIR" Attributes="0" KeyPath="PowerSDR.exe"/>
+    <ROW Component="PowerSDR_T9.exe.config" ComponentId="{C17B42E1-8AAA-4553-912D-9C7F5BF50C3E}" Directory_="APPDIR" Attributes="0" KeyPath="CATStructs.xml" Type="0"/>
+    <ROW Component="ProductInformation" ComponentId="{248274CB-9FD2-48CF-8A83-DE409F6200A9}" Directory_="APPDIR" Attributes="4" KeyPath="Version"/>
+    <ROW Component="System.Buffers.dll" ComponentId="{7F8CA696-48F4-44CE-9B15-8B03EF05A7DB}" Directory_="APPDIR" Attributes="0" KeyPath="System.Buffers.dll"/>
+    <ROW Component="System.Diagnostics.DiagnosticSource.dll" ComponentId="{6CBB1EDE-0938-4531-A84F-2E23EBDECDC7}" Directory_="APPDIR" Attributes="0" KeyPath="System.Diagnostics.DiagnosticSource.dll"/>
+    <ROW Component="System.Json.dll" ComponentId="{0B824FE6-B013-4663-BBC2-3799F63BC3B1}" Directory_="APPDIR" Attributes="0" KeyPath="System.Json.dll"/>
+    <ROW Component="System.Memory.dll" ComponentId="{04603D16-6A9D-4F11-AB7E-24FEFC12A310}" Directory_="APPDIR" Attributes="0" KeyPath="System.Memory.dll"/>
+    <ROW Component="System.Numerics.Vectors.dll" ComponentId="{E699B808-9369-448B-B602-4E49E72F5DC0}" Directory_="APPDIR" Attributes="0" KeyPath="System.Numerics.Vectors.dll"/>
+    <ROW Component="System.Runtime.CompilerServices.Unsafe.dll" ComponentId="{FE363113-DB14-4582-992C-293608D0CCA0}" Directory_="APPDIR" Attributes="0" KeyPath="System.Runtime.CompilerServices.Unsafe.dll"/>
+    <ROW Component="System.Text.Encodings.Web.dll" ComponentId="{C4302A00-B713-47C1-9611-8D0CB3F3E493}" Directory_="APPDIR" Attributes="0" KeyPath="System.Text.Encodings.Web.dll"/>
+    <ROW Component="System.Text.Json.dll" ComponentId="{E2E52356-68F2-40D1-B469-865C7A5112A1}" Directory_="APPDIR" Attributes="0" KeyPath="System.Text.Json.dll"/>
+    <ROW Component="System.Threading.Tasks.Extensions.dll" ComponentId="{9C199093-0A9B-44AF-9F16-8A46E4BE2088}" Directory_="APPDIR" Attributes="0" KeyPath="System.Threading.Tasks.Extensions.dll"/>
+    <ROW Component="System.ValueTuple.dll" ComponentId="{E365D749-4FAE-40C1-826B-3148D3B9B1B7}" Directory_="APPDIR" Attributes="0" KeyPath="System.ValueTuple.dll"/>
+    <ROW Component="System.Windows.Interactivity.dll" ComponentId="{A79E6F90-1F50-45D0-A70A-88BE8936C6D1}" Directory_="APPDIR" Attributes="0" KeyPath="System.Windows.Interactivity.dll"/>
+    <ROW Component="WebDriver.dll" ComponentId="{E09C3703-8E63-4E71-96BA-7E044E34968B}" Directory_="APPDIR" Attributes="0" KeyPath="WebDriver.dll"/>
+    <ROW Component="X20bttn0.png" ComponentId="{CA72BD69-FD64-4D09-831C-E92F3F9F227E}" Directory_="Base_Dir" Attributes="0" KeyPath="X20bttn0.png" Type="0"/>
+    <ROW Component="X20bttn0.png_1" ComponentId="{C19E50D6-DF87-418D-B633-3E6F081027F7}" Directory_="Base_1_Dir" Attributes="0" KeyPath="X20bttn0.png_3" Type="0"/>
+    <ROW Component="X20bttn0.png_2" ComponentId="{E34FB008-F1FB-49CE-B6AE-3270585746A1}" Directory_="Base_2_Dir" Attributes="0" KeyPath="X20bttn0.png_6" Type="0"/>
+    <ROW Component="apimswincrtheapl110.dll" ComponentId="{CE22AE65-3655-4F7A-ADBA-08233462206F}" Directory_="APPDIR" Attributes="0" KeyPath="apimswincrtheapl110.dll"/>
+    <ROW Component="apimswincrtruntimel110.dll" ComponentId="{55DF30DE-75E3-4E09-B8E1-64523BF42A78}" Directory_="APPDIR" Attributes="0" KeyPath="apimswincrtruntimel110.dll"/>
+    <ROW Component="btnBandHF0.png" ComponentId="{127A9878-0183-495A-9AD4-CEE23EA86ED3}" Directory_="Console_Dir" Attributes="0" KeyPath="btnBandHF0.png" Type="0"/>
+    <ROW Component="btnBandHF0.png_1" ComponentId="{942A8669-5FBB-4295-8BF0-785DF5038D1D}" Directory_="Console_1_Dir" Attributes="0" KeyPath="btnBandHF0.png_1" Type="0"/>
+    <ROW Component="btnBandHF0.png_2" ComponentId="{64BC0D1D-9E0E-4AC6-B18B-E4EFEA47C99F}" Directory_="Console_2_Dir" Attributes="0" KeyPath="btnBandHF0.png_2" Type="0"/>
+    <ROW Component="chrome_elf.dll" ComponentId="{8095D0A8-8878-4A0C-B56D-E6A0D08FC164}" Directory_="APPDIR" Attributes="0" KeyPath="chrome_elf.dll"/>
+    <ROW Component="mcl_pm.dll" ComponentId="{AAFDE62C-6A14-42CB-9C61-3EEA528D4EAB}" Directory_="APPDIR" Attributes="0" KeyPath="mcl_pm.dll"/>
+    <ROW Component="pdfium.dll" ComponentId="{85D9B594-23D9-4A79-A8EE-5B1BFD7D12C0}" Directory_="APPDIR" Attributes="0" KeyPath="pdfium.dll"/>
+    <ROW Component="pthreadVC.dll" ComponentId="{02A5FFA9-769D-4BA3-B053-ADDDBB601A2F}" Directory_="APPDIR" Attributes="0" KeyPath="pthreadVC.dll"/>
+    <ROW Component="tool.exe" ComponentId="{554AAF73-1F32-40EE-B2BB-9B206AD054B7}" Directory_="FlexRadioSystems_1_Dir" Attributes="0" KeyPath="tool.exe"/>
+    <ROW Component="tool.exe_1" ComponentId="{32B4BC80-3B78-4079-9E1D-197F4F663F22}" Directory_="FLEXFirmware_Dir" Attributes="0" KeyPath="tool.exe_1"/>
   </COMPONENT>
   <COMPONENT cid="caphyon.advinst.msicomp.MsiFeatsComponent">
-    <ROW Feature="MainFeature" Title="MainFeature" Description="Description" Display="1" Level="1" Directory_="APPDIR" Attributes="0" Components="ADODB.dll AutoItX3.Assembly.dll AutoItX3.dll AutoItX3_x64.dll CUSTOM_MEM_SCANNER_EXAMPLE.txt D3DCompiler_47.dll DXLOC.txt DttSP.dll FLEX1500_Firmware_ReadMe.txt FLEX3000_Firmware_ReadMe.txt FLEX5000_Firmware_ReadMe.txt LicenseAgreement.txt LicenseAgreement.txt_1 LicenseAgreement.txt_2 Microsoft.AspNetCore.WebUtilities.dll Microsoft.Bcl.AsyncInterfaces.dll Microsoft.Extensions.DependencyInjection.Abstractions.dll Microsoft.Extensions.DependencyInjection.dll Microsoft.Extensions.Logging.Abstractions.dll Microsoft.Extensions.Logging.dll Microsoft.Extensions.Options.dll Microsoft.Extensions.Primitives.dll Microsoft.Net.Http.Headers.dll Microsoft.Vsa.dll PdfiumViewer.dll PowerMate.dll PowerSDR.exe PowerSDR_T9.exe.config ProductInformation System.Buffers.dll System.Diagnostics.DiagnosticSource.dll System.Json.dll System.Memory.dll System.Numerics.Vectors.dll System.Runtime.CompilerServices.Unsafe.dll System.Text.Encodings.Web.dll System.Text.Json.dll System.Threading.Tasks.Extensions.dll System.ValueTuple.dll System.Windows.Interactivity.dll WebDriver.dll X20bttn0.png X20bttn0.png_1 X20bttn0.png_2 apimswincrtheapl110.dll apimswincrtruntimel110.dll ar.pak btnBandHF0.png btnBandHF0.png_1 btnBandHF0.png_2 chrome.dll chrome.exe chrome_elf.dll chrome_elf.dll_1 chrome_proxy.exe chrome_pwa_launcher.exe elevation_service.exe eventlog_provider.dll libEGL.dll libEGL.dll_1 libGLESv2.dll libGLESv2.dll_1 manifest manifest.json mcl_pm.dll mojo_core.dll notification_helper.exe pdfium.dll pthreadVC.dll seleniummanager.exe tool.exe tool.exe_1"/>
+    <ROW Feature="MainFeature" Title="MainFeature" Description="Description" Display="1" Level="1" Directory_="APPDIR" Attributes="0" Components="ADODB.dll AutoItX3.Assembly.dll AutoItX3.dll AutoItX3_x64.dll CUSTOM_MEM_SCANNER_EXAMPLE.txt DXLOC.txt DttSP.dll FLEX1500_Firmware_ReadMe.txt FLEX3000_Firmware_ReadMe.txt FLEX5000_Firmware_ReadMe.txt LicenseAgreement.txt LicenseAgreement.txt_1 LicenseAgreement.txt_2 Microsoft.AspNetCore.WebUtilities.dll Microsoft.Bcl.AsyncInterfaces.dll Microsoft.Extensions.DependencyInjection.Abstractions.dll Microsoft.Extensions.DependencyInjection.dll Microsoft.Extensions.Logging.Abstractions.dll Microsoft.Extensions.Logging.dll Microsoft.Extensions.Options.dll Microsoft.Extensions.Primitives.dll Microsoft.Net.Http.Headers.dll Microsoft.Vsa.dll PdfiumViewer.dll PowerMate.dll PowerSDR.exe PowerSDR_T9.exe.config ProductInformation System.Buffers.dll System.Diagnostics.DiagnosticSource.dll System.Json.dll System.Memory.dll System.Numerics.Vectors.dll System.Runtime.CompilerServices.Unsafe.dll System.Text.Encodings.Web.dll System.Text.Json.dll System.Threading.Tasks.Extensions.dll System.ValueTuple.dll System.Windows.Interactivity.dll WebDriver.dll X20bttn0.png X20bttn0.png_1 X20bttn0.png_2 apimswincrtheapl110.dll apimswincrtruntimel110.dll btnBandHF0.png btnBandHF0.png_1 btnBandHF0.png_2 chrome_elf.dll mcl_pm.dll pdfium.dll pthreadVC.dll tool.exe tool.exe_1"/>
     <ATTRIBUTE name="CurrentFeature" value="MainFeature"/>
   </COMPONENT>
   <COMPONENT cid="caphyon.advinst.msicomp.MsiFilesComponent">
-    <ROW File="ADODB.dll" Component_="ADODB.dll" FileName="ADODB.dll" Attributes="0" SourcePath="bin\Release\ADODB.dll" SelfReg="false" NextFile="FCCDATA.dat"/>
+    <ROW File="ADODB.dll" Component_="ADODB.dll" FileName="ADODB.dll" Attributes="0" SourcePath="bin\Release\ADODB.dll" SelfReg="false" NextFile="FLEX1500_Firmware_ReadMe.txt"/>
     <ROW File="AutoItX3.Assembly.dll" Component_="AutoItX3.Assembly.dll" FileName="AUTOIT~1.DLL|AutoItX3.Assembly.dll" Attributes="0" SourcePath="bin\Release\AutoItX3.Assembly.dll" SelfReg="false" NextFile="AutoItX3_x64.dll"/>
     <ROW File="AutoItX3.Assembly.xml" Component_="PowerSDR_T9.exe.config" FileName="AUTOIT~1.XML|AutoItX3.Assembly.xml" Version="65535.65535.65535.65535" Attributes="0" SourcePath="bin\Release\AutoItX3.Assembly.xml" SelfReg="false" NextFile="apimswincrtheapl110.dll"/>
     <ROW File="AutoItX3.dll" Component_="AutoItX3.dll" FileName="AutoItX3.dll" Attributes="0" SourcePath="bin\Release\AutoItX3.dll" SelfReg="false" NextFile="AutoItX3.Assembly.xml"/>
@@ -164,19 +139,16 @@
     <ROW File="Console.png_3" Component_="btnBandHF0.png_1" FileName="Console.png" Attributes="0" SourcePath="..\..\..\..\..\ProgramData\FlexRadio Systems\PowerSDR\Skins\KE9NS4_Plain\Console\Console.png" SelfReg="false" NextFile="panelBandHF.png_1"/>
     <ROW File="Console.png_4" Component_="X20bttn0.png_2" FileName="Console.png" Attributes="0" SourcePath="..\..\..\..\..\ProgramData\FlexRadio Systems\PowerSDR\Skins\KE9NS6_World\Console\Base\Console.png" SelfReg="false" NextFile="longledbttn0.png_2"/>
     <ROW File="Console.png_5" Component_="btnBandHF0.png_2" FileName="Console.png" Attributes="0" SourcePath="..\..\..\..\..\ProgramData\FlexRadio Systems\PowerSDR\Skins\KE9NS6_World\Console\Console.png" SelfReg="false" NextFile="panelBandHF.png_2"/>
-    <ROW File="D3DCompiler_47.dll" Component_="D3DCompiler_47.dll" FileName="D3DCOM~1.DLL|D3DCompiler_47.dll" Attributes="0" SourcePath="..\..\..\..\..\Program Files (x86)\FlexRadio Systems\PowerSDR v2.8.0\.local-chromium\Win64-848005\chrome-win\D3DCompiler_47.dll" SelfReg="false" NextFile="debug.log"/>
     <ROW File="DXLOC.txt" Component_="DXLOC.txt" FileName="DXLOC.txt" Attributes="0" SourcePath="..\..\..\Documents\My Webs\ke9ns2\DXLOC.txt" SelfReg="false" NextFile="SWL.csv"/>
     <ROW File="DttSP.dll" Component_="DttSP.dll" FileName="DttSP.dll" Attributes="0" SourcePath="bin\Release\DttSP.dll" SelfReg="false" NextFile="ADODB.dll"/>
-    <ROW File="FCCDATA.dat" Component_="DXLOC.txt" FileName="FCCDATA.dat" Attributes="0" SourcePath="..\..\..\Documents\My Webs\ke9ns2\FCCDATA.dat" SelfReg="false" NextFile="FLEX1500_Firmware_ReadMe.txt"/>
     <ROW File="FLEX1500_Firmware_ReadMe.txt" Component_="FLEX1500_Firmware_ReadMe.txt" FileName="FLEX-1~1.TXT|FLEX-1500_Firmware_ReadMe.txt" Attributes="0" SourcePath="..\..\..\..\..\ProgramData\FlexRadio Systems\FLEX Firmware\FLEX-1500\FLEX-1500_Firmware_ReadMe.txt" SelfReg="false" NextFile="FLEX3000_Firmware_ReadMe.txt"/>
     <ROW File="FLEX1500_Firmware_v0.5.3.24.bin" Component_="FLEX1500_Firmware_ReadMe.txt" FileName="FLEX-1~2.BIN|FLEX-1500_Firmware_v0.5.3.24.bin" Attributes="0" SourcePath="..\..\..\..\..\ProgramData\FlexRadio Systems\FLEX Firmware\FLEX-1500\FLEX-1500_Firmware_v0.5.3.24.bin" SelfReg="false" NextFile="FLEX3000_Firmware_v2.1.4.12.bin"/>
     <ROW File="FLEX3000_Firmware_ReadMe.txt" Component_="FLEX3000_Firmware_ReadMe.txt" FileName="FLEX-3~1.TXT|FLEX-3000_Firmware_ReadMe.txt" Attributes="0" SourcePath="..\..\..\..\..\ProgramData\FlexRadio Systems\FLEX Firmware\FLEX-3000\FLEX-3000_Firmware_ReadMe.txt" SelfReg="false" NextFile="FLEX5000_Firmware_ReadMe.txt"/>
     <ROW File="FLEX3000_Firmware_v2.1.4.12.bin" Component_="FLEX3000_Firmware_ReadMe.txt" FileName="FLEX-3~2.BIN|FLEX-3000_Firmware_v2.1.4.12.bin" Attributes="0" SourcePath="..\..\..\..\..\ProgramData\FlexRadio Systems\FLEX Firmware\FLEX-3000\FLEX-3000_Firmware_v2.1.4.12.bin" SelfReg="false" NextFile="FLEX5000_Firmware_v2.1.4.12.bin"/>
     <ROW File="FLEX5000_Firmware_ReadMe.txt" Component_="FLEX5000_Firmware_ReadMe.txt" FileName="FLEX-5~1.TXT|FLEX-5000_Firmware_ReadMe.txt" Attributes="0" SourcePath="..\..\..\..\..\ProgramData\FlexRadio Systems\FLEX Firmware\FLEX-5000\FLEX-5000_Firmware_ReadMe.txt" SelfReg="false" NextFile="cwman.bmp"/>
     <ROW File="FLEX5000_Firmware_v2.1.4.12.bin" Component_="FLEX5000_Firmware_ReadMe.txt" FileName="FLEX-5~2.BIN|FLEX-5000_Firmware_v2.1.4.12.bin" Attributes="0" SourcePath="..\..\..\..\..\ProgramData\FlexRadio Systems\FLEX Firmware\FLEX-5000\FLEX-5000_Firmware_v2.1.4.12.bin" SelfReg="false" NextFile="AutoItX3.Assembly.dll"/>
-    <ROW File="FLEX5000_Owners_Manual_v2.8.pdf" Component_="PowerSDR_T9.exe.config" FileName="FLEX-5~1.PDF|FLEX-5000_Owners_Manual_v2.8.pdf" Attributes="0" SourcePath="..\FLEX-5000_Owners_Manual_v2.8.pdf" SelfReg="false" NextFile="PowerSDRke9nskeyboardshortcuts.pdf"/>
-    <ROW File="FLEX5000_Owners_Manual_v2.8.pdf_1" Component_="DXLOC.txt" FileName="FLEX-5~1.PDF|FLEX-5000_Owners_Manual_v2.8.pdf" Attributes="0" SourcePath="..\FLEX-5000_Owners_Manual_v2.8.pdf" SelfReg="false" NextFile="PowerSDR_ke9ns_CAT_Commands.pdf_1"/>
-    <ROW File="FirstRun" Component_="manifest" FileName="FIRSTR~1|First Run" Attributes="0" SourcePath="..\..\..\..\..\Program Files (x86)\FlexRadio Systems\PowerSDR v2.8.0\.local-chromium\Win64-848005\chrome-win\First Run" SelfReg="false" NextFile="icudtl.dat"/>
+    <ROW File="FLEX5000_Owners_Manual_v2.8.pdf" Component_="PowerSDR_T9.exe.config" FileName="FLEX-5~1.PDF|FLEX-5000_Owners_Manual_v2.8.pdf" Attributes="0" SourcePath="FLEX-5000_Owners_Manual_v2.8.pdf" SelfReg="false" NextFile="PowerSDRke9nskeyboardshortcuts.pdf"/>
+    <ROW File="FLEX5000_Owners_Manual_v2.8.pdf_1" Component_="DXLOC.txt" FileName="FLEX-5~1.PDF|FLEX-5000_Owners_Manual_v2.8.pdf" Attributes="0" SourcePath="FLEX-5000_Owners_Manual_v2.8.pdf" SelfReg="false" NextFile="PowerSDR_ke9ns_CAT_Commands.pdf_1"/>
     <ROW File="LicenseAgreement.txt" Component_="LicenseAgreement.txt" FileName="LICENS~1.TXT|License Agreement.txt" Attributes="0" SourcePath="..\..\..\..\..\ProgramData\FlexRadio Systems\PowerSDR\Skins\KE9NS3_Spot\License Agreement.txt" SelfReg="false" NextFile="X20bttn0.png_3"/>
     <ROW File="LicenseAgreement.txt_1" Component_="LicenseAgreement.txt_1" FileName="LICENS~1.TXT|License Agreement.txt" Attributes="0" SourcePath="..\..\..\..\..\ProgramData\FlexRadio Systems\PowerSDR\Skins\KE9NS4_Plain\License Agreement.txt" SelfReg="false" NextFile="X20bttn0.png_6"/>
     <ROW File="LicenseAgreement.txt_2" Component_="LicenseAgreement.txt_2" FileName="LICENS~1.TXT|License Agreement.txt" Attributes="0" SourcePath="..\..\..\..\..\ProgramData\FlexRadio Systems\PowerSDR\Skins\KE9NS6_World\License Agreement.txt" SelfReg="false" NextFile="mic.bmp"/>
@@ -201,7 +173,7 @@
     <ROW File="Microsoft.Net.Http.Headers.xml" Component_="PowerSDR_T9.exe.config" FileName="MICROS~9.XML|Microsoft.Net.Http.Headers.xml" Attributes="0" SourcePath="bin\Release\Microsoft.Net.Http.Headers.xml" SelfReg="false" NextFile="Microsoft.Vsa.dll"/>
     <ROW File="Microsoft.Vsa.dll" Component_="Microsoft.Vsa.dll" FileName="MICRO~10.DLL|Microsoft.Vsa.dll" Attributes="0" SourcePath="bin\Release\Microsoft.Vsa.dll" SelfReg="false" NextFile="Microsoft.Vsa.xml"/>
     <ROW File="Microsoft.Vsa.xml" Component_="PowerSDR_T9.exe.config" FileName="MICRO~10.XML|Microsoft.Vsa.xml" Attributes="0" SourcePath="bin\Release\Microsoft.Vsa.xml" SelfReg="false" NextFile="PdfiumViewer.dll"/>
-    <ROW File="OP.bmp" Component_="DXLOC.txt" FileName="OP.bmp" Attributes="0" SourcePath="..\..\..\AppData\Roaming\FlexRadio Systems\PowerSDR v2.8.0\OP.bmp" SelfReg="false" NextFile="CUSTOM_MEM_SCANNER_EXAMPLE.txt"/>
+    <ROW File="OP.bmp" Component_="DXLOC.txt" FileName="OP.bmp" Attributes="0" SourcePath="..\..\..\AppData\Roaming\FlexRadio Systems\PowerSDR v3.0.0\OP.bmp" SelfReg="false" NextFile="CUSTOM_MEM_SCANNER_EXAMPLE.txt"/>
     <ROW File="PdfiumViewer.dll" Component_="PdfiumViewer.dll" FileName="PDFIUM~1.DLL|PdfiumViewer.dll" Attributes="0" SourcePath="bin\Release\PdfiumViewer.dll" SelfReg="false" NextFile="PdfiumViewer.xml"/>
     <ROW File="PdfiumViewer.xml" Component_="PowerSDR_T9.exe.config" FileName="PDFIUM~1.XML|PdfiumViewer.xml" Attributes="0" SourcePath="bin\Release\PdfiumViewer.xml" SelfReg="false" NextFile="System.Buffers.dll"/>
     <ROW File="PowerMate.dll" Component_="PowerMate.dll" FileName="POWERM~1.DLL|PowerMate.dll" Attributes="0" SourcePath="bin\Release\PowerMate.dll" SelfReg="false" NextFile="mcl_pm.dll"/>
@@ -212,8 +184,8 @@
     <ROW File="PowerSDRTXWaterfallID.pdf" Component_="DXLOC.txt" FileName="POWERS~2.PDF|PowerSDR TX Waterfall ID.pdf" Attributes="0" SourcePath="..\..\..\Documents\My Webs\ke9ns2\PowerSDR TX Waterfall ID.pdf" SelfReg="false" NextFile="PowerSDR.exe"/>
     <ROW File="PowerSDR_ke9ns_CAT_Commands.pdf" Component_="PowerSDR_T9.exe.config" FileName="POWERS~3.PDF|PowerSDR_ke9ns_CAT_Commands.pdf" Attributes="0" SourcePath="PowerSDR_ke9ns_CAT_Commands.pdf" SelfReg="false" NextFile="FLEX5000_Owners_Manual_v2.8.pdf"/>
     <ROW File="PowerSDR_ke9ns_CAT_Commands.pdf_1" Component_="DXLOC.txt" FileName="POWERS~3.PDF|PowerSDR_ke9ns_CAT_Commands.pdf" Attributes="0" SourcePath="PowerSDR_ke9ns_CAT_Commands.pdf" SelfReg="false" NextFile="pdfium.dll"/>
-    <ROW File="PowerSDRke9nskeyboardshortcuts.pdf" Component_="DXLOC.txt" FileName="POWERS~1.PDF|PowerSDR ke9ns keyboard shortcuts.pdf" Attributes="0" SourcePath="..\PowerSDR ke9ns keyboard shortcuts.pdf" SelfReg="false" NextFile="FLEX5000_Owners_Manual_v2.8.pdf_1"/>
-    <ROW File="PowerSDRke9nskeyboardshortcuts.pdf_1" Component_="PowerSDR_T9.exe.config" FileName="POWERS~2.PDF|PowerSDR ke9ns keyboard shortcuts.pdf" Attributes="0" SourcePath="..\PowerSDR ke9ns keyboard shortcuts.pdf" SelfReg="false" NextFile="PowerSDR_ke9ns_CAT_Commands.pdf"/>
+    <ROW File="PowerSDRke9nskeyboardshortcuts.pdf" Component_="DXLOC.txt" FileName="POWERS~1.PDF|PowerSDR ke9ns keyboard shortcuts.pdf" Attributes="0" SourcePath="PowerSDR ke9ns keyboard shortcuts.pdf" SelfReg="false" NextFile="FLEX5000_Owners_Manual_v2.8.pdf_1"/>
+    <ROW File="PowerSDRke9nskeyboardshortcuts.pdf_1" Component_="PowerSDR_T9.exe.config" FileName="POWERS~2.PDF|PowerSDR ke9ns keyboard shortcuts.pdf" Attributes="0" SourcePath="PowerSDR ke9ns keyboard shortcuts.pdf" SelfReg="false" NextFile="PowerSDR_ke9ns_CAT_Commands.pdf"/>
     <ROW File="SWL.csv" Component_="DXLOC.txt" FileName="SWL.csv" Attributes="0" SourcePath="..\..\..\Documents\My Webs\ke9ns2\SWL.csv" SelfReg="false" NextFile="SWL2.csv"/>
     <ROW File="SWL2.csv" Component_="DXLOC.txt" FileName="SWL2.csv" Attributes="0" SourcePath="..\..\..\Documents\My Webs\ke9ns2\SWL2.csv" SelfReg="false" NextFile="tool.exe"/>
     <ROW File="System.Buffers.dll" Component_="System.Buffers.dll" FileName="SYSTEM~1.DLL|System.Buffers.dll" Attributes="0" SourcePath="bin\Release\System.Buffers.dll" SelfReg="false" NextFile="System.Buffers.xml"/>
@@ -229,7 +201,7 @@
     <ROW File="System.Runtime.CompilerServices.Unsafe.xml" Component_="PowerSDR_T9.exe.config" FileName="SYSTEM~8.XML|System.Runtime.CompilerServices.Unsafe.xml" Attributes="0" SourcePath="bin\Release\System.Runtime.CompilerServices.Unsafe.xml" SelfReg="false" NextFile="System.Text.Encodings.Web.dll"/>
     <ROW File="System.Text.Encodings.Web.dll" Component_="System.Text.Encodings.Web.dll" FileName="SYSTE~10.DLL|System.Text.Encodings.Web.dll" Attributes="0" SourcePath="bin\Release\System.Text.Encodings.Web.dll" SelfReg="false" NextFile="System.Text.Encodings.Web.xml"/>
     <ROW File="System.Text.Encodings.Web.xml" Component_="PowerSDR_T9.exe.config" FileName="SYSTEM~9.XML|System.Text.Encodings.Web.xml" Attributes="0" SourcePath="bin\Release\System.Text.Encodings.Web.xml" SelfReg="false" NextFile="chrome_elf.dll"/>
-    <ROW File="System.Text.Json.dll" Component_="System.Text.Json.dll" FileName="SYSTE~11.DLL|System.Text.Json.dll" Attributes="0" SourcePath="bin\Release\System.Text.Json.dll" SelfReg="false" NextFile="manifest"/>
+    <ROW File="System.Text.Json.dll" Component_="System.Text.Json.dll" FileName="SYSTE~11.DLL|System.Text.Json.dll" Attributes="0" SourcePath="bin\Release\System.Text.Json.dll" SelfReg="false"/>
     <ROW File="System.Text.Json.xml" Component_="PowerSDR_T9.exe.config" FileName="SYSTEM~6.XML|System.Text.Json.xml" Attributes="0" SourcePath="bin\Release\System.Text.Json.xml" SelfReg="false" NextFile="System.Json.dll"/>
     <ROW File="System.Threading.Tasks.Extensions.dll" Component_="System.Threading.Tasks.Extensions.dll" FileName="SYSTEM~5.DLL|System.Threading.Tasks.Extensions.dll" Attributes="0" SourcePath="bin\Release\System.Threading.Tasks.Extensions.dll" SelfReg="false" NextFile="System.Text.Json.xml"/>
     <ROW File="System.Threading.Tasks.Extensions.xml" Component_="PowerSDR_T9.exe.config" FileName="SYSTEM~5.XML|System.Threading.Tasks.Extensions.xml" Attributes="0" SourcePath="bin\Release\System.Threading.Tasks.Extensions.xml" SelfReg="false" NextFile="System.Threading.Tasks.Extensions.dll"/>
@@ -270,10 +242,7 @@
     <ROW File="X23bttn_red1.png_2" Component_="X20bttn0.png_2" FileName="80X23B~3.PNG|80X23bttn_red-1.png" Attributes="0" SourcePath="..\..\..\..\..\ProgramData\FlexRadio Systems\PowerSDR\Skins\KE9NS6_World\Console\Base\80X23bttn_red-1.png" SelfReg="false" NextFile="build.log_2"/>
     <ROW File="apimswincrtheapl110.dll" Component_="apimswincrtheapl110.dll" FileName="API-MS~1.DLL|api-ms-win-crt-heap-l1-1-0.dll" Attributes="0" SourcePath="bin\Release\api-ms-win-crt-heap-l1-1-0.dll" SelfReg="false" NextFile="apimswincrtruntimel110.dll"/>
     <ROW File="apimswincrtruntimel110.dll" Component_="apimswincrtruntimel110.dll" FileName="API-MS~2.DLL|api-ms-win-crt-runtime-l1-1-0.dll" Attributes="0" SourcePath="bin\Release\api-ms-win-crt-runtime-l1-1-0.dll" SelfReg="false" NextFile="pthreadVC.dll"/>
-    <ROW File="ar.pak" Component_="ar.pak" FileName="ar.pak" Attributes="0" SourcePath="..\..\..\..\..\Program Files (x86)\FlexRadio Systems\PowerSDR v2.8.0\.local-chromium\Win64-848005\chrome-win\locales\ar.pak" SelfReg="false" NextFile="bg.pak"/>
-    <ROW File="arrl.bmp" Component_="DXLOC.txt" FileName="arrl.bmp" Attributes="0" SourcePath="..\..\..\AppData\Roaming\FlexRadio Systems\PowerSDR v2.8.0\arrl.bmp" SelfReg="false" NextFile="OP.bmp"/>
-    <ROW File="bg.pak" Component_="ar.pak" FileName="bg.pak" Attributes="0" SourcePath="..\..\..\..\..\Program Files (x86)\FlexRadio Systems\PowerSDR v2.8.0\.local-chromium\Win64-848005\chrome-win\locales\bg.pak" SelfReg="false" NextFile="bn.pak"/>
-    <ROW File="bn.pak" Component_="ar.pak" FileName="bn.pak" Attributes="0" SourcePath="..\..\..\..\..\Program Files (x86)\FlexRadio Systems\PowerSDR v2.8.0\.local-chromium\Win64-848005\chrome-win\locales\bn.pak" SelfReg="false" NextFile="ca.pak"/>
+    <ROW File="arrl.bmp" Component_="DXLOC.txt" FileName="arrl.bmp" Attributes="0" SourcePath="..\..\..\AppData\Roaming\FlexRadio Systems\PowerSDR v3.0.0\arrl.bmp" SelfReg="false" NextFile="OP.bmp"/>
     <ROW File="btnBandHF0.png" Component_="btnBandHF0.png" FileName="BTNBAN~1.PNG|btnBandHF-0.png" Attributes="0" SourcePath="..\..\..\..\..\ProgramData\FlexRadio Systems\PowerSDR\Skins\KE9NS3_Spot\Console\btnBandHF-0.png" SelfReg="false" NextFile="btnBandHF1.png"/>
     <ROW File="btnBandHF0.png_1" Component_="btnBandHF0.png_1" FileName="BTNBAN~1.PNG|btnBandHF-0.png" Attributes="0" SourcePath="..\..\..\..\..\ProgramData\FlexRadio Systems\PowerSDR\Skins\KE9NS4_Plain\Console\btnBandHF-0.png" SelfReg="false" NextFile="btnBandHF1.png_1"/>
     <ROW File="btnBandHF0.png_2" Component_="btnBandHF0.png_2" FileName="BTNBAN~1.PNG|btnBandHF-0.png" Attributes="0" SourcePath="..\..\..\..\..\ProgramData\FlexRadio Systems\PowerSDR\Skins\KE9NS6_World\Console\btnBandHF-0.png" SelfReg="false" NextFile="btnBandHF1.png_2"/>
@@ -391,7 +360,6 @@
     <ROW File="build.log" Component_="X20bttn0.png" FileName="build.log" Attributes="0" SourcePath="..\..\..\..\..\ProgramData\FlexRadio Systems\PowerSDR\Skins\KE9NS3_Spot\Console\Base\build.log" SelfReg="false" NextFile="chkPower0.png"/>
     <ROW File="build.log_1" Component_="X20bttn0.png_1" FileName="build.log" Attributes="0" SourcePath="..\..\..\..\..\ProgramData\FlexRadio Systems\PowerSDR\Skins\KE9NS4_Plain\Console\Base\build.log" SelfReg="false" NextFile="chkPower0.png_2"/>
     <ROW File="build.log_2" Component_="X20bttn0.png_2" FileName="build.log" Attributes="0" SourcePath="..\..\..\..\..\ProgramData\FlexRadio Systems\PowerSDR\Skins\KE9NS6_World\Console\Base\build.log" SelfReg="false" NextFile="chkPower0.png_4"/>
-    <ROW File="ca.pak" Component_="ar.pak" FileName="ca.pak" Attributes="0" SourcePath="..\..\..\..\..\Program Files (x86)\FlexRadio Systems\PowerSDR v2.8.0\.local-chromium\Win64-848005\chrome-win\locales\ca.pak" SelfReg="false" NextFile="cs.pak"/>
     <ROW File="chkANF0.png" Component_="btnBandHF0.png" FileName="chkANF-0.png" Attributes="0" SourcePath="..\..\..\..\..\ProgramData\FlexRadio Systems\PowerSDR\Skins\KE9NS3_Spot\Console\chkANF-0.png" SelfReg="false" NextFile="chkANF1.png"/>
     <ROW File="chkANF0.png_1" Component_="btnBandHF0.png_1" FileName="chkANF-0.png" Attributes="0" SourcePath="..\..\..\..\..\ProgramData\FlexRadio Systems\PowerSDR\Skins\KE9NS4_Plain\Console\chkANF-0.png" SelfReg="false" NextFile="chkANF1.png_1"/>
     <ROW File="chkANF0.png_2" Component_="btnBandHF0.png_2" FileName="chkANF-0.png" Attributes="0" SourcePath="..\..\..\..\..\ProgramData\FlexRadio Systems\PowerSDR\Skins\KE9NS6_World\Console\chkANF-0.png" SelfReg="false" NextFile="chkANF1.png_2"/>
@@ -728,14 +696,7 @@
     <ROW File="chkXIT1.png" Component_="btnBandHF0.png" FileName="chkXIT-1.png" Attributes="0" SourcePath="..\..\..\..\..\ProgramData\FlexRadio Systems\PowerSDR\Skins\KE9NS3_Spot\Console\chkXIT-1.png" SelfReg="false" NextFile="ckQuickPlay0.png"/>
     <ROW File="chkXIT1.png_1" Component_="btnBandHF0.png_1" FileName="chkXIT-1.png" Attributes="0" SourcePath="..\..\..\..\..\ProgramData\FlexRadio Systems\PowerSDR\Skins\KE9NS4_Plain\Console\chkXIT-1.png" SelfReg="false" NextFile="ckQuickPlay0.png_1"/>
     <ROW File="chkXIT1.png_2" Component_="btnBandHF0.png_2" FileName="chkXIT-1.png" Attributes="0" SourcePath="..\..\..\..\..\ProgramData\FlexRadio Systems\PowerSDR\Skins\KE9NS6_World\Console\chkXIT-1.png" SelfReg="false" NextFile="ckQuickPlay0.png_2"/>
-    <ROW File="chrome.dll" Component_="chrome.dll" FileName="chrome.dll" Attributes="0" SourcePath="..\..\..\..\..\Program Files (x86)\FlexRadio Systems\PowerSDR v2.8.0\.local-chromium\Win64-848005\chrome-win\chrome.dll" SelfReg="false" NextFile="chrome.exe"/>
-    <ROW File="chrome.exe" Component_="chrome.exe" FileName="chrome.exe" Attributes="0" SourcePath="..\..\..\..\..\Program Files (x86)\FlexRadio Systems\PowerSDR v2.8.0\.local-chromium\Win64-848005\chrome-win\chrome.exe" SelfReg="false" NextFile="chrome_100_percent.pak" DigSign="true"/>
-    <ROW File="chrome_100_percent.pak" Component_="manifest" FileName="CHROME~1.PAK|chrome_100_percent.pak" Attributes="0" SourcePath="..\..\..\..\..\Program Files (x86)\FlexRadio Systems\PowerSDR v2.8.0\.local-chromium\Win64-848005\chrome-win\chrome_100_percent.pak" SelfReg="false" NextFile="chrome_200_percent.pak"/>
-    <ROW File="chrome_200_percent.pak" Component_="manifest" FileName="CHROME~2.PAK|chrome_200_percent.pak" Attributes="0" SourcePath="..\..\..\..\..\Program Files (x86)\FlexRadio Systems\PowerSDR v2.8.0\.local-chromium\Win64-848005\chrome-win\chrome_200_percent.pak" SelfReg="false" NextFile="chrome_elf.dll_1"/>
     <ROW File="chrome_elf.dll" Component_="chrome_elf.dll" FileName="CHROME~1.DLL|chrome_elf.dll" Attributes="0" SourcePath="bin\Release\chrome_elf.dll" SelfReg="false" NextFile="System.Text.Json.dll"/>
-    <ROW File="chrome_elf.dll_1" Component_="chrome_elf.dll_1" FileName="CHROME~1.DLL|chrome_elf.dll" Attributes="0" SourcePath="..\..\..\..\..\Program Files (x86)\FlexRadio Systems\PowerSDR v2.8.0\.local-chromium\Win64-848005\chrome-win\chrome_elf.dll" SelfReg="false" NextFile="chrome_proxy.exe"/>
-    <ROW File="chrome_proxy.exe" Component_="chrome_proxy.exe" FileName="CHROME~1.EXE|chrome_proxy.exe" Attributes="0" SourcePath="..\..\..\..\..\Program Files (x86)\FlexRadio Systems\PowerSDR v2.8.0\.local-chromium\Win64-848005\chrome-win\chrome_proxy.exe" SelfReg="false" NextFile="chrome_pwa_launcher.exe" DigSign="true"/>
-    <ROW File="chrome_pwa_launcher.exe" Component_="chrome_pwa_launcher.exe" FileName="CHROME~2.EXE|chrome_pwa_launcher.exe" Attributes="0" SourcePath="..\..\..\..\..\Program Files (x86)\FlexRadio Systems\PowerSDR v2.8.0\.local-chromium\Win64-848005\chrome-win\chrome_pwa_launcher.exe" SelfReg="false" NextFile="D3DCompiler_47.dll" DigSign="true"/>
     <ROW File="ckQuickPlay0.png" Component_="btnBandHF0.png" FileName="CKQUIC~1.PNG|ckQuickPlay-0.png" Attributes="0" SourcePath="..\..\..\..\..\ProgramData\FlexRadio Systems\PowerSDR\Skins\KE9NS3_Spot\Console\ckQuickPlay-0.png" SelfReg="false" NextFile="ckQuickPlay1.png"/>
     <ROW File="ckQuickPlay0.png_1" Component_="btnBandHF0.png_1" FileName="CKQUIC~1.PNG|ckQuickPlay-0.png" Attributes="0" SourcePath="..\..\..\..\..\ProgramData\FlexRadio Systems\PowerSDR\Skins\KE9NS4_Plain\Console\ckQuickPlay-0.png" SelfReg="false" NextFile="ckQuickPlay1.png_1"/>
     <ROW File="ckQuickPlay0.png_2" Component_="btnBandHF0.png_2" FileName="CKQUIC~1.PNG|ckQuickPlay-0.png" Attributes="0" SourcePath="..\..\..\..\..\ProgramData\FlexRadio Systems\PowerSDR\Skins\KE9NS6_World\Console\ckQuickPlay-0.png" SelfReg="false" NextFile="ckQuickPlay1.png_2"/>
@@ -748,37 +709,7 @@
     <ROW File="ckQuickRec1.png" Component_="btnBandHF0.png" FileName="CKQUIC~4.PNG|ckQuickRec-1.png" Attributes="0" SourcePath="..\..\..\..\..\ProgramData\FlexRadio Systems\PowerSDR\Skins\KE9NS3_Spot\Console\ckQuickRec-1.png" SelfReg="false" NextFile="Console.png_1"/>
     <ROW File="ckQuickRec1.png_1" Component_="btnBandHF0.png_1" FileName="CKQUIC~4.PNG|ckQuickRec-1.png" Attributes="0" SourcePath="..\..\..\..\..\ProgramData\FlexRadio Systems\PowerSDR\Skins\KE9NS4_Plain\Console\ckQuickRec-1.png" SelfReg="false" NextFile="Console.png_3"/>
     <ROW File="ckQuickRec1.png_2" Component_="btnBandHF0.png_2" FileName="CKQUIC~4.PNG|ckQuickRec-1.png" Attributes="0" SourcePath="..\..\..\..\..\ProgramData\FlexRadio Systems\PowerSDR\Skins\KE9NS6_World\Console\ckQuickRec-1.png" SelfReg="false" NextFile="Console.png_5"/>
-    <ROW File="cs.pak" Component_="ar.pak" FileName="cs.pak" Attributes="0" SourcePath="..\..\..\..\..\Program Files (x86)\FlexRadio Systems\PowerSDR v2.8.0\.local-chromium\Win64-848005\chrome-win\locales\cs.pak" SelfReg="false" NextFile="da.pak"/>
-    <ROW File="cwman.bmp" Component_="DXLOC.txt" FileName="cwman.bmp" Attributes="0" SourcePath="..\..\..\AppData\Roaming\FlexRadio Systems\PowerSDR v2.8.0\cwman.bmp" SelfReg="false" NextFile="tower.bmp"/>
-    <ROW File="da.pak" Component_="ar.pak" FileName="da.pak" Attributes="0" SourcePath="..\..\..\..\..\Program Files (x86)\FlexRadio Systems\PowerSDR v2.8.0\.local-chromium\Win64-848005\chrome-win\locales\da.pak" SelfReg="false" NextFile="de.pak"/>
-    <ROW File="de.pak" Component_="ar.pak" FileName="de.pak" Attributes="0" SourcePath="..\..\..\..\..\Program Files (x86)\FlexRadio Systems\PowerSDR v2.8.0\.local-chromium\Win64-848005\chrome-win\locales\de.pak" SelfReg="false" NextFile="el.pak"/>
-    <ROW File="debug.log" Component_="manifest" FileName="debug.log" Attributes="0" SourcePath="..\..\..\..\..\Program Files (x86)\FlexRadio Systems\PowerSDR v2.8.0\.local-chromium\Win64-848005\chrome-win\debug.log" SelfReg="false" NextFile="elevation_service.exe"/>
-    <ROW File="el.pak" Component_="ar.pak" FileName="el.pak" Attributes="0" SourcePath="..\..\..\..\..\Program Files (x86)\FlexRadio Systems\PowerSDR v2.8.0\.local-chromium\Win64-848005\chrome-win\locales\el.pak" SelfReg="false" NextFile="enGB.pak"/>
-    <ROW File="elevation_service.exe" Component_="elevation_service.exe" FileName="ELEVAT~1.EXE|elevation_service.exe" Attributes="0" SourcePath="..\..\..\..\..\Program Files (x86)\FlexRadio Systems\PowerSDR v2.8.0\.local-chromium\Win64-848005\chrome-win\elevation_service.exe" SelfReg="false" NextFile="eventlog_provider.dll" DigSign="true"/>
-    <ROW File="enGB.pak" Component_="ar.pak" FileName="en-GB.pak" Attributes="0" SourcePath="..\..\..\..\..\Program Files (x86)\FlexRadio Systems\PowerSDR v2.8.0\.local-chromium\Win64-848005\chrome-win\locales\en-GB.pak" SelfReg="false" NextFile="enUS.pak"/>
-    <ROW File="enUS.pak" Component_="ar.pak" FileName="en-US.pak" Attributes="0" SourcePath="..\..\..\..\..\Program Files (x86)\FlexRadio Systems\PowerSDR v2.8.0\.local-chromium\Win64-848005\chrome-win\locales\en-US.pak" SelfReg="false" NextFile="es419.pak"/>
-    <ROW File="es.pak" Component_="ar.pak" FileName="es.pak" Attributes="0" SourcePath="..\..\..\..\..\Program Files (x86)\FlexRadio Systems\PowerSDR v2.8.0\.local-chromium\Win64-848005\chrome-win\locales\es.pak" SelfReg="false" NextFile="et.pak"/>
-    <ROW File="es419.pak" Component_="ar.pak" FileName="es-419.pak" Attributes="0" SourcePath="..\..\..\..\..\Program Files (x86)\FlexRadio Systems\PowerSDR v2.8.0\.local-chromium\Win64-848005\chrome-win\locales\es-419.pak" SelfReg="false" NextFile="es.pak"/>
-    <ROW File="et.pak" Component_="ar.pak" FileName="et.pak" Attributes="0" SourcePath="..\..\..\..\..\Program Files (x86)\FlexRadio Systems\PowerSDR v2.8.0\.local-chromium\Win64-848005\chrome-win\locales\et.pak" SelfReg="false" NextFile="fi.pak"/>
-    <ROW File="eventlog_provider.dll" Component_="eventlog_provider.dll" FileName="EVENTL~1.DLL|eventlog_provider.dll" Attributes="0" SourcePath="..\..\..\..\..\Program Files (x86)\FlexRadio Systems\PowerSDR v2.8.0\.local-chromium\Win64-848005\chrome-win\eventlog_provider.dll" SelfReg="false" NextFile="FirstRun"/>
-    <ROW File="fi.pak" Component_="ar.pak" FileName="fi.pak" Attributes="0" SourcePath="..\..\..\..\..\Program Files (x86)\FlexRadio Systems\PowerSDR v2.8.0\.local-chromium\Win64-848005\chrome-win\locales\fi.pak" SelfReg="false" NextFile="fil.pak"/>
-    <ROW File="fil.pak" Component_="ar.pak" FileName="fil.pak" Attributes="0" SourcePath="..\..\..\..\..\Program Files (x86)\FlexRadio Systems\PowerSDR v2.8.0\.local-chromium\Win64-848005\chrome-win\locales\fil.pak" SelfReg="false" NextFile="fr.pak"/>
-    <ROW File="fr.pak" Component_="ar.pak" FileName="fr.pak" Attributes="0" SourcePath="..\..\..\..\..\Program Files (x86)\FlexRadio Systems\PowerSDR v2.8.0\.local-chromium\Win64-848005\chrome-win\locales\fr.pak" SelfReg="false" NextFile="gu.pak"/>
-    <ROW File="gu.pak" Component_="ar.pak" FileName="gu.pak" Attributes="0" SourcePath="..\..\..\..\..\Program Files (x86)\FlexRadio Systems\PowerSDR v2.8.0\.local-chromium\Win64-848005\chrome-win\locales\gu.pak" SelfReg="false" NextFile="he.pak"/>
-    <ROW File="he.pak" Component_="ar.pak" FileName="he.pak" Attributes="0" SourcePath="..\..\..\..\..\Program Files (x86)\FlexRadio Systems\PowerSDR v2.8.0\.local-chromium\Win64-848005\chrome-win\locales\he.pak" SelfReg="false" NextFile="hi.pak"/>
-    <ROW File="hi.pak" Component_="ar.pak" FileName="hi.pak" Attributes="0" SourcePath="..\..\..\..\..\Program Files (x86)\FlexRadio Systems\PowerSDR v2.8.0\.local-chromium\Win64-848005\chrome-win\locales\hi.pak" SelfReg="false" NextFile="hr.pak"/>
-    <ROW File="hr.pak" Component_="ar.pak" FileName="hr.pak" Attributes="0" SourcePath="..\..\..\..\..\Program Files (x86)\FlexRadio Systems\PowerSDR v2.8.0\.local-chromium\Win64-848005\chrome-win\locales\hr.pak" SelfReg="false" NextFile="hu.pak"/>
-    <ROW File="hu.pak" Component_="ar.pak" FileName="hu.pak" Attributes="0" SourcePath="..\..\..\..\..\Program Files (x86)\FlexRadio Systems\PowerSDR v2.8.0\.local-chromium\Win64-848005\chrome-win\locales\hu.pak" SelfReg="false" NextFile="id.pak"/>
-    <ROW File="icudtl.dat" Component_="manifest" FileName="icudtl.dat" Attributes="0" SourcePath="..\..\..\..\..\Program Files (x86)\FlexRadio Systems\PowerSDR v2.8.0\.local-chromium\Win64-848005\chrome-win\icudtl.dat" SelfReg="false" NextFile="libEGL.dll"/>
-    <ROW File="id.pak" Component_="ar.pak" FileName="id.pak" Attributes="0" SourcePath="..\..\..\..\..\Program Files (x86)\FlexRadio Systems\PowerSDR v2.8.0\.local-chromium\Win64-848005\chrome-win\locales\id.pak" SelfReg="false" NextFile="it.pak"/>
-    <ROW File="it.pak" Component_="ar.pak" FileName="it.pak" Attributes="0" SourcePath="..\..\..\..\..\Program Files (x86)\FlexRadio Systems\PowerSDR v2.8.0\.local-chromium\Win64-848005\chrome-win\locales\it.pak" SelfReg="false" NextFile="ja.pak"/>
-    <ROW File="ja.pak" Component_="ar.pak" FileName="ja.pak" Attributes="0" SourcePath="..\..\..\..\..\Program Files (x86)\FlexRadio Systems\PowerSDR v2.8.0\.local-chromium\Win64-848005\chrome-win\locales\ja.pak" SelfReg="false" NextFile="kn.pak"/>
-    <ROW File="kn.pak" Component_="ar.pak" FileName="kn.pak" Attributes="0" SourcePath="..\..\..\..\..\Program Files (x86)\FlexRadio Systems\PowerSDR v2.8.0\.local-chromium\Win64-848005\chrome-win\locales\kn.pak" SelfReg="false" NextFile="ko.pak"/>
-    <ROW File="ko.pak" Component_="ar.pak" FileName="ko.pak" Attributes="0" SourcePath="..\..\..\..\..\Program Files (x86)\FlexRadio Systems\PowerSDR v2.8.0\.local-chromium\Win64-848005\chrome-win\locales\ko.pak" SelfReg="false" NextFile="lt.pak"/>
-    <ROW File="libEGL.dll" Component_="libEGL.dll" FileName="libEGL.dll" Attributes="0" SourcePath="..\..\..\..\..\Program Files (x86)\FlexRadio Systems\PowerSDR v2.8.0\.local-chromium\Win64-848005\chrome-win\libEGL.dll" SelfReg="false" NextFile="libGLESv2.dll"/>
-    <ROW File="libEGL.dll_1" Component_="libEGL.dll_1" FileName="libEGL.dll" Attributes="0" SourcePath="..\..\..\..\..\Program Files (x86)\FlexRadio Systems\PowerSDR v2.8.0\.local-chromium\Win64-848005\chrome-win\swiftshader\libEGL.dll" SelfReg="false" NextFile="libGLESv2.dll_1"/>
-    <ROW File="libGLESv2.dll" Component_="libGLESv2.dll" FileName="LIBGLE~1.DLL|libGLESv2.dll" Attributes="0" SourcePath="..\..\..\..\..\Program Files (x86)\FlexRadio Systems\PowerSDR v2.8.0\.local-chromium\Win64-848005\chrome-win\libGLESv2.dll" SelfReg="false" NextFile="ar.pak"/>
-    <ROW File="libGLESv2.dll_1" Component_="libGLESv2.dll_1" FileName="LIBGLE~1.DLL|libGLESv2.dll" Attributes="0" SourcePath="..\..\..\..\..\Program Files (x86)\FlexRadio Systems\PowerSDR v2.8.0\.local-chromium\Win64-848005\chrome-win\swiftshader\libGLESv2.dll" SelfReg="false" NextFile="v8_context_snapshot.bin"/>
+    <ROW File="cwman.bmp" Component_="DXLOC.txt" FileName="cwman.bmp" Attributes="0" SourcePath="..\..\..\AppData\Roaming\FlexRadio Systems\PowerSDR v3.0.0\cwman.bmp" SelfReg="false" NextFile="tower.bmp"/>
     <ROW File="longledbttn0.png" Component_="X20bttn0.png" FileName="LONGLE~1.PNG|longledbttn-0.png" Attributes="0" SourcePath="..\..\..\..\..\ProgramData\FlexRadio Systems\PowerSDR\Skins\KE9NS3_Spot\Console\Base\longledbttn-0.png" SelfReg="false" NextFile="longledbttn1.png"/>
     <ROW File="longledbttn0.png_1" Component_="X20bttn0.png_1" FileName="LONGLE~1.PNG|longledbttn-0.png" Attributes="0" SourcePath="..\..\..\..\..\ProgramData\FlexRadio Systems\PowerSDR\Skins\KE9NS4_Plain\Console\Base\longledbttn-0.png" SelfReg="false" NextFile="longledbttn1.png_1"/>
     <ROW File="longledbttn0.png_2" Component_="X20bttn0.png_2" FileName="LONGLE~1.PNG|longledbttn-0.png" Attributes="0" SourcePath="..\..\..\..\..\ProgramData\FlexRadio Systems\PowerSDR\Skins\KE9NS6_World\Console\Base\longledbttn-0.png" SelfReg="false" NextFile="longledbttn1.png_2"/>
@@ -803,20 +734,8 @@
     <ROW File="longledbttnVERDE1.png" Component_="X20bttn0.png" FileName="LONGLE~8.PNG|longledbttnVERDE-1.png" Attributes="0" SourcePath="..\..\..\..\..\ProgramData\FlexRadio Systems\PowerSDR\Skins\KE9NS3_Spot\Console\Base\longledbttnVERDE-1.png" SelfReg="false" NextFile="panelbackBand.png"/>
     <ROW File="longledbttnVERDE1.png_1" Component_="X20bttn0.png_1" FileName="LONGLE~8.PNG|longledbttnVERDE-1.png" Attributes="0" SourcePath="..\..\..\..\..\ProgramData\FlexRadio Systems\PowerSDR\Skins\KE9NS4_Plain\Console\Base\longledbttnVERDE-1.png" SelfReg="false" NextFile="panelbackBand.png_1"/>
     <ROW File="longledbttnVERDE1.png_2" Component_="X20bttn0.png_2" FileName="LONGLE~8.PNG|longledbttnVERDE-1.png" Attributes="0" SourcePath="..\..\..\..\..\ProgramData\FlexRadio Systems\PowerSDR\Skins\KE9NS6_World\Console\Base\longledbttnVERDE-1.png" SelfReg="false" NextFile="panelbackBand.png_2"/>
-    <ROW File="lt.pak" Component_="ar.pak" FileName="lt.pak" Attributes="0" SourcePath="..\..\..\..\..\Program Files (x86)\FlexRadio Systems\PowerSDR v2.8.0\.local-chromium\Win64-848005\chrome-win\locales\lt.pak" SelfReg="false" NextFile="lv.pak"/>
-    <ROW File="lv.pak" Component_="ar.pak" FileName="lv.pak" Attributes="0" SourcePath="..\..\..\..\..\Program Files (x86)\FlexRadio Systems\PowerSDR v2.8.0\.local-chromium\Win64-848005\chrome-win\locales\lv.pak" SelfReg="false" NextFile="ml.pak"/>
-    <ROW File="manifest" Component_="manifest" FileName="900440~1.MAN|90.0.4403.0.manifest" Attributes="0" SourcePath="..\..\..\..\..\Program Files (x86)\FlexRadio Systems\PowerSDR v2.8.0\.local-chromium\Win64-848005\chrome-win\90.0.4403.0.manifest" SelfReg="false" NextFile="chrome.dll"/>
-    <ROW File="manifest.json" Component_="manifest.json" FileName="MANIFE~1.JSO|manifest.json" Attributes="0" SourcePath="..\..\..\..\..\Program Files (x86)\FlexRadio Systems\PowerSDR v2.8.0\.local-chromium\Win64-848005\chrome-win\MEIPreload\manifest.json" SelfReg="false" NextFile="preloaded_data.pb"/>
     <ROW File="mcl_pm.dll" Component_="mcl_pm.dll" FileName="mcl_pm.dll" Attributes="0" SourcePath="bin\Release\mcl_pm.dll" SelfReg="false" NextFile="PowerSDRke9nskeyboardshortcuts.pdf_1"/>
-    <ROW File="mic.bmp" Component_="DXLOC.txt" FileName="mic.bmp" Attributes="0" SourcePath="..\..\..\AppData\Roaming\FlexRadio Systems\PowerSDR v2.8.0\mic.bmp" SelfReg="false" NextFile="arrl.bmp"/>
-    <ROW File="ml.pak" Component_="ar.pak" FileName="ml.pak" Attributes="0" SourcePath="..\..\..\..\..\Program Files (x86)\FlexRadio Systems\PowerSDR v2.8.0\.local-chromium\Win64-848005\chrome-win\locales\ml.pak" SelfReg="false" NextFile="mr.pak"/>
-    <ROW File="mojo_core.dll" Component_="mojo_core.dll" FileName="MOJO_C~1.DLL|mojo_core.dll" Attributes="0" SourcePath="..\..\..\..\..\Program Files (x86)\FlexRadio Systems\PowerSDR v2.8.0\.local-chromium\Win64-848005\chrome-win\mojo_core.dll" SelfReg="false" NextFile="nacl_irt_x86_64.nexe"/>
-    <ROW File="mr.pak" Component_="ar.pak" FileName="mr.pak" Attributes="0" SourcePath="..\..\..\..\..\Program Files (x86)\FlexRadio Systems\PowerSDR v2.8.0\.local-chromium\Win64-848005\chrome-win\locales\mr.pak" SelfReg="false" NextFile="ms.pak"/>
-    <ROW File="ms.pak" Component_="ar.pak" FileName="ms.pak" Attributes="0" SourcePath="..\..\..\..\..\Program Files (x86)\FlexRadio Systems\PowerSDR v2.8.0\.local-chromium\Win64-848005\chrome-win\locales\ms.pak" SelfReg="false" NextFile="nb.pak"/>
-    <ROW File="nacl_irt_x86_64.nexe" Component_="manifest" FileName="NACL_I~1.NEX|nacl_irt_x86_64.nexe" Attributes="0" SourcePath="..\..\..\..\..\Program Files (x86)\FlexRadio Systems\PowerSDR v2.8.0\.local-chromium\Win64-848005\chrome-win\nacl_irt_x86_64.nexe" SelfReg="false" NextFile="notification_helper.exe"/>
-    <ROW File="nb.pak" Component_="ar.pak" FileName="nb.pak" Attributes="0" SourcePath="..\..\..\..\..\Program Files (x86)\FlexRadio Systems\PowerSDR v2.8.0\.local-chromium\Win64-848005\chrome-win\locales\nb.pak" SelfReg="false" NextFile="nl.pak"/>
-    <ROW File="nl.pak" Component_="ar.pak" FileName="nl.pak" Attributes="0" SourcePath="..\..\..\..\..\Program Files (x86)\FlexRadio Systems\PowerSDR v2.8.0\.local-chromium\Win64-848005\chrome-win\locales\nl.pak" SelfReg="false" NextFile="pl.pak"/>
-    <ROW File="notification_helper.exe" Component_="notification_helper.exe" FileName="NOTIFI~1.EXE|notification_helper.exe" Attributes="0" SourcePath="..\..\..\..\..\Program Files (x86)\FlexRadio Systems\PowerSDR v2.8.0\.local-chromium\Win64-848005\chrome-win\notification_helper.exe" SelfReg="false" NextFile="resources.pak" DigSign="true"/>
+    <ROW File="mic.bmp" Component_="DXLOC.txt" FileName="mic.bmp" Attributes="0" SourcePath="..\..\..\AppData\Roaming\FlexRadio Systems\PowerSDR v3.0.0\mic.bmp" SelfReg="false" NextFile="arrl.bmp"/>
     <ROW File="panelBandHF.png" Component_="btnBandHF0.png" FileName="PANELB~1.PNG|panelBandHF.png" Attributes="0" SourcePath="..\..\..\..\..\ProgramData\FlexRadio Systems\PowerSDR\Skins\KE9NS3_Spot\Console\panelBandHF.png" SelfReg="false" NextFile="panelBandVHF.png"/>
     <ROW File="panelBandHF.png_1" Component_="btnBandHF0.png_1" FileName="PANELB~1.PNG|panelBandHF.png" Attributes="0" SourcePath="..\..\..\..\..\ProgramData\FlexRadio Systems\PowerSDR\Skins\KE9NS4_Plain\Console\panelBandHF.png" SelfReg="false" NextFile="panelBandVHF.png_1"/>
     <ROW File="panelBandHF.png_2" Component_="btnBandHF0.png_2" FileName="PANELB~1.PNG|panelBandHF.png" Attributes="0" SourcePath="..\..\..\..\..\ProgramData\FlexRadio Systems\PowerSDR\Skins\KE9NS6_World\Console\panelBandHF.png" SelfReg="false" NextFile="panelBandVHF.png_2"/>
@@ -855,14 +774,13 @@
     <ROW File="panelbackOptions.png" Component_="X20bttn0.png" FileName="PANELB~4.PNG|panelbackOptions.png" Attributes="0" SourcePath="..\..\..\..\..\ProgramData\FlexRadio Systems\PowerSDR\Skins\KE9NS3_Spot\Console\Base\panelbackOptions.png" SelfReg="false" NextFile="picDisplay.png"/>
     <ROW File="panelbackOptions.png_1" Component_="X20bttn0.png_1" FileName="PANELB~4.PNG|panelbackOptions.png" Attributes="0" SourcePath="..\..\..\..\..\ProgramData\FlexRadio Systems\PowerSDR\Skins\KE9NS4_Plain\Console\Base\panelbackOptions.png" SelfReg="false" NextFile="picDisplay.png_2"/>
     <ROW File="panelbackOptions.png_2" Component_="X20bttn0.png_2" FileName="PANELB~4.PNG|panelbackOptions.png" Attributes="0" SourcePath="..\..\..\..\..\ProgramData\FlexRadio Systems\PowerSDR\Skins\KE9NS6_World\Console\Base\panelbackOptions.png" SelfReg="false" NextFile="picDisplay.png_4"/>
-    <ROW File="pdfium.dll" Component_="pdfium.dll" FileName="pdfium.dll" Attributes="0" SourcePath="bin\Release\pdfium.dll" SelfReg="false" NextFile="seleniummanager.exe"/>
+    <ROW File="pdfium.dll" Component_="pdfium.dll" FileName="pdfium.dll" Attributes="0" SourcePath="bin\Release\pdfium.dll" SelfReg="false" NextFile="Microsoft.AspNetCore.WebUtilities.dll"/>
     <ROW File="picDisplay.png" Component_="X20bttn0.png" FileName="PICDIS~1.PNG|picDisplay.png" Attributes="0" SourcePath="..\..\..\..\..\ProgramData\FlexRadio Systems\PowerSDR\Skins\KE9NS3_Spot\Console\Base\picDisplay.png" SelfReg="false" NextFile="play0.png"/>
     <ROW File="picDisplay.png_1" Component_="btnBandHF0.png" FileName="PICDIS~1.PNG|picDisplay.png" Attributes="0" SourcePath="..\..\..\..\..\ProgramData\FlexRadio Systems\PowerSDR\Skins\KE9NS3_Spot\Console\picDisplay.png" SelfReg="false" NextFile="ptbAFback.png"/>
     <ROW File="picDisplay.png_2" Component_="X20bttn0.png_1" FileName="PICDIS~1.PNG|picDisplay.png" Attributes="0" SourcePath="..\..\..\..\..\ProgramData\FlexRadio Systems\PowerSDR\Skins\KE9NS4_Plain\Console\Base\picDisplay.png" SelfReg="false" NextFile="play0.png_1"/>
     <ROW File="picDisplay.png_3" Component_="btnBandHF0.png_1" FileName="PICDIS~1.PNG|picDisplay.png" Attributes="0" SourcePath="..\..\..\..\..\ProgramData\FlexRadio Systems\PowerSDR\Skins\KE9NS4_Plain\Console\picDisplay.png" SelfReg="false" NextFile="ptbAFback.png_1"/>
     <ROW File="picDisplay.png_4" Component_="X20bttn0.png_2" FileName="PICDIS~1.PNG|picDisplay.png" Attributes="0" SourcePath="..\..\..\..\..\ProgramData\FlexRadio Systems\PowerSDR\Skins\KE9NS6_World\Console\Base\picDisplay.png" SelfReg="false" NextFile="play0.png_2"/>
     <ROW File="picDisplay.png_5" Component_="btnBandHF0.png_2" FileName="PICDIS~1.PNG|picDisplay.png" Attributes="0" SourcePath="..\..\..\..\..\ProgramData\FlexRadio Systems\PowerSDR\Skins\KE9NS6_World\Console\picDisplay.png" SelfReg="false" NextFile="ptbAFback.png_2"/>
-    <ROW File="pl.pak" Component_="ar.pak" FileName="pl.pak" Attributes="0" SourcePath="..\..\..\..\..\Program Files (x86)\FlexRadio Systems\PowerSDR v2.8.0\.local-chromium\Win64-848005\chrome-win\locales\pl.pak" SelfReg="false" NextFile="ptBR.pak"/>
     <ROW File="play.png" Component_="X20bttn0.png" FileName="play.png" Attributes="0" SourcePath="..\..\..\..\..\ProgramData\FlexRadio Systems\PowerSDR\Skins\KE9NS3_Spot\Console\Base\play.png" SelfReg="false" NextFile="record0.png"/>
     <ROW File="play.png_1" Component_="X20bttn0.png_1" FileName="play.png" Attributes="0" SourcePath="..\..\..\..\..\ProgramData\FlexRadio Systems\PowerSDR\Skins\KE9NS4_Plain\Console\Base\play.png" SelfReg="false" NextFile="record0.png_1"/>
     <ROW File="play.png_2" Component_="X20bttn0.png_2" FileName="play.png" Attributes="0" SourcePath="..\..\..\..\..\ProgramData\FlexRadio Systems\PowerSDR\Skins\KE9NS6_World\Console\Base\play.png" SelfReg="false" NextFile="record0.png_2"/>
@@ -872,9 +790,6 @@
     <ROW File="play1.png" Component_="X20bttn0.png" FileName="play-1.png" Attributes="0" SourcePath="..\..\..\..\..\ProgramData\FlexRadio Systems\PowerSDR\Skins\KE9NS3_Spot\Console\Base\play-1.png" SelfReg="false" NextFile="play.png"/>
     <ROW File="play1.png_1" Component_="X20bttn0.png_1" FileName="play-1.png" Attributes="0" SourcePath="..\..\..\..\..\ProgramData\FlexRadio Systems\PowerSDR\Skins\KE9NS4_Plain\Console\Base\play-1.png" SelfReg="false" NextFile="play.png_1"/>
     <ROW File="play1.png_2" Component_="X20bttn0.png_2" FileName="play-1.png" Attributes="0" SourcePath="..\..\..\..\..\ProgramData\FlexRadio Systems\PowerSDR\Skins\KE9NS6_World\Console\Base\play-1.png" SelfReg="false" NextFile="play.png_2"/>
-    <ROW File="preloaded_data.pb" Component_="manifest.json" FileName="PRELOA~1.PB|preloaded_data.pb" Attributes="0" SourcePath="..\..\..\..\..\Program Files (x86)\FlexRadio Systems\PowerSDR v2.8.0\.local-chromium\Win64-848005\chrome-win\MEIPreload\preloaded_data.pb" SelfReg="false" NextFile="mojo_core.dll"/>
-    <ROW File="ptBR.pak" Component_="ar.pak" FileName="pt-BR.pak" Attributes="0" SourcePath="..\..\..\..\..\Program Files (x86)\FlexRadio Systems\PowerSDR v2.8.0\.local-chromium\Win64-848005\chrome-win\locales\pt-BR.pak" SelfReg="false" NextFile="ptPT.pak"/>
-    <ROW File="ptPT.pak" Component_="ar.pak" FileName="pt-PT.pak" Attributes="0" SourcePath="..\..\..\..\..\Program Files (x86)\FlexRadio Systems\PowerSDR v2.8.0\.local-chromium\Win64-848005\chrome-win\locales\pt-PT.pak" SelfReg="false" NextFile="ro.pak"/>
     <ROW File="ptbAFback.png" Component_="btnBandHF0.png" FileName="PTBAF-~1.PNG|ptbAF-back.png" Attributes="0" SourcePath="..\..\..\..\..\ProgramData\FlexRadio Systems\PowerSDR\Skins\KE9NS3_Spot\Console\ptbAF-back.png" SelfReg="false" NextFile="ptbAFhead.png"/>
     <ROW File="ptbAFback.png_1" Component_="btnBandHF0.png_1" FileName="PTBAF-~1.PNG|ptbAF-back.png" Attributes="0" SourcePath="..\..\..\..\..\ProgramData\FlexRadio Systems\PowerSDR\Skins\KE9NS4_Plain\Console\ptbAF-back.png" SelfReg="false" NextFile="ptbAFhead.png_1"/>
     <ROW File="ptbAFback.png_2" Component_="btnBandHF0.png_2" FileName="PTBAF-~1.PNG|ptbAF-back.png" Attributes="0" SourcePath="..\..\..\..\..\ProgramData\FlexRadio Systems\PowerSDR\Skins\KE9NS6_World\Console\ptbAF-back.png" SelfReg="false" NextFile="ptbAFhead.png_2"/>
@@ -1506,18 +1421,12 @@
     <ROW File="record1.png" Component_="X20bttn0.png" FileName="record-1.png" Attributes="0" SourcePath="..\..\..\..\..\ProgramData\FlexRadio Systems\PowerSDR\Skins\KE9NS3_Spot\Console\Base\record-1.png" SelfReg="false" NextFile="rx20.png"/>
     <ROW File="record1.png_1" Component_="X20bttn0.png_1" FileName="record-1.png" Attributes="0" SourcePath="..\..\..\..\..\ProgramData\FlexRadio Systems\PowerSDR\Skins\KE9NS4_Plain\Console\Base\record-1.png" SelfReg="false" NextFile="rx20.png_1"/>
     <ROW File="record1.png_2" Component_="X20bttn0.png_2" FileName="record-1.png" Attributes="0" SourcePath="..\..\..\..\..\ProgramData\FlexRadio Systems\PowerSDR\Skins\KE9NS6_World\Console\Base\record-1.png" SelfReg="false" NextFile="rx20.png_2"/>
-    <ROW File="resources.pak" Component_="manifest" FileName="RESOUR~1.PAK|resources.pak" Attributes="0" SourcePath="..\..\..\..\..\Program Files (x86)\FlexRadio Systems\PowerSDR v2.8.0\.local-chromium\Win64-848005\chrome-win\resources.pak" SelfReg="false" NextFile="libEGL.dll_1"/>
-    <ROW File="ro.pak" Component_="ar.pak" FileName="ro.pak" Attributes="0" SourcePath="..\..\..\..\..\Program Files (x86)\FlexRadio Systems\PowerSDR v2.8.0\.local-chromium\Win64-848005\chrome-win\locales\ro.pak" SelfReg="false" NextFile="ru.pak"/>
-    <ROW File="ru.pak" Component_="ar.pak" FileName="ru.pak" Attributes="0" SourcePath="..\..\..\..\..\Program Files (x86)\FlexRadio Systems\PowerSDR v2.8.0\.local-chromium\Win64-848005\chrome-win\locales\ru.pak" SelfReg="false" NextFile="sk.pak"/>
     <ROW File="rx20.png" Component_="X20bttn0.png" FileName="rx2-0.png" Attributes="0" SourcePath="..\..\..\..\..\ProgramData\FlexRadio Systems\PowerSDR\Skins\KE9NS3_Spot\Console\Base\rx2-0.png" SelfReg="false" NextFile="rx21.png"/>
     <ROW File="rx20.png_1" Component_="X20bttn0.png_1" FileName="rx2-0.png" Attributes="0" SourcePath="..\..\..\..\..\ProgramData\FlexRadio Systems\PowerSDR\Skins\KE9NS4_Plain\Console\Base\rx2-0.png" SelfReg="false" NextFile="rx21.png_1"/>
     <ROW File="rx20.png_2" Component_="X20bttn0.png_2" FileName="rx2-0.png" Attributes="0" SourcePath="..\..\..\..\..\ProgramData\FlexRadio Systems\PowerSDR\Skins\KE9NS6_World\Console\Base\rx2-0.png" SelfReg="false" NextFile="rx21.png_2"/>
     <ROW File="rx21.png" Component_="X20bttn0.png" FileName="rx2-1.png" Attributes="0" SourcePath="..\..\..\..\..\ProgramData\FlexRadio Systems\PowerSDR\Skins\KE9NS3_Spot\Console\Base\rx2-1.png" SelfReg="false" NextFile="slider_back.png"/>
     <ROW File="rx21.png_1" Component_="X20bttn0.png_1" FileName="rx2-1.png" Attributes="0" SourcePath="..\..\..\..\..\ProgramData\FlexRadio Systems\PowerSDR\Skins\KE9NS4_Plain\Console\Base\rx2-1.png" SelfReg="false" NextFile="slider_back.png_1"/>
     <ROW File="rx21.png_2" Component_="X20bttn0.png_2" FileName="rx2-1.png" Attributes="0" SourcePath="..\..\..\..\..\ProgramData\FlexRadio Systems\PowerSDR\Skins\KE9NS6_World\Console\Base\rx2-1.png" SelfReg="false" NextFile="slider_back.png_2"/>
-    <ROW File="seleniummanager.exe" Component_="seleniummanager.exe" FileName="SELENI~1.EXE|selenium-manager.exe" Attributes="0" SourcePath="..\..\..\..\..\Program Files (x86)\FlexRadio Systems\PowerSDR v2.8.0\selenium-manager\windows\selenium-manager.exe" SelfReg="false" NextFile="Microsoft.AspNetCore.WebUtilities.dll" DigSign="true"/>
-    <ROW File="sk.pak" Component_="ar.pak" FileName="sk.pak" Attributes="0" SourcePath="..\..\..\..\..\Program Files (x86)\FlexRadio Systems\PowerSDR v2.8.0\.local-chromium\Win64-848005\chrome-win\locales\sk.pak" SelfReg="false" NextFile="sl.pak"/>
-    <ROW File="sl.pak" Component_="ar.pak" FileName="sl.pak" Attributes="0" SourcePath="..\..\..\..\..\Program Files (x86)\FlexRadio Systems\PowerSDR v2.8.0\.local-chromium\Win64-848005\chrome-win\locales\sl.pak" SelfReg="false" NextFile="sr.pak"/>
     <ROW File="slider_back.png" Component_="X20bttn0.png" FileName="SLIDER~1.PNG|slider_back.png" Attributes="0" SourcePath="..\..\..\..\..\ProgramData\FlexRadio Systems\PowerSDR\Skins\KE9NS3_Spot\Console\Base\slider_back.png" SelfReg="false" NextFile="slider_back_v.png"/>
     <ROW File="slider_back.png_1" Component_="X20bttn0.png_1" FileName="SLIDER~1.PNG|slider_back.png" Attributes="0" SourcePath="..\..\..\..\..\ProgramData\FlexRadio Systems\PowerSDR\Skins\KE9NS4_Plain\Console\Base\slider_back.png" SelfReg="false" NextFile="slider_back_v.png_1"/>
     <ROW File="slider_back.png_2" Component_="X20bttn0.png_2" FileName="SLIDER~1.PNG|slider_back.png" Attributes="0" SourcePath="..\..\..\..\..\ProgramData\FlexRadio Systems\PowerSDR\Skins\KE9NS6_World\Console\Base\slider_back.png" SelfReg="false" NextFile="slider_back_v.png_2"/>
@@ -1530,26 +1439,15 @@
     <ROW File="slider_head_v.png" Component_="X20bttn0.png" FileName="SLIDER~4.PNG|slider_head_v.png" Attributes="0" SourcePath="..\..\..\..\..\ProgramData\FlexRadio Systems\PowerSDR\Skins\KE9NS3_Spot\Console\Base\slider_head_v.png" SelfReg="false" NextFile="btnBandHF0.png"/>
     <ROW File="slider_head_v.png_1" Component_="X20bttn0.png_1" FileName="SLIDER~4.PNG|slider_head_v.png" Attributes="0" SourcePath="..\..\..\..\..\ProgramData\FlexRadio Systems\PowerSDR\Skins\KE9NS4_Plain\Console\Base\slider_head_v.png" SelfReg="false" NextFile="btnBandHF0.png_1"/>
     <ROW File="slider_head_v.png_2" Component_="X20bttn0.png_2" FileName="SLIDER~4.PNG|slider_head_v.png" Attributes="0" SourcePath="..\..\..\..\..\ProgramData\FlexRadio Systems\PowerSDR\Skins\KE9NS6_World\Console\Base\slider_head_v.png" SelfReg="false" NextFile="btnBandHF0.png_2"/>
-    <ROW File="sr.pak" Component_="ar.pak" FileName="sr.pak" Attributes="0" SourcePath="..\..\..\..\..\Program Files (x86)\FlexRadio Systems\PowerSDR v2.8.0\.local-chromium\Win64-848005\chrome-win\locales\sr.pak" SelfReg="false" NextFile="sv.pak"/>
-    <ROW File="sv.pak" Component_="ar.pak" FileName="sv.pak" Attributes="0" SourcePath="..\..\..\..\..\Program Files (x86)\FlexRadio Systems\PowerSDR v2.8.0\.local-chromium\Win64-848005\chrome-win\locales\sv.pak" SelfReg="false" NextFile="ta.pak"/>
-    <ROW File="ta.pak" Component_="ar.pak" FileName="ta.pak" Attributes="0" SourcePath="..\..\..\..\..\Program Files (x86)\FlexRadio Systems\PowerSDR v2.8.0\.local-chromium\Win64-848005\chrome-win\locales\ta.pak" SelfReg="false" NextFile="te.pak"/>
-    <ROW File="te.pak" Component_="ar.pak" FileName="te.pak" Attributes="0" SourcePath="..\..\..\..\..\Program Files (x86)\FlexRadio Systems\PowerSDR v2.8.0\.local-chromium\Win64-848005\chrome-win\locales\te.pak" SelfReg="false" NextFile="th.pak"/>
-    <ROW File="th.pak" Component_="ar.pak" FileName="th.pak" Attributes="0" SourcePath="..\..\..\..\..\Program Files (x86)\FlexRadio Systems\PowerSDR v2.8.0\.local-chromium\Win64-848005\chrome-win\locales\th.pak" SelfReg="false" NextFile="tr.pak"/>
     <ROW File="tool.exe" Component_="tool.exe" FileName="tool.exe" Attributes="0" SourcePath="..\..\..\..\..\ProgramData\FlexRadio Systems\FLEX Firmware\tool.exe" SelfReg="false" NextFile="tool.exe_1" DigSign="true"/>
     <ROW File="tool.exe_1" Component_="tool.exe_1" FileName="tool.exe" Attributes="0" SourcePath="..\..\..\..\..\ProgramData\FlexRadio Systems\FLEX Firmware\tool.exe" SelfReg="false" NextFile="PowerSDRTXWaterfallID.pdf" DigSign="true"/>
-    <ROW File="tower.bmp" Component_="DXLOC.txt" FileName="tower.bmp" Attributes="0" SourcePath="..\..\..\AppData\Roaming\FlexRadio Systems\PowerSDR v2.8.0\tower.bmp" SelfReg="false" NextFile="FLEX1500_Firmware_v0.5.3.24.bin"/>
-    <ROW File="tr.pak" Component_="ar.pak" FileName="tr.pak" Attributes="0" SourcePath="..\..\..\..\..\Program Files (x86)\FlexRadio Systems\PowerSDR v2.8.0\.local-chromium\Win64-848005\chrome-win\locales\tr.pak" SelfReg="false" NextFile="uk.pak"/>
-    <ROW File="uk.pak" Component_="ar.pak" FileName="uk.pak" Attributes="0" SourcePath="..\..\..\..\..\Program Files (x86)\FlexRadio Systems\PowerSDR v2.8.0\.local-chromium\Win64-848005\chrome-win\locales\uk.pak" SelfReg="false" NextFile="vi.pak"/>
-    <ROW File="v8_context_snapshot.bin" Component_="manifest" FileName="V8_CON~1.BIN|v8_context_snapshot.bin" Attributes="0" SourcePath="..\..\..\..\..\Program Files (x86)\FlexRadio Systems\PowerSDR v2.8.0\.local-chromium\Win64-848005\chrome-win\v8_context_snapshot.bin" SelfReg="false"/>
-    <ROW File="vi.pak" Component_="ar.pak" FileName="vi.pak" Attributes="0" SourcePath="..\..\..\..\..\Program Files (x86)\FlexRadio Systems\PowerSDR v2.8.0\.local-chromium\Win64-848005\chrome-win\locales\vi.pak" SelfReg="false" NextFile="zhCN.pak"/>
-    <ROW File="zhCN.pak" Component_="ar.pak" FileName="zh-CN.pak" Attributes="0" SourcePath="..\..\..\..\..\Program Files (x86)\FlexRadio Systems\PowerSDR v2.8.0\.local-chromium\Win64-848005\chrome-win\locales\zh-CN.pak" SelfReg="false" NextFile="zhTW.pak"/>
-    <ROW File="zhTW.pak" Component_="ar.pak" FileName="zh-TW.pak" Attributes="0" SourcePath="..\..\..\..\..\Program Files (x86)\FlexRadio Systems\PowerSDR v2.8.0\.local-chromium\Win64-848005\chrome-win\locales\zh-TW.pak" SelfReg="false" NextFile="manifest.json"/>
+    <ROW File="tower.bmp" Component_="DXLOC.txt" FileName="tower.bmp" Attributes="0" SourcePath="..\..\..\AppData\Roaming\FlexRadio Systems\PowerSDR v3.0.0\tower.bmp" SelfReg="false" NextFile="FLEX1500_Firmware_v0.5.3.24.bin"/>
   </COMPONENT>
   <COMPONENT cid="caphyon.advinst.msicomp.BootstrapperUISequenceComponent">
     <ROW Action="AI_DetectSoftware" Sequence="101"/>
   </COMPONENT>
   <COMPONENT cid="caphyon.advinst.msicomp.BuildComponent">
-    <ROW BuildKey="AnyCPU_Release" BuildName="AnyCPU_Release" BuildOrder="1" BuildType="0" PackageFolder="..\..\..\Documents\Advanced Installer\Projects\PowerSDR ke9ns 2.8.0\Setup Files" PackageFileName="PowerSDR_KE9NS_V2.8.0.322_Incremental_Installer" Languages="en" InstallationType="4" UseLargeSchema="true"/>
+    <ROW BuildKey="AnyCPU_Release" BuildName="AnyCPU_Release" BuildOrder="1" BuildType="0" PackageFolder="..\..\..\Documents\Advanced Installer\Projects\PowerSDR ke9ns 3.0.0\Setup Files" PackageFileName="PowerSDR_KE9NS_V3.0.0.1_Incremental_Installer" Languages="en" InstallationType="4" UseLargeSchema="true"/>
   </COMPONENT>
   <COMPONENT cid="caphyon.advinst.msicomp.CacheComponent">
     <ATTRIBUTE name="CacheIndex" value="PowerSDR ke9ns Installer 2.8.0_WEB.txt"/>
@@ -1602,7 +1500,6 @@
     <ROW Dialog_="VerifyReadyDlg" Control_="Back" Event="NewDialog" Argument="PatchWelcomeDlg" Condition="AI_PATCH" Ordering="203"/>
   </COMPONENT>
   <COMPONENT cid="caphyon.advinst.msicomp.MsiCustActComponent">
-    <ROW Action="AI_DOWNGRADE" Type="19" Target="4010"/>
     <ROW Action="AI_DetectSoftware" Type="257" Source="SoftwareDetector.dll" Target="OnDetectSoftware"/>
     <ROW Action="AI_DpiContentScale" Type="1" Source="aicustact.dll" Target="DpiContentScale"/>
     <ROW Action="AI_EnableDebugLog" Type="321" Source="aicustact.dll" Target="EnableDebugLog"/>
@@ -1612,7 +1509,7 @@
     <ROW Action="AI_SHOW_LOG" Type="65" Source="aicustact.dll" Target="LaunchLogFile" WithoutSeq="true"/>
     <ROW Action="AI_STORE_LOCATION" Type="51" Source="ARPINSTALLLOCATION" Target="[APPDIR]"/>
     <ROW Action="AI_ViewReadme" Type="1" Source="aicustact.dll" Target="[#FLEX5000_Owners_Manual_v2.8.pdf]"/>
-    <ROW Action="SET_APPDIR" Type="307" Source="APPDIR" Target="[ProgramFilesFolder][Manufacturer]\[ProductName]" MultiBuildTarget="AnyCPU_Release:[ProgramFilesFolder]\FlexRadio Systems\PowerSDR v2.8.0"/>
+    <ROW Action="SET_APPDIR" Type="307" Source="APPDIR" Target="[ProgramFilesFolder][Manufacturer]\[ProductName]" MultiBuildTarget="AnyCPU_Release:[ProgramFilesFolder]\FlexRadio Systems\PowerSDR v3.0.0"/>
     <ROW Action="SET_SHORTCUTDIR" Type="307" Source="SHORTCUTDIR" Target="[ProgramMenuFolder][ProductName]"/>
     <ROW Action="SET_TARGETDIR_TO_APPDIR" Type="51" Source="TARGETDIR" Target="[APPDIR]"/>
   </COMPONENT>
@@ -1625,7 +1522,6 @@
     <ROW Action="AI_ResolveKnownFolders" Sequence="53"/>
     <ROW Action="AI_EnableDebugLog" Sequence="51"/>
     <ROW Action="AI_DetectSoftware" Sequence="101"/>
-    <ROW Action="AI_DOWNGRADE" Condition="AI_NEWERPRODUCTFOUND AND (UILevel &lt;&gt; 5)" Sequence="201"/>
   </COMPONENT>
   <COMPONENT cid="caphyon.advinst.msicomp.MsiInstallUISequenceComponent">
     <ROW Action="AI_ResolveKnownFolders" Sequence="53"/>
@@ -1652,6 +1548,5 @@
   </COMPONENT>
   <COMPONENT cid="caphyon.advinst.msicomp.MsiUpgradeComponent">
     <ROW UpgradeCode="[|UpgradeCode]" VersionMin="0.0.1" VersionMax="[|ProductVersion]" Attributes="257" ActionProperty="OLDPRODUCTS"/>
-    <ROW UpgradeCode="[|UpgradeCode]" VersionMin="[|ProductVersion]" Attributes="2" ActionProperty="AI_NEWERPRODUCTFOUND"/>
   </COMPONENT>
 </DOCUMENT>
