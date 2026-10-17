@@ -41,8 +41,9 @@ namespace PowerSDR
                 P51Snapshot();
                 P51SetBounds(new Rectangle(
                     panelDisplay.Location,
-                    Math.Max(P51MinWidth, panelDisplay.Width + p51UserSizeOffset.Width),
-                    Math.Max(P51MinHeight, panelDisplay.Height + p51UserSizeOffset.Height)));
+                    new Size(
+                        Math.Max(P51MinWidth, panelDisplay.Width + p51UserSizeOffset.Width),
+                        Math.Max(P51MinHeight, panelDisplay.Height + p51UserSizeOffset.Height))));
             }
 
             panelDisplay.SizeChanged += P51NativeDisplaySizeChanged;
