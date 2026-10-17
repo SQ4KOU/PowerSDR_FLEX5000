@@ -23,6 +23,8 @@ namespace PowerSDR
         private Point p51MouseStart;
         private Rectangle p51BoundsStart;
         private Size p51ImageStart;
+        private Point p51Rx1StripStart;
+        private Point p51Rx2StripStart;
         private Size p51LastSize;
         private Size p51UserSizeOffset;
         private readonly Dictionary<Control, Rectangle> p51ChildStart =
@@ -89,6 +91,8 @@ namespace PowerSDR
         {
             p51BoundsStart = panelDisplay.Bounds;
             p51ImageStart = picDisplay.Size;
+            p51Rx1StripStart = panelDisplay2.Location;
+            p51Rx2StripStart = panelRX2Display.Location;
             p51LastSize = panelDisplay.Size;
             p51ChildStart.Clear();
             foreach (Control child in panelDisplay.Controls)
@@ -142,6 +146,18 @@ namespace PowerSDR
 
                         c.Bounds = new Rectangle(x, y, w, h);
                     }
+
+                    // Native RX1/RX2 display selectors are SIBLINGS of
+                    // panelDisplay, not its children. P51 previously left
+                    // them behind the enlarged/moved waterfall.
+                    int moveX = bounds.Left - p51BoundsStart.Left;
+                    int moveY = bounds.Top - p51BoundsStart.Top;
+                    panelDisplay2.Location = new Point(
+                        p51Rx1StripStart.X + moveX + dw / 2,
+                        p51Rx1StripStart.Y + moveY + dh);
+                    panelRX2Display.Location = new Point(
+                        p51Rx2StripStart.X + moveX + (int)(dw * 0.383),
+                        p51Rx2StripStart.Y + moveY + dh);
                 }
                 finally { panelDisplay.ResumeLayout(false); }
                 p51LastSize = panelDisplay.Size;
@@ -174,6 +190,31 @@ namespace PowerSDR
                         changed.Height + p51UserSizeOffset.Height));
             }
             finally { p51ApplyingSize = false; }
+        }
+
+        // Called once after the native KE9NS ResizeConsole() has laid out
+        // the screen. It repositions the original bottom controls relative
+        // to the user's saved extra display size, with no renderer changes.
+        private void P51AfterNativeConsoleResize()
+        {
+            if (!p51Ready || p51Resizing ||
+                p51ApplyingSize || p51UserSizeOffset == Size.Empty)
+                return;
+
+            Rectangle actualBounds = panelDisplay.Bounds;
+            P51Snapshot();
+            // Native panel/picture SizeChanged already restored the P51
+            // width/height offsets. Only the native child/strip layout needs
+            // the same delta. Use P51SetBounds to align the existing controls.
+            p51BoundsStart = new Rectangle(
+                actualBounds.Location,
+                new Size(
+                    Math.Max(1, actualBounds.Width - p51UserSizeOffset.Width),
+                    Math.Max(1, actualBounds.Height - p51UserSizeOffset.Height)));
+            p51ImageStart = new Size(
+                Math.Max(1, picDisplay.Width - p51UserSizeOffset.Width),
+                Math.Max(1, picDisplay.Height - p51UserSizeOffset.Height));
+            P51SetBounds(actualBounds);
         }
 
         // Invoked first by the already installed P50 mouse filter.
