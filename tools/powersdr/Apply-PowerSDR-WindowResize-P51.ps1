@@ -10,11 +10,12 @@ $positionPath = Join-Path $consoleDir 'P50WindowPositions.cs'
 $designerPath = Join-Path $consoleDir 'console.Designer.cs'
 $resizeSrc = Join-Path $PSScriptRoot 'P51BandscopeResize.cs'
 $resizeDst = Join-Path $consoleDir 'P51BandscopeResize.cs'
+$consolePath = Join-Path $consoleDir 'console.cs'
 $utf8 = New-Object System.Text.UTF8Encoding($true)
 $utf8NoBom = New-Object System.Text.UTF8Encoding($false)
 $lf=[string][char]10
 $crlf=([string][char]13)+[char]10
-foreach($path in @($projPath,$positionPath,$designerPath,$resizeSrc)) {
+foreach($path in @($projPath,$positionPath,$designerPath,$resizeSrc,$consolePath)) {
     if(!(Test-Path $path)) { throw "P51 prerequisite missing: $path" }
 }
 
@@ -49,9 +50,10 @@ $newGroups = @'
 
             // P51 – remaining movable native control groups and the spectrum.
             // Distinct groups retain independent positions in the P50 table.
-            P50AddGroup("BandscopeWaterfall", saved, panelDisplay);
-            P50AddGroup("RX1_DisplayControls", saved, panelDisplay2);
-            P50AddGroup("RX2_DisplayControls", saved, panelRX2Display);
+            // These lower RX1/RX2 selector panels belong to the display.
+            // They must follow the waterfall when moving it.
+            P50AddGroup("BandscopeWaterfall", saved,
+                panelDisplay, panelDisplay2, panelRX2Display);
             P50AddGroup("VFO_Controls", saved, panelVFO);
             P50AddGroup("TS_Controls", saved, panelTS1);
             P50AddGroup("Radar", saved, panelTSRadar);
@@ -94,6 +96,40 @@ $code = $code.Replace(
 [IO.File]::WriteAllText($positionPath,$code.Replace($lf,$crlf),$utf8)
 
 Copy-Item $resizeSrc $resizeDst -Force
+
+# KE9NS ResizeConsole recalculates the toolbar positions independently of
+# panelDisplay/picDisplay sizing. Re-align only AFTER the original native
+# WinForms layout has completed (no DSP/renderer modification).
+$console = [IO.File]::ReadAllText($consolePath).Replace($crlf,$lf)
+$resizeStart = @'
+        public void ResizeConsole(int h_delta1, int v_delta)        //k6jca 1/15/08
+        {
+'@.Replace($crlf,$lf)
+$resizeStartNew = @'
+        public void ResizeConsole(int h_delta1, int v_delta)        //k6jca 1/15/08
+        {
+            bool p51NativeLayoutWasApplied =
+                !(h_delta1 == 0 && v_delta == 0 && previous_delta == 0);
+'@.Replace($crlf,$lf)
+$console = Replace-Once $console $resizeStart $resizeStartNew 'KE9NS ResizeConsole entry'
+
+$resizeEnd = @'
+            panelTSRadar.Invalidate(); //.246
+
+
+        } // resizeconsole
+'@.Replace($crlf,$lf)
+$resizeEndNew = @'
+            panelTSRadar.Invalidate(); //.246
+
+            if (p51NativeLayoutWasApplied)
+                P51AfterNativeConsoleResize();
+
+        } // resizeconsole
+'@.Replace($crlf,$lf)
+$console = Replace-Once $console $resizeEnd $resizeEndNew 'KE9NS ResizeConsole completion'
+[IO.File]::WriteAllText($consolePath,$console.Replace($lf,$crlf),$utf8)
+
 $proj = [IO.File]::ReadAllText($projPath)
 $oldProj = '<Compile Include="P50WindowPositions.cs" />'
 if(!$proj.Contains($oldProj)){throw 'P51 P50 csproj anchor missing'}
@@ -105,8 +141,8 @@ $proj = Replace-Once $proj $oldProj ($oldProj+[Environment]::NewLine+'    '+'<Co
 
 $verify = [IO.File]::ReadAllText($positionPath)
 foreach($required in @(
-    'P50AddGroup("BandscopeWaterfall", saved, panelDisplay);',
-    'P50AddGroup("RX2_DisplayControls", saved, panelRX2Display);',
+    'P50AddGroup("BandscopeWaterfall", saved,',
+    'panelDisplay, panelDisplay2, panelRX2Display);',
     'P51InitBandscopeResize();','P51FilterBandscopeResize(message)'
 )){
     if(!$verify.Contains($required)){throw "P51 source gate failed: $required"}
@@ -115,9 +151,16 @@ $resize = [IO.File]::ReadAllText($resizeDst)
 foreach($required in @(
     'picDisplay.Size = new Size(', 'P51SaveSizeOffset();',
     'P50StoreOffsets();', 'P51NativeDisplaySizeChanged',
-    'P51DragResize()', 'P51FinishResize()'
+    'P51DragResize()', 'P51FinishResize()',
+    'P51AfterNativeConsoleResize()', 'p51Rx1StripStart',
+    'p51Rx2StripStart'
 )){
     if(!$resize.Contains($required)){throw "P51 native resize gate failed: $required"}
+}
+
+$verifyNative = [IO.File]::ReadAllText($consolePath)
+foreach($required in @('bool p51NativeLayoutWasApplied', 'P51AfterNativeConsoleResize();')){
+    if(!$verifyNative.Contains($required)){ throw "P51 native-layout gate missing: $required" }
 }
 
 Write-Host 'P51_MAIN_UI=EXTENDED_P50_SHIFT_LMB'
