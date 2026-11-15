@@ -4525,6 +4525,7 @@ namespace PowerSDR
             // 
             // ScreenCap
             // 
+            this.ScreenCap.Image = global::PowerSDR.Properties.Resources.SC;
             resources.ApplyResources(this.ScreenCap, "ScreenCap");
             this.ScreenCap.Name = "ScreenCap";
             this.ScreenCap.TabStop = false;
@@ -7103,8 +7104,6 @@ namespace PowerSDR
         public System.Windows.Forms.TextBoxTS autoBrightBox;
         private System.Windows.Forms.TextBoxTS txtDisplayCursorOffset;
         private System.Windows.Forms.TextBoxTS txtDisplayCursorPower;
-        private System.Windows.Forms.TextBoxTS txtDisplayPeakOffset;
-        private System.Windows.Forms.TextBoxTS txtDisplayPeakFreq;
         public System.Windows.Forms.TextBoxTS txtDisplayPeakPower;
         public System.Windows.Forms.TextBoxTS txtVFOAMSD;
         public System.Windows.Forms.TextBoxTS txtVFOBMSD;
@@ -7572,6 +7571,8 @@ namespace PowerSDR
         private System.Windows.Forms.ToolStripMenuItem toolStripMenuItemRX2FilterReset1;
         public System.Windows.Forms.TextBoxTS txtDisplayCursorFreq;
         private System.Windows.Forms.Button buttonLock;
+        public System.Windows.Forms.TextBoxTS txtDisplayPeakOffset;
+        public System.Windows.Forms.TextBoxTS txtDisplayPeakFreq;
     } // class console
 
 

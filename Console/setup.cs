@@ -63,6 +63,9 @@ namespace PowerSDR
         public static ScanControl ScanForm;                       // ke9ns add freq Scanner function
         public static FlexControlBasicForm FCBasicForm;
 
+        public static YouTubeStreamer youtubestreamer;  //.14
+
+
         //   public static Http httpFile;
         //   public static VolumeControl volumecontrol;
 
@@ -887,6 +890,7 @@ namespace PowerSDR
         {
             comboAudioInput2.Items.Clear();
             comboAudioOutput2.Items.Clear();
+            comboAudioYouTube.Items.Clear(); //.14
 
 
             int host = ((PADeviceInfo)comboAudioDriver2.SelectedItem).Index;
@@ -896,6 +900,8 @@ namespace PowerSDR
             foreach (PADeviceInfo p in a)
             {
                 comboAudioInput2.Items.Add(p);
+                comboAudioYouTube.Items.Add(p); //.14
+
 
                 Debug.WriteLine("vac1a " + p + " in "); // SOUND input: (Microsoft Sound Mapper - Input,CABLE Output (VB-Audio Virtual, Mic in at front panel (Pink) (R
 
@@ -17159,6 +17165,16 @@ namespace PowerSDR
         private void tb3DScale_ValueChanged(object sender, EventArgs e)
         {
             Display.Data3DScale = tb3DScale.Value; //.13a
+        }
+
+        private void chkYouTube_CheckedChanged(object sender, EventArgs e)
+        {
+
+        }
+
+        private void chkYouTubeFull_CheckedChanged(object sender, EventArgs e)
+        {
+
         }
 
         //setupForm.gridBoxTS.CheckedChanged -= setupForm.gridBoxTS_CheckedChanged;  // ke9ns turn off checkchanged temporarily   

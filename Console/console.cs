@@ -259,6 +259,8 @@ using HidDevice;
 using EnvDTE;
 using Thread = System.Threading.Thread;
 using Process = System.Diagnostics.Process;
+using PowerSDR;
+
 
 
 
@@ -979,6 +981,8 @@ namespace PowerSDR
         public IDBOX IDBOXForm;                          // ke9ns add ID Timer function function (idtimer)
         public TOTBOX TOTBOXForm;                          // ke9ns add Timeout Timer function function (tottimer)
         public SpotWatchBox SpotWatchBoxForm;           // .269 pop box when your dx spot watch comes up
+
+        public YouTubeStreamer youtubestreamer;                 //.14
 
 
         private CATParser parser;                       // ke9ns: add to allow serial port (but currently only used in setup for CATURL
@@ -3322,6 +3326,8 @@ namespace PowerSDR
             SpotWatchBox.console = this;          //.269
 
             SpotControl.console = this;           // ke9ns add  spot.cs to this console so spot can talk to console
+
+            YouTubeStreamer.console = this;       //.14
 
             ScanControl.console = this;           // ke9ns add  scan.cs to this console so scan can talk to console
             StackControl.console = this;          // ke9ns add  stack.cs to this console so stack can talk to console
@@ -40649,25 +40655,36 @@ namespace PowerSDR
                 //  autoBrightBox.Text = "Auto Wtr Level";
             }
 
-
-            if (peak1 == 0)  // ke9ns ADD:  turn off peak value on screen if you click on them
+            if (youtube == false) //.14
             {
-                txtDisplayPeakOffset.Text = x.ToString("f1") + "Hz";
 
-                txtDisplayPeakPower.Text = y.ToString("f1") + "dBm"; // ke9ns: this value can be used in Continuum mode waterfall
+                if (peak1 == 0)  // ke9ns ADD:  turn off peak value on screen if you click on them
+                {
+                    txtDisplayPeakOffset.Text = x.ToString("f1") + "Hz";
 
-                string temp_text = freq.ToString("f6") + " MHz";
-                int jper = temp_text.IndexOf(separator) + 4;
-                txtDisplayPeakFreq.Text = String.Copy(temp_text.Insert(jper, " "));
+                    txtDisplayPeakPower.Text = y.ToString("f1") + "dBm"; // ke9ns: this value can be used in Continuum mode waterfall
+
+                    string temp_text = freq.ToString("f6") + " MHz";
+                    int jper = temp_text.IndexOf(separator) + 4;
+                    txtDisplayPeakFreq.Text = String.Copy(temp_text.Insert(jper, " "));
 
 
-            }
-            else
+                }
+                else
+                {
+                    txtDisplayPeakOffset.Text = "";  // ke9ns ADD
+                    txtDisplayPeakPower.Text = "";
+                    txtDisplayPeakFreq.Text = "";
+                    // autoBrightBox.Text = "Auto Wtr Level";
+
+                }
+            } // ystreamer
+            else //.14
             {
-                txtDisplayPeakOffset.Text = "";  // ke9ns ADD
-                txtDisplayPeakPower.Text = "";
-                txtDisplayPeakFreq.Text = "";
-                // autoBrightBox.Text = "Auto Wtr Level";
+              //  txtDisplayPeakOffset.Text = "";  // ke9ns 
+              //  txtDisplayPeakPower.Text = "";
+              //  txtDisplayPeakFreq.Text = "";
+
 
             }
 
@@ -87443,15 +87460,47 @@ namespace PowerSDR
                 System.Diagnostics.Process.Start("explorer.exe", filePath); // open folder
 
             } // right click
+            else if ((me.Button == System.Windows.Forms.MouseButtons.Left))
+            {
+                if (setupForm.chkYouTube.Checked)
+                {
+                  
+                    if (youtube == false)
+                    {
+                        btnStartStream_Click(this, EventArgs.Empty); //.14
+                        youtube = true;
+
+                        txtDisplayPeakOffset.Text = "";  // ke9ns ADD
+                        txtDisplayPeakPower.Text = "";
+                        txtDisplayPeakFreq.Text = "";
+
+
+                    }
+                    else
+                    {
+                        btnStopStream_Click(this, EventArgs.Empty); //.14
+                        youtube = false;
+                    }
+
+                }
+                else
+                {
+                    Screen_Save(); // left click performs a screen display capture and save as JPEG
+
+                }
+            }
             else
             {
-                Screen_Save(); // left click performs a screen display capture and save as JPEG
+                 Screen_Save(); // left click performs a screen display capture and save as JPEG
+
+
+
             }
 
             btnHidden.Focus();
         } // ScreenCap_MouseDown
 
-
+        bool youtube = false; //.14 on or off
         //======================================================================================================
         // ke9ns add  screen save
         public void Screen_Save()
@@ -92143,6 +92192,44 @@ namespace PowerSDR
             DB.BandTextRefresh = false;
 
         } //  public void Refresh_Tables()
+
+
+//=================================================================================================
+//.14
+
+
+        private YouTubeStreamer _ytStreamer;
+
+        // When user clicks "Start Streaming" in your UI menu:
+        private void btnStartStream_Click(object sender, EventArgs e)
+        {
+            string rtmpUrl = "rtmp://a.rtmp.youtube.com/live2";
+            string streamKey = setupForm.txtYouTubeKey.Text; //
+         
+            
+            _ytStreamer = new YouTubeStreamer(picDisplay, rtmpUrl, streamKey, setupForm.comboAudioYouTube.Text);
+            _ytStreamer.Start();
+
+             Debug.WriteLine("YOUTUBE START");
+        }
+          
+
+        // When user clicks "Stop Streaming":
+        private void btnStopStream_Click(object sender, EventArgs e)
+        {
+            if (_ytStreamer != null)
+            {
+                _ytStreamer.Stop();
+                _ytStreamer = null;
+            }
+
+            Debug.WriteLine("YOUTUBE STOP");
+            
+        }
+
+
+        //.14
+        //=================================================================================================
 
 
 

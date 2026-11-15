@@ -1339,6 +1339,185 @@ D/A     = Stage12 back to Analog (to the PA)
   <data name="panelTSRadar.AutoScrollMinSize" type="System.Drawing.Size, System.Drawing">
     <value>0, 0</value>
   </data>
+  <data name="&gt;&gt;chkESCRX2Mag.Name" xml:space="preserve">
+    <value>chkESCRX2Mag</value>
+  </data>
+  <data name="&gt;&gt;chkESCRX2Mag.Type" xml:space="preserve">
+    <value>System.Windows.Forms.CheckBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;chkESCRX2Mag.Parent" xml:space="preserve">
+    <value>panelTSRadar</value>
+  </data>
+  <data name="&gt;&gt;chkESCRX2Mag.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
+  <data name="&gt;&gt;ptbAngle.Name" xml:space="preserve">
+    <value>ptbAngle</value>
+  </data>
+  <data name="&gt;&gt;ptbAngle.Type" xml:space="preserve">
+    <value>PowerSDR.PrettyTrackBar, PowerSDR, Version=3.0.0.13, Culture=neutral, PublicKeyToken=null</value>
+  </data>
+  <data name="&gt;&gt;ptbAngle.Parent" xml:space="preserve">
+    <value>panelTSRadar</value>
+  </data>
+  <data name="&gt;&gt;ptbAngle.ZOrder" xml:space="preserve">
+    <value>1</value>
+  </data>
+  <data name="&gt;&gt;btnBump180.Name" xml:space="preserve">
+    <value>btnBump180</value>
+  </data>
+  <data name="&gt;&gt;btnBump180.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ButtonTS, PowerSDR, Version=3.0.0.13, Culture=neutral, PublicKeyToken=null</value>
+  </data>
+  <data name="&gt;&gt;btnBump180.Parent" xml:space="preserve">
+    <value>panelTSRadar</value>
+  </data>
+  <data name="&gt;&gt;btnBump180.ZOrder" xml:space="preserve">
+    <value>2</value>
+  </data>
+  <data name="&gt;&gt;btnReset.Name" xml:space="preserve">
+    <value>btnReset</value>
+  </data>
+  <data name="&gt;&gt;btnReset.Type" xml:space="preserve">
+    <value>System.Windows.Forms.RadioButtonTS, PowerSDR, Version=3.0.0.13, Culture=neutral, PublicKeyToken=null</value>
+  </data>
+  <data name="&gt;&gt;btnReset.Parent" xml:space="preserve">
+    <value>panelTSRadar</value>
+  </data>
+  <data name="&gt;&gt;btnReset.ZOrder" xml:space="preserve">
+    <value>3</value>
+  </data>
+  <data name="&gt;&gt;btnEnable.Name" xml:space="preserve">
+    <value>btnEnable</value>
+  </data>
+  <data name="&gt;&gt;btnEnable.Type" xml:space="preserve">
+    <value>System.Windows.Forms.RadioButtonTS, PowerSDR, Version=3.0.0.13, Culture=neutral, PublicKeyToken=null</value>
+  </data>
+  <data name="&gt;&gt;btnEnable.Parent" xml:space="preserve">
+    <value>panelTSRadar</value>
+  </data>
+  <data name="&gt;&gt;btnEnable.ZOrder" xml:space="preserve">
+    <value>4</value>
+  </data>
+  <data name="&gt;&gt;btnSync.Name" xml:space="preserve">
+    <value>btnSync</value>
+  </data>
+  <data name="&gt;&gt;btnSync.Type" xml:space="preserve">
+    <value>System.Windows.Forms.RadioButtonTS, PowerSDR, Version=3.0.0.13, Culture=neutral, PublicKeyToken=null</value>
+  </data>
+  <data name="&gt;&gt;btnSync.Parent" xml:space="preserve">
+    <value>panelTSRadar</value>
+  </data>
+  <data name="&gt;&gt;btnSync.ZOrder" xml:space="preserve">
+    <value>5</value>
+  </data>
+  <data name="&gt;&gt;chkLockAngle.Name" xml:space="preserve">
+    <value>chkLockAngle</value>
+  </data>
+  <data name="&gt;&gt;chkLockAngle.Type" xml:space="preserve">
+    <value>System.Windows.Forms.CheckBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;chkLockAngle.Parent" xml:space="preserve">
+    <value>panelTSRadar</value>
+  </data>
+  <data name="&gt;&gt;chkLockAngle.ZOrder" xml:space="preserve">
+    <value>6</value>
+  </data>
+  <data name="&gt;&gt;chkLockR.Name" xml:space="preserve">
+    <value>chkLockR</value>
+  </data>
+  <data name="&gt;&gt;chkLockR.Type" xml:space="preserve">
+    <value>System.Windows.Forms.CheckBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;chkLockR.Parent" xml:space="preserve">
+    <value>panelTSRadar</value>
+  </data>
+  <data name="&gt;&gt;chkLockR.ZOrder" xml:space="preserve">
+    <value>7</value>
+  </data>
+  <data name="&gt;&gt;udR.Name" xml:space="preserve">
+    <value>udR</value>
+  </data>
+  <data name="&gt;&gt;udR.Type" xml:space="preserve">
+    <value>System.Windows.Forms.NumericUpDownTS, PowerSDR, Version=3.0.0.13, Culture=neutral, PublicKeyToken=null</value>
+  </data>
+  <data name="&gt;&gt;udR.Parent" xml:space="preserve">
+    <value>panelTSRadar</value>
+  </data>
+  <data name="&gt;&gt;udR.ZOrder" xml:space="preserve">
+    <value>8</value>
+  </data>
+  <data name="&gt;&gt;udAngle.Name" xml:space="preserve">
+    <value>udAngle</value>
+  </data>
+  <data name="&gt;&gt;udAngle.Type" xml:space="preserve">
+    <value>System.Windows.Forms.NumericUpDownTS, PowerSDR, Version=3.0.0.13, Culture=neutral, PublicKeyToken=null</value>
+  </data>
+  <data name="&gt;&gt;udAngle.Parent" xml:space="preserve">
+    <value>panelTSRadar</value>
+  </data>
+  <data name="&gt;&gt;udAngle.ZOrder" xml:space="preserve">
+    <value>9</value>
+  </data>
+  <data name="&gt;&gt;checkBoxRadar.Name" xml:space="preserve">
+    <value>checkBoxRadar</value>
+  </data>
+  <data name="&gt;&gt;checkBoxRadar.Type" xml:space="preserve">
+    <value>System.Windows.Forms.CheckBoxTS, PowerSDR, Version=3.0.0.13, Culture=neutral, PublicKeyToken=null</value>
+  </data>
+  <data name="&gt;&gt;checkBoxRadar.Parent" xml:space="preserve">
+    <value>panelTSRadar</value>
+  </data>
+  <data name="&gt;&gt;checkBoxRadar.ZOrder" xml:space="preserve">
+    <value>10</value>
+  </data>
+  <data name="&gt;&gt;picRadar.Name" xml:space="preserve">
+    <value>picRadar</value>
+  </data>
+  <data name="&gt;&gt;picRadar.Type" xml:space="preserve">
+    <value>System.Windows.Forms.PictureBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;picRadar.Parent" xml:space="preserve">
+    <value>panelTSRadar</value>
+  </data>
+  <data name="&gt;&gt;picRadar.ZOrder" xml:space="preserve">
+    <value>11</value>
+  </data>
+  <data name="panelTSRadar.Enabled" type="System.Boolean, mscorlib">
+    <value>False</value>
+  </data>
+  <data name="panelTSRadar.Font" type="System.Drawing.Font, System.Drawing">
+    <value>Microsoft Sans Serif, 8.25pt, style=Bold</value>
+  </data>
+  <data name="panelTSRadar.Location" type="System.Drawing.Point, System.Drawing">
+    <value>499, 397</value>
+  </data>
+  <data name="panelTSRadar.Size" type="System.Drawing.Size, System.Drawing">
+    <value>189, 254</value>
+  </data>
+  <data name="panelTSRadar.TabIndex" type="System.Int32, mscorlib">
+    <value>122</value>
+  </data>
+  <data name="panelTSRadar.ToolTip" xml:space="preserve">
+    <value>Dual Receiver (RX1 - RX2) Diversity reception "Enhanced Signal Clarity"
+
+Hit F2 for Video showing Diversity "ESC" in operation</value>
+  </data>
+  <data name="panelTSRadar.Visible" type="System.Boolean, mscorlib">
+    <value>False</value>
+  </data>
+  <data name="&gt;&gt;panelTSRadar.Name" xml:space="preserve">
+    <value>panelTSRadar</value>
+  </data>
+  <data name="&gt;&gt;panelTSRadar.Type" xml:space="preserve">
+    <value>System.Windows.Forms.PanelTS, PowerSDR, Version=3.0.0.13, Culture=neutral, PublicKeyToken=null</value>
+  </data>
+  <data name="&gt;&gt;panelTSRadar.Parent" xml:space="preserve">
+    <value>$this</value>
+  </data>
+  <data name="&gt;&gt;panelTSRadar.ZOrder" xml:space="preserve">
+    <value>6</value>
+  </data>
   <data name="chkESCRX2Mag.Anchor" type="System.Windows.Forms.AnchorStyles, System.Windows.Forms">
     <value>Bottom, Left</value>
   </data>
@@ -1835,41 +2014,6 @@ Play Button: MOX Radio and Play new recorded message
   </data>
   <data name="&gt;&gt;picRadar.ZOrder" xml:space="preserve">
     <value>11</value>
-  </data>
-  <data name="panelTSRadar.Enabled" type="System.Boolean, mscorlib">
-    <value>False</value>
-  </data>
-  <data name="panelTSRadar.Font" type="System.Drawing.Font, System.Drawing">
-    <value>Microsoft Sans Serif, 8.25pt, style=Bold</value>
-  </data>
-  <data name="panelTSRadar.Location" type="System.Drawing.Point, System.Drawing">
-    <value>499, 397</value>
-  </data>
-  <data name="panelTSRadar.Size" type="System.Drawing.Size, System.Drawing">
-    <value>189, 254</value>
-  </data>
-  <data name="panelTSRadar.TabIndex" type="System.Int32, mscorlib">
-    <value>122</value>
-  </data>
-  <data name="panelTSRadar.ToolTip" xml:space="preserve">
-    <value>Dual Receiver (RX1 - RX2) Diversity reception "Enhanced Signal Clarity"
-
-Hit F2 for Video showing Diversity "ESC" in operation</value>
-  </data>
-  <data name="panelTSRadar.Visible" type="System.Boolean, mscorlib">
-    <value>False</value>
-  </data>
-  <data name="&gt;&gt;panelTSRadar.Name" xml:space="preserve">
-    <value>panelTSRadar</value>
-  </data>
-  <data name="&gt;&gt;panelTSRadar.Type" xml:space="preserve">
-    <value>System.Windows.Forms.PanelTS, PowerSDR, Version=3.0.0.13, Culture=neutral, PublicKeyToken=null</value>
-  </data>
-  <data name="&gt;&gt;panelTSRadar.Parent" xml:space="preserve">
-    <value>$this</value>
-  </data>
-  <data name="&gt;&gt;panelTSRadar.ZOrder" xml:space="preserve">
-    <value>6</value>
   </data>
   <data name="btnBandVHFRX2.FlatStyle" type="System.Windows.Forms.FlatStyle, System.Windows.Forms">
     <value>Flat</value>
@@ -14515,408 +14659,6 @@ D/A     = Stage12 back to Analog (to the PA)
   <data name="&gt;&gt;comboCWTXProfile.ZOrder" xml:space="preserve">
     <value>1</value>
   </data>
-  <data name="ScreenCap.Image" type="System.Drawing.Bitmap, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
-    <value>
-        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
-        tkBITicAAAAASUVORK5CYII=
-</value>
-  </data>
   <data name="ScreenCap.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
     <value>Off</value>
   </data>
@@ -16787,6 +16529,18 @@ Right Click to toggle Lock of a Highlighted RX2 VFOB Bandstack Entry
   <metadata name="contextMenuStripFilterRX1.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
     <value>615, 15</value>
   </metadata>
+  <data name="contextMenuStripFilterRX1.Size" type="System.Drawing.Size, System.Drawing">
+    <value>206, 70</value>
+  </data>
+  <data name="contextMenuStripFilterRX1.Text" xml:space="preserve">
+    <value>RX1 Filter</value>
+  </data>
+  <data name="&gt;&gt;contextMenuStripFilterRX1.Name" xml:space="preserve">
+    <value>contextMenuStripFilterRX1</value>
+  </data>
+  <data name="&gt;&gt;contextMenuStripFilterRX1.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ContextMenuStrip, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
   <data name="toolStripMenuItemRX1FilterConfigure.Size" type="System.Drawing.Size, System.Drawing">
     <value>205, 22</value>
   </data>
@@ -16805,21 +16559,18 @@ Right Click to toggle Lock of a Highlighted RX2 VFOB Bandstack Entry
   <data name="toolStripMenuItemRX1FilterReset1.Text" xml:space="preserve">
     <value>Reset to Clean Defaults</value>
   </data>
-  <data name="contextMenuStripFilterRX1.Size" type="System.Drawing.Size, System.Drawing">
-    <value>206, 70</value>
-  </data>
-  <data name="contextMenuStripFilterRX1.Text" xml:space="preserve">
-    <value>RX1 Filter</value>
-  </data>
-  <data name="&gt;&gt;contextMenuStripFilterRX1.Name" xml:space="preserve">
-    <value>contextMenuStripFilterRX1</value>
-  </data>
-  <data name="&gt;&gt;contextMenuStripFilterRX1.Type" xml:space="preserve">
-    <value>System.Windows.Forms.ContextMenuStrip, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
   <metadata name="contextMenuStripFilterRX2.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
     <value>812, 15</value>
   </metadata>
+  <data name="contextMenuStripFilterRX2.Size" type="System.Drawing.Size, System.Drawing">
+    <value>206, 70</value>
+  </data>
+  <data name="&gt;&gt;contextMenuStripFilterRX2.Name" xml:space="preserve">
+    <value>contextMenuStripFilterRX2</value>
+  </data>
+  <data name="&gt;&gt;contextMenuStripFilterRX2.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ContextMenuStrip, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
   <data name="toolStripMenuItemRX2FilterConfigure.Size" type="System.Drawing.Size, System.Drawing">
     <value>205, 22</value>
   </data>
@@ -16838,15 +16589,6 @@ Right Click to toggle Lock of a Highlighted RX2 VFOB Bandstack Entry
   <data name="toolStripMenuItemRX2FilterReset1.Text" xml:space="preserve">
     <value>Reset to clean Defaults</value>
   </data>
-  <data name="contextMenuStripFilterRX2.Size" type="System.Drawing.Size, System.Drawing">
-    <value>206, 70</value>
-  </data>
-  <data name="&gt;&gt;contextMenuStripFilterRX2.Name" xml:space="preserve">
-    <value>contextMenuStripFilterRX2</value>
-  </data>
-  <data name="&gt;&gt;contextMenuStripFilterRX2.Type" xml:space="preserve">
-    <value>System.Windows.Forms.ContextMenuStrip, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
   <metadata name="timer_navigate.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
     <value>199, 17</value>
   </metadata>
@@ -16856,6 +16598,15 @@ Right Click to toggle Lock of a Highlighted RX2 VFOB Bandstack Entry
   <metadata name="contextMenuStripNotch.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
     <value>17, 17</value>
   </metadata>
+  <data name="contextMenuStripNotch.Size" type="System.Drawing.Size, System.Drawing">
+    <value>149, 120</value>
+  </data>
+  <data name="&gt;&gt;contextMenuStripNotch.Name" xml:space="preserve">
+    <value>contextMenuStripNotch</value>
+  </data>
+  <data name="&gt;&gt;contextMenuStripNotch.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ContextMenuStrip, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
   <data name="toolStripNotchDelete.Size" type="System.Drawing.Size, System.Drawing">
     <value>148, 22</value>
   </data>
@@ -16889,15 +16640,6 @@ Right Click to toggle Lock of a Highlighted RX2 VFOB Bandstack Entry
   <data name="toolStripNotchVeryDeep.Text" xml:space="preserve">
     <value>Very Deep (x3)</value>
   </data>
-  <data name="contextMenuStripNotch.Size" type="System.Drawing.Size, System.Drawing">
-    <value>149, 120</value>
-  </data>
-  <data name="&gt;&gt;contextMenuStripNotch.Name" xml:space="preserve">
-    <value>contextMenuStripNotch</value>
-  </data>
-  <data name="&gt;&gt;contextMenuStripNotch.Type" xml:space="preserve">
-    <value>System.Windows.Forms.ContextMenuStrip, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
   <metadata name="timerNotchZoom.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
     <value>420, 13</value>
   </metadata>
@@ -16909,6 +16651,30 @@ Right Click to toggle Lock of a Highlighted RX2 VFOB Bandstack Entry
   </data>
   <data name="menuStrip1.Font" type="System.Drawing.Font, System.Drawing">
     <value>Microsoft Sans Serif, 9pt</value>
+  </data>
+  <data name="menuStrip1.Location" type="System.Drawing.Point, System.Drawing">
+    <value>0, 0</value>
+  </data>
+  <data name="menuStrip1.Size" type="System.Drawing.Size, System.Drawing">
+    <value>1017, 22</value>
+  </data>
+  <data name="menuStrip1.TabIndex" type="System.Int32, mscorlib">
+    <value>135</value>
+  </data>
+  <data name="menuStrip1.Text" xml:space="preserve">
+    <value>menuStrip1</value>
+  </data>
+  <data name="&gt;&gt;menuStrip1.Name" xml:space="preserve">
+    <value>menuStrip1</value>
+  </data>
+  <data name="&gt;&gt;menuStrip1.Type" xml:space="preserve">
+    <value>System.Windows.Forms.MenuStrip, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;menuStrip1.Parent" xml:space="preserve">
+    <value>$this</value>
+  </data>
+  <data name="&gt;&gt;menuStrip1.ZOrder" xml:space="preserve">
+    <value>28</value>
   </data>
   <data name="setupToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
     <value>51, 18</value>
@@ -17192,30 +16958,6 @@ Right Click: Open PDF PowerSDR_CAT_Command_Reference_Guide
   <data name="reportBugToolStripMenuItem.Visible" type="System.Boolean, mscorlib">
     <value>False</value>
   </data>
-  <data name="menuStrip1.Location" type="System.Drawing.Point, System.Drawing">
-    <value>0, 0</value>
-  </data>
-  <data name="menuStrip1.Size" type="System.Drawing.Size, System.Drawing">
-    <value>1017, 22</value>
-  </data>
-  <data name="menuStrip1.TabIndex" type="System.Int32, mscorlib">
-    <value>135</value>
-  </data>
-  <data name="menuStrip1.Text" xml:space="preserve">
-    <value>menuStrip1</value>
-  </data>
-  <data name="&gt;&gt;menuStrip1.Name" xml:space="preserve">
-    <value>menuStrip1</value>
-  </data>
-  <data name="&gt;&gt;menuStrip1.Type" xml:space="preserve">
-    <value>System.Windows.Forms.MenuStrip, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;menuStrip1.Parent" xml:space="preserve">
-    <value>$this</value>
-  </data>
-  <data name="&gt;&gt;menuStrip1.ZOrder" xml:space="preserve">
-    <value>28</value>
-  </data>
   <metadata name="openFileDialog1.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
     <value>17, 54</value>
   </metadata>
@@ -17446,6 +17188,198 @@ Right Click: Open PDF PowerSDR_CAT_Command_Reference_Guide
   </data>
   <data name="panelModeSpecificDigital.AutoScrollMinSize" type="System.Drawing.Size, System.Drawing">
     <value>0, 0</value>
+  </data>
+  <data name="&gt;&gt;grpDIGSampleRate.Name" xml:space="preserve">
+    <value>grpDIGSampleRate</value>
+  </data>
+  <data name="&gt;&gt;grpDIGSampleRate.Type" xml:space="preserve">
+    <value>System.Windows.Forms.GroupBoxTS, PowerSDR, Version=3.0.0.13, Culture=neutral, PublicKeyToken=null</value>
+  </data>
+  <data name="&gt;&gt;grpDIGSampleRate.Parent" xml:space="preserve">
+    <value>panelModeSpecificDigital</value>
+  </data>
+  <data name="&gt;&gt;grpDIGSampleRate.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
+  <data name="&gt;&gt;lblVACTX2Indicator.Name" xml:space="preserve">
+    <value>lblVACTX2Indicator</value>
+  </data>
+  <data name="&gt;&gt;lblVACTX2Indicator.Type" xml:space="preserve">
+    <value>System.Windows.Forms.LabelTS, PowerSDR, Version=3.0.0.13, Culture=neutral, PublicKeyToken=null</value>
+  </data>
+  <data name="&gt;&gt;lblVACTX2Indicator.Parent" xml:space="preserve">
+    <value>panelModeSpecificDigital</value>
+  </data>
+  <data name="&gt;&gt;lblVACTX2Indicator.ZOrder" xml:space="preserve">
+    <value>1</value>
+  </data>
+  <data name="&gt;&gt;lblVACRX2Indicator.Name" xml:space="preserve">
+    <value>lblVACRX2Indicator</value>
+  </data>
+  <data name="&gt;&gt;lblVACRX2Indicator.Type" xml:space="preserve">
+    <value>System.Windows.Forms.LabelTS, PowerSDR, Version=3.0.0.13, Culture=neutral, PublicKeyToken=null</value>
+  </data>
+  <data name="&gt;&gt;lblVACRX2Indicator.Parent" xml:space="preserve">
+    <value>panelModeSpecificDigital</value>
+  </data>
+  <data name="&gt;&gt;lblVACRX2Indicator.ZOrder" xml:space="preserve">
+    <value>2</value>
+  </data>
+  <data name="&gt;&gt;lblTX2Gain.Name" xml:space="preserve">
+    <value>lblTX2Gain</value>
+  </data>
+  <data name="&gt;&gt;lblTX2Gain.Type" xml:space="preserve">
+    <value>System.Windows.Forms.LabelTS, PowerSDR, Version=3.0.0.13, Culture=neutral, PublicKeyToken=null</value>
+  </data>
+  <data name="&gt;&gt;lblTX2Gain.Parent" xml:space="preserve">
+    <value>panelModeSpecificDigital</value>
+  </data>
+  <data name="&gt;&gt;lblTX2Gain.ZOrder" xml:space="preserve">
+    <value>5</value>
+  </data>
+  <data name="&gt;&gt;lblRX2Gain.Name" xml:space="preserve">
+    <value>lblRX2Gain</value>
+  </data>
+  <data name="&gt;&gt;lblRX2Gain.Type" xml:space="preserve">
+    <value>System.Windows.Forms.LabelTS, PowerSDR, Version=3.0.0.13, Culture=neutral, PublicKeyToken=null</value>
+  </data>
+  <data name="&gt;&gt;lblRX2Gain.Parent" xml:space="preserve">
+    <value>panelModeSpecificDigital</value>
+  </data>
+  <data name="&gt;&gt;lblRX2Gain.ZOrder" xml:space="preserve">
+    <value>6</value>
+  </data>
+  <data name="&gt;&gt;labelVOXVal.Name" xml:space="preserve">
+    <value>labelVOXVal</value>
+  </data>
+  <data name="&gt;&gt;labelVOXVal.Type" xml:space="preserve">
+    <value>System.Windows.Forms.LabelTS, PowerSDR, Version=3.0.0.13, Culture=neutral, PublicKeyToken=null</value>
+  </data>
+  <data name="&gt;&gt;labelVOXVal.Parent" xml:space="preserve">
+    <value>panelModeSpecificDigital</value>
+  </data>
+  <data name="&gt;&gt;labelVOXVal.ZOrder" xml:space="preserve">
+    <value>7</value>
+  </data>
+  <data name="&gt;&gt;lblVACTXIndicator.Name" xml:space="preserve">
+    <value>lblVACTXIndicator</value>
+  </data>
+  <data name="&gt;&gt;lblVACTXIndicator.Type" xml:space="preserve">
+    <value>System.Windows.Forms.LabelTS, PowerSDR, Version=3.0.0.13, Culture=neutral, PublicKeyToken=null</value>
+  </data>
+  <data name="&gt;&gt;lblVACTXIndicator.Parent" xml:space="preserve">
+    <value>panelModeSpecificDigital</value>
+  </data>
+  <data name="&gt;&gt;lblVACTXIndicator.ZOrder" xml:space="preserve">
+    <value>10</value>
+  </data>
+  <data name="&gt;&gt;lblVACRXIndicator.Name" xml:space="preserve">
+    <value>lblVACRXIndicator</value>
+  </data>
+  <data name="&gt;&gt;lblVACRXIndicator.Type" xml:space="preserve">
+    <value>System.Windows.Forms.LabelTS, PowerSDR, Version=3.0.0.13, Culture=neutral, PublicKeyToken=null</value>
+  </data>
+  <data name="&gt;&gt;lblVACRXIndicator.Parent" xml:space="preserve">
+    <value>panelModeSpecificDigital</value>
+  </data>
+  <data name="&gt;&gt;lblVACRXIndicator.ZOrder" xml:space="preserve">
+    <value>11</value>
+  </data>
+  <data name="&gt;&gt;lblDigTXProfile.Name" xml:space="preserve">
+    <value>lblDigTXProfile</value>
+  </data>
+  <data name="&gt;&gt;lblDigTXProfile.Type" xml:space="preserve">
+    <value>System.Windows.Forms.LabelTS, PowerSDR, Version=3.0.0.13, Culture=neutral, PublicKeyToken=null</value>
+  </data>
+  <data name="&gt;&gt;lblDigTXProfile.Parent" xml:space="preserve">
+    <value>panelModeSpecificDigital</value>
+  </data>
+  <data name="&gt;&gt;lblDigTXProfile.ZOrder" xml:space="preserve">
+    <value>15</value>
+  </data>
+  <data name="&gt;&gt;lblRXGain.Name" xml:space="preserve">
+    <value>lblRXGain</value>
+  </data>
+  <data name="&gt;&gt;lblRXGain.Type" xml:space="preserve">
+    <value>System.Windows.Forms.LabelTS, PowerSDR, Version=3.0.0.13, Culture=neutral, PublicKeyToken=null</value>
+  </data>
+  <data name="&gt;&gt;lblRXGain.Parent" xml:space="preserve">
+    <value>panelModeSpecificDigital</value>
+  </data>
+  <data name="&gt;&gt;lblRXGain.ZOrder" xml:space="preserve">
+    <value>16</value>
+  </data>
+  <data name="&gt;&gt;grpVACStereo.Name" xml:space="preserve">
+    <value>grpVACStereo</value>
+  </data>
+  <data name="&gt;&gt;grpVACStereo.Type" xml:space="preserve">
+    <value>System.Windows.Forms.GroupBoxTS, PowerSDR, Version=3.0.0.13, Culture=neutral, PublicKeyToken=null</value>
+  </data>
+  <data name="&gt;&gt;grpVACStereo.Parent" xml:space="preserve">
+    <value>panelModeSpecificDigital</value>
+  </data>
+  <data name="&gt;&gt;grpVACStereo.ZOrder" xml:space="preserve">
+    <value>17</value>
+  </data>
+  <data name="&gt;&gt;lblTXGain.Name" xml:space="preserve">
+    <value>lblTXGain</value>
+  </data>
+  <data name="&gt;&gt;lblTXGain.Type" xml:space="preserve">
+    <value>System.Windows.Forms.LabelTS, PowerSDR, Version=3.0.0.13, Culture=neutral, PublicKeyToken=null</value>
+  </data>
+  <data name="&gt;&gt;lblTXGain.Parent" xml:space="preserve">
+    <value>panelModeSpecificDigital</value>
+  </data>
+  <data name="&gt;&gt;lblTXGain.ZOrder" xml:space="preserve">
+    <value>18</value>
+  </data>
+  <data name="&gt;&gt;pictureBoxVOX.Name" xml:space="preserve">
+    <value>pictureBoxVOX</value>
+  </data>
+  <data name="&gt;&gt;pictureBoxVOX.Type" xml:space="preserve">
+    <value>System.Windows.Forms.PictureBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;pictureBoxVOX.Parent" xml:space="preserve">
+    <value>panelModeSpecificDigital</value>
+  </data>
+  <data name="&gt;&gt;pictureBoxVOX.ZOrder" xml:space="preserve">
+    <value>19</value>
+  </data>
+  <data name="&gt;&gt;prettyTrackBarVOX.Name" xml:space="preserve">
+    <value>prettyTrackBarVOX</value>
+  </data>
+  <data name="&gt;&gt;prettyTrackBarVOX.Type" xml:space="preserve">
+    <value>PowerSDR.PrettyTrackBar, PowerSDR, Version=3.0.0.13, Culture=neutral, PublicKeyToken=null</value>
+  </data>
+  <data name="&gt;&gt;prettyTrackBarVOX.Parent" xml:space="preserve">
+    <value>panelModeSpecificDigital</value>
+  </data>
+  <data name="&gt;&gt;prettyTrackBarVOX.ZOrder" xml:space="preserve">
+    <value>20</value>
+  </data>
+  <data name="panelModeSpecificDigital.Font" type="System.Drawing.Font, System.Drawing">
+    <value>Microsoft Sans Serif, 8.25pt, style=Bold</value>
+  </data>
+  <data name="panelModeSpecificDigital.Location" type="System.Drawing.Point, System.Drawing">
+    <value>504, 394</value>
+  </data>
+  <data name="panelModeSpecificDigital.Size" type="System.Drawing.Size, System.Drawing">
+    <value>336, 148</value>
+  </data>
+  <data name="panelModeSpecificDigital.TabIndex" type="System.Int32, mscorlib">
+    <value>126</value>
+  </data>
+  <data name="&gt;&gt;panelModeSpecificDigital.Name" xml:space="preserve">
+    <value>panelModeSpecificDigital</value>
+  </data>
+  <data name="&gt;&gt;panelModeSpecificDigital.Type" xml:space="preserve">
+    <value>System.Windows.Forms.PanelTS, PowerSDR, Version=3.0.0.13, Culture=neutral, PublicKeyToken=null</value>
+  </data>
+  <data name="&gt;&gt;panelModeSpecificDigital.Parent" xml:space="preserve">
+    <value>$this</value>
+  </data>
+  <data name="&gt;&gt;panelModeSpecificDigital.ZOrder" xml:space="preserve">
+    <value>5</value>
   </data>
   <data name="grpDIGSampleRate.Location" type="System.Drawing.Point, System.Drawing">
     <value>233, 14</value>
@@ -17885,35 +17819,212 @@ Right Click: Open PDF PowerSDR_CAT_Command_Reference_Guide
   <data name="&gt;&gt;prettyTrackBarVOX.ZOrder" xml:space="preserve">
     <value>20</value>
   </data>
-  <data name="panelModeSpecificDigital.Font" type="System.Drawing.Font, System.Drawing">
-    <value>Microsoft Sans Serif, 8.25pt, style=Bold</value>
-  </data>
-  <data name="panelModeSpecificDigital.Location" type="System.Drawing.Point, System.Drawing">
-    <value>504, 394</value>
-  </data>
-  <data name="panelModeSpecificDigital.Size" type="System.Drawing.Size, System.Drawing">
-    <value>336, 148</value>
-  </data>
-  <data name="panelModeSpecificDigital.TabIndex" type="System.Int32, mscorlib">
-    <value>126</value>
-  </data>
-  <data name="&gt;&gt;panelModeSpecificDigital.Name" xml:space="preserve">
-    <value>panelModeSpecificDigital</value>
-  </data>
-  <data name="&gt;&gt;panelModeSpecificDigital.Type" xml:space="preserve">
-    <value>System.Windows.Forms.PanelTS, PowerSDR, Version=3.0.0.13, Culture=neutral, PublicKeyToken=null</value>
-  </data>
-  <data name="&gt;&gt;panelModeSpecificDigital.Parent" xml:space="preserve">
-    <value>$this</value>
-  </data>
-  <data name="&gt;&gt;panelModeSpecificDigital.ZOrder" xml:space="preserve">
-    <value>5</value>
-  </data>
   <data name="panelBandVHFRX2.AutoScrollMargin" type="System.Drawing.Size, System.Drawing">
     <value>0, 0</value>
   </data>
   <data name="panelBandVHFRX2.AutoScrollMinSize" type="System.Drawing.Size, System.Drawing">
     <value>0, 0</value>
+  </data>
+  <data name="&gt;&gt;radBandVHF13RX2.Name" xml:space="preserve">
+    <value>radBandVHF13RX2</value>
+  </data>
+  <data name="&gt;&gt;radBandVHF13RX2.Type" xml:space="preserve">
+    <value>System.Windows.Forms.RadioButtonTS, PowerSDR, Version=3.0.0.13, Culture=neutral, PublicKeyToken=null</value>
+  </data>
+  <data name="&gt;&gt;radBandVHF13RX2.Parent" xml:space="preserve">
+    <value>panelBandVHFRX2</value>
+  </data>
+  <data name="&gt;&gt;radBandVHF13RX2.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
+  <data name="&gt;&gt;radBandVHF12RX2.Name" xml:space="preserve">
+    <value>radBandVHF12RX2</value>
+  </data>
+  <data name="&gt;&gt;radBandVHF12RX2.Type" xml:space="preserve">
+    <value>System.Windows.Forms.RadioButtonTS, PowerSDR, Version=3.0.0.13, Culture=neutral, PublicKeyToken=null</value>
+  </data>
+  <data name="&gt;&gt;radBandVHF12RX2.Parent" xml:space="preserve">
+    <value>panelBandVHFRX2</value>
+  </data>
+  <data name="&gt;&gt;radBandVHF12RX2.ZOrder" xml:space="preserve">
+    <value>1</value>
+  </data>
+  <data name="&gt;&gt;radBandVHF11RX2.Name" xml:space="preserve">
+    <value>radBandVHF11RX2</value>
+  </data>
+  <data name="&gt;&gt;radBandVHF11RX2.Type" xml:space="preserve">
+    <value>System.Windows.Forms.RadioButtonTS, PowerSDR, Version=3.0.0.13, Culture=neutral, PublicKeyToken=null</value>
+  </data>
+  <data name="&gt;&gt;radBandVHF11RX2.Parent" xml:space="preserve">
+    <value>panelBandVHFRX2</value>
+  </data>
+  <data name="&gt;&gt;radBandVHF11RX2.ZOrder" xml:space="preserve">
+    <value>2</value>
+  </data>
+  <data name="&gt;&gt;radBandVHF10RX2.Name" xml:space="preserve">
+    <value>radBandVHF10RX2</value>
+  </data>
+  <data name="&gt;&gt;radBandVHF10RX2.Type" xml:space="preserve">
+    <value>System.Windows.Forms.RadioButtonTS, PowerSDR, Version=3.0.0.13, Culture=neutral, PublicKeyToken=null</value>
+  </data>
+  <data name="&gt;&gt;radBandVHF10RX2.Parent" xml:space="preserve">
+    <value>panelBandVHFRX2</value>
+  </data>
+  <data name="&gt;&gt;radBandVHF10RX2.ZOrder" xml:space="preserve">
+    <value>3</value>
+  </data>
+  <data name="&gt;&gt;radBandVHF9RX2.Name" xml:space="preserve">
+    <value>radBandVHF9RX2</value>
+  </data>
+  <data name="&gt;&gt;radBandVHF9RX2.Type" xml:space="preserve">
+    <value>System.Windows.Forms.RadioButtonTS, PowerSDR, Version=3.0.0.13, Culture=neutral, PublicKeyToken=null</value>
+  </data>
+  <data name="&gt;&gt;radBandVHF9RX2.Parent" xml:space="preserve">
+    <value>panelBandVHFRX2</value>
+  </data>
+  <data name="&gt;&gt;radBandVHF9RX2.ZOrder" xml:space="preserve">
+    <value>4</value>
+  </data>
+  <data name="&gt;&gt;radBandVHF8RX2.Name" xml:space="preserve">
+    <value>radBandVHF8RX2</value>
+  </data>
+  <data name="&gt;&gt;radBandVHF8RX2.Type" xml:space="preserve">
+    <value>System.Windows.Forms.RadioButtonTS, PowerSDR, Version=3.0.0.13, Culture=neutral, PublicKeyToken=null</value>
+  </data>
+  <data name="&gt;&gt;radBandVHF8RX2.Parent" xml:space="preserve">
+    <value>panelBandVHFRX2</value>
+  </data>
+  <data name="&gt;&gt;radBandVHF8RX2.ZOrder" xml:space="preserve">
+    <value>5</value>
+  </data>
+  <data name="&gt;&gt;radBandVHF7RX2.Name" xml:space="preserve">
+    <value>radBandVHF7RX2</value>
+  </data>
+  <data name="&gt;&gt;radBandVHF7RX2.Type" xml:space="preserve">
+    <value>System.Windows.Forms.RadioButtonTS, PowerSDR, Version=3.0.0.13, Culture=neutral, PublicKeyToken=null</value>
+  </data>
+  <data name="&gt;&gt;radBandVHF7RX2.Parent" xml:space="preserve">
+    <value>panelBandVHFRX2</value>
+  </data>
+  <data name="&gt;&gt;radBandVHF7RX2.ZOrder" xml:space="preserve">
+    <value>6</value>
+  </data>
+  <data name="&gt;&gt;radBandVHF6RX2.Name" xml:space="preserve">
+    <value>radBandVHF6RX2</value>
+  </data>
+  <data name="&gt;&gt;radBandVHF6RX2.Type" xml:space="preserve">
+    <value>System.Windows.Forms.RadioButtonTS, PowerSDR, Version=3.0.0.13, Culture=neutral, PublicKeyToken=null</value>
+  </data>
+  <data name="&gt;&gt;radBandVHF6RX2.Parent" xml:space="preserve">
+    <value>panelBandVHFRX2</value>
+  </data>
+  <data name="&gt;&gt;radBandVHF6RX2.ZOrder" xml:space="preserve">
+    <value>7</value>
+  </data>
+  <data name="&gt;&gt;radBandVHF5RX2.Name" xml:space="preserve">
+    <value>radBandVHF5RX2</value>
+  </data>
+  <data name="&gt;&gt;radBandVHF5RX2.Type" xml:space="preserve">
+    <value>System.Windows.Forms.RadioButtonTS, PowerSDR, Version=3.0.0.13, Culture=neutral, PublicKeyToken=null</value>
+  </data>
+  <data name="&gt;&gt;radBandVHF5RX2.Parent" xml:space="preserve">
+    <value>panelBandVHFRX2</value>
+  </data>
+  <data name="&gt;&gt;radBandVHF5RX2.ZOrder" xml:space="preserve">
+    <value>8</value>
+  </data>
+  <data name="&gt;&gt;radBandVHF4RX2.Name" xml:space="preserve">
+    <value>radBandVHF4RX2</value>
+  </data>
+  <data name="&gt;&gt;radBandVHF4RX2.Type" xml:space="preserve">
+    <value>System.Windows.Forms.RadioButtonTS, PowerSDR, Version=3.0.0.13, Culture=neutral, PublicKeyToken=null</value>
+  </data>
+  <data name="&gt;&gt;radBandVHF4RX2.Parent" xml:space="preserve">
+    <value>panelBandVHFRX2</value>
+  </data>
+  <data name="&gt;&gt;radBandVHF4RX2.ZOrder" xml:space="preserve">
+    <value>9</value>
+  </data>
+  <data name="&gt;&gt;radBandVHF3RX2.Name" xml:space="preserve">
+    <value>radBandVHF3RX2</value>
+  </data>
+  <data name="&gt;&gt;radBandVHF3RX2.Type" xml:space="preserve">
+    <value>System.Windows.Forms.RadioButtonTS, PowerSDR, Version=3.0.0.13, Culture=neutral, PublicKeyToken=null</value>
+  </data>
+  <data name="&gt;&gt;radBandVHF3RX2.Parent" xml:space="preserve">
+    <value>panelBandVHFRX2</value>
+  </data>
+  <data name="&gt;&gt;radBandVHF3RX2.ZOrder" xml:space="preserve">
+    <value>10</value>
+  </data>
+  <data name="&gt;&gt;radBandVHF2RX2.Name" xml:space="preserve">
+    <value>radBandVHF2RX2</value>
+  </data>
+  <data name="&gt;&gt;radBandVHF2RX2.Type" xml:space="preserve">
+    <value>System.Windows.Forms.RadioButtonTS, PowerSDR, Version=3.0.0.13, Culture=neutral, PublicKeyToken=null</value>
+  </data>
+  <data name="&gt;&gt;radBandVHF2RX2.Parent" xml:space="preserve">
+    <value>panelBandVHFRX2</value>
+  </data>
+  <data name="&gt;&gt;radBandVHF2RX2.ZOrder" xml:space="preserve">
+    <value>11</value>
+  </data>
+  <data name="&gt;&gt;radBandVHF1RX2.Name" xml:space="preserve">
+    <value>radBandVHF1RX2</value>
+  </data>
+  <data name="&gt;&gt;radBandVHF1RX2.Type" xml:space="preserve">
+    <value>System.Windows.Forms.RadioButtonTS, PowerSDR, Version=3.0.0.13, Culture=neutral, PublicKeyToken=null</value>
+  </data>
+  <data name="&gt;&gt;radBandVHF1RX2.Parent" xml:space="preserve">
+    <value>panelBandVHFRX2</value>
+  </data>
+  <data name="&gt;&gt;radBandVHF1RX2.ZOrder" xml:space="preserve">
+    <value>12</value>
+  </data>
+  <data name="&gt;&gt;radBandVHF0RX2.Name" xml:space="preserve">
+    <value>radBandVHF0RX2</value>
+  </data>
+  <data name="&gt;&gt;radBandVHF0RX2.Type" xml:space="preserve">
+    <value>System.Windows.Forms.RadioButtonTS, PowerSDR, Version=3.0.0.13, Culture=neutral, PublicKeyToken=null</value>
+  </data>
+  <data name="&gt;&gt;radBandVHF0RX2.Parent" xml:space="preserve">
+    <value>panelBandVHFRX2</value>
+  </data>
+  <data name="&gt;&gt;radBandVHF0RX2.ZOrder" xml:space="preserve">
+    <value>13</value>
+  </data>
+  <data name="&gt;&gt;btnBandHFRX2.Name" xml:space="preserve">
+    <value>btnBandHFRX2</value>
+  </data>
+  <data name="&gt;&gt;btnBandHFRX2.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ButtonTS, PowerSDR, Version=3.0.0.13, Culture=neutral, PublicKeyToken=null</value>
+  </data>
+  <data name="&gt;&gt;btnBandHFRX2.Parent" xml:space="preserve">
+    <value>panelBandVHFRX2</value>
+  </data>
+  <data name="&gt;&gt;btnBandHFRX2.ZOrder" xml:space="preserve">
+    <value>14</value>
+  </data>
+  <data name="panelBandVHFRX2.Location" type="System.Drawing.Point, System.Drawing">
+    <value>839, 511</value>
+  </data>
+  <data name="panelBandVHFRX2.Size" type="System.Drawing.Size, System.Drawing">
+    <value>173, 127</value>
+  </data>
+  <data name="panelBandVHFRX2.TabIndex" type="System.Int32, mscorlib">
+    <value>115</value>
+  </data>
+  <data name="&gt;&gt;panelBandVHFRX2.Name" xml:space="preserve">
+    <value>panelBandVHFRX2</value>
+  </data>
+  <data name="&gt;&gt;panelBandVHFRX2.Type" xml:space="preserve">
+    <value>System.Windows.Forms.PanelTS, PowerSDR, Version=3.0.0.13, Culture=neutral, PublicKeyToken=null</value>
+  </data>
+  <data name="&gt;&gt;panelBandVHFRX2.Parent" xml:space="preserve">
+    <value>$this</value>
+  </data>
+  <data name="&gt;&gt;panelBandVHFRX2.ZOrder" xml:space="preserve">
+    <value>7</value>
   </data>
   <data name="radBandVHF13RX2.Appearance" type="System.Windows.Forms.Appearance, System.Windows.Forms">
     <value>Button</value>
@@ -18581,27 +18692,6 @@ Right Click: Open PDF PowerSDR_CAT_Command_Reference_Guide
   <data name="&gt;&gt;btnBandHFRX2.ZOrder" xml:space="preserve">
     <value>14</value>
   </data>
-  <data name="panelBandVHFRX2.Location" type="System.Drawing.Point, System.Drawing">
-    <value>839, 511</value>
-  </data>
-  <data name="panelBandVHFRX2.Size" type="System.Drawing.Size, System.Drawing">
-    <value>173, 127</value>
-  </data>
-  <data name="panelBandVHFRX2.TabIndex" type="System.Int32, mscorlib">
-    <value>115</value>
-  </data>
-  <data name="&gt;&gt;panelBandVHFRX2.Name" xml:space="preserve">
-    <value>panelBandVHFRX2</value>
-  </data>
-  <data name="&gt;&gt;panelBandVHFRX2.Type" xml:space="preserve">
-    <value>System.Windows.Forms.PanelTS, PowerSDR, Version=3.0.0.13, Culture=neutral, PublicKeyToken=null</value>
-  </data>
-  <data name="&gt;&gt;panelBandVHFRX2.Parent" xml:space="preserve">
-    <value>$this</value>
-  </data>
-  <data name="&gt;&gt;panelBandVHFRX2.ZOrder" xml:space="preserve">
-    <value>7</value>
-  </data>
   <data name="panelBandHFRX2.AutoScrollMargin" type="System.Drawing.Size, System.Drawing">
     <value>0, 0</value>
   </data>
@@ -18637,6 +18727,39 @@ Right Click: Open PDF PowerSDR_CAT_Command_Reference_Guide
   </data>
   <data name="panelBandVHF.AutoScrollMinSize" type="System.Drawing.Size, System.Drawing">
     <value>0, 0</value>
+  </data>
+  <data name="&gt;&gt;btnBandHF.Name" xml:space="preserve">
+    <value>btnBandHF</value>
+  </data>
+  <data name="&gt;&gt;btnBandHF.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ButtonTS, PowerSDR, Version=3.0.0.13, Culture=neutral, PublicKeyToken=null</value>
+  </data>
+  <data name="&gt;&gt;btnBandHF.Parent" xml:space="preserve">
+    <value>panelBandVHF</value>
+  </data>
+  <data name="&gt;&gt;btnBandHF.ZOrder" xml:space="preserve">
+    <value>14</value>
+  </data>
+  <data name="panelBandVHF.Location" type="System.Drawing.Point, System.Drawing">
+    <value>839, 163</value>
+  </data>
+  <data name="panelBandVHF.Size" type="System.Drawing.Size, System.Drawing">
+    <value>173, 127</value>
+  </data>
+  <data name="panelBandVHF.TabIndex" type="System.Int32, mscorlib">
+    <value>114</value>
+  </data>
+  <data name="&gt;&gt;panelBandVHF.Name" xml:space="preserve">
+    <value>panelBandVHF</value>
+  </data>
+  <data name="&gt;&gt;panelBandVHF.Type" xml:space="preserve">
+    <value>System.Windows.Forms.PanelTS, PowerSDR, Version=3.0.0.13, Culture=neutral, PublicKeyToken=null</value>
+  </data>
+  <data name="&gt;&gt;panelBandVHF.Parent" xml:space="preserve">
+    <value>$this</value>
+  </data>
+  <data name="&gt;&gt;panelBandVHF.ZOrder" xml:space="preserve">
+    <value>9</value>
   </data>
   <data name="btnBandHF.FlatStyle" type="System.Windows.Forms.FlatStyle, System.Windows.Forms">
     <value>Flat</value>
@@ -18674,32 +18797,62 @@ Right Click: Open PDF PowerSDR_CAT_Command_Reference_Guide
   <data name="&gt;&gt;btnBandHF.ZOrder" xml:space="preserve">
     <value>14</value>
   </data>
-  <data name="panelBandVHF.Location" type="System.Drawing.Point, System.Drawing">
-    <value>839, 163</value>
-  </data>
-  <data name="panelBandVHF.Size" type="System.Drawing.Size, System.Drawing">
-    <value>173, 127</value>
-  </data>
-  <data name="panelBandVHF.TabIndex" type="System.Int32, mscorlib">
-    <value>114</value>
-  </data>
-  <data name="&gt;&gt;panelBandVHF.Name" xml:space="preserve">
-    <value>panelBandVHF</value>
-  </data>
-  <data name="&gt;&gt;panelBandVHF.Type" xml:space="preserve">
-    <value>System.Windows.Forms.PanelTS, PowerSDR, Version=3.0.0.13, Culture=neutral, PublicKeyToken=null</value>
-  </data>
-  <data name="&gt;&gt;panelBandVHF.Parent" xml:space="preserve">
-    <value>$this</value>
-  </data>
-  <data name="&gt;&gt;panelBandVHF.ZOrder" xml:space="preserve">
-    <value>9</value>
-  </data>
   <data name="grpRX2Meter.AutoScrollMargin" type="System.Drawing.Size, System.Drawing">
     <value>0, 0</value>
   </data>
   <data name="grpRX2Meter.AutoScrollMinSize" type="System.Drawing.Size, System.Drawing">
     <value>0, 0</value>
+  </data>
+  <data name="&gt;&gt;lblRX2Meter.Name" xml:space="preserve">
+    <value>lblRX2Meter</value>
+  </data>
+  <data name="&gt;&gt;lblRX2Meter.Type" xml:space="preserve">
+    <value>System.Windows.Forms.LabelTS, PowerSDR, Version=3.0.0.13, Culture=neutral, PublicKeyToken=null</value>
+  </data>
+  <data name="&gt;&gt;lblRX2Meter.Parent" xml:space="preserve">
+    <value>grpRX2Meter</value>
+  </data>
+  <data name="&gt;&gt;lblRX2Meter.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
+  <data name="&gt;&gt;txtRX2Meter.Name" xml:space="preserve">
+    <value>txtRX2Meter</value>
+  </data>
+  <data name="&gt;&gt;txtRX2Meter.Type" xml:space="preserve">
+    <value>System.Windows.Forms.TextBoxTS, PowerSDR, Version=3.0.0.13, Culture=neutral, PublicKeyToken=null</value>
+  </data>
+  <data name="&gt;&gt;txtRX2Meter.Parent" xml:space="preserve">
+    <value>grpRX2Meter</value>
+  </data>
+  <data name="&gt;&gt;txtRX2Meter.ZOrder" xml:space="preserve">
+    <value>5</value>
+  </data>
+  <data name="grpRX2Meter.Font" type="System.Drawing.Font, System.Drawing">
+    <value>Microsoft Sans Serif, 8.25pt</value>
+  </data>
+  <data name="grpRX2Meter.Location" type="System.Drawing.Point, System.Drawing">
+    <value>839, 511</value>
+  </data>
+  <data name="grpRX2Meter.Size" type="System.Drawing.Size, System.Drawing">
+    <value>172, 145</value>
+  </data>
+  <data name="grpRX2Meter.TabIndex" type="System.Int32, mscorlib">
+    <value>90</value>
+  </data>
+  <data name="grpRX2Meter.Text" xml:space="preserve">
+    <value>RX2 Meter        TX Meter (2nd)</value>
+  </data>
+  <data name="&gt;&gt;grpRX2Meter.Name" xml:space="preserve">
+    <value>grpRX2Meter</value>
+  </data>
+  <data name="&gt;&gt;grpRX2Meter.Type" xml:space="preserve">
+    <value>System.Windows.Forms.PanelTS, PowerSDR, Version=3.0.0.13, Culture=neutral, PublicKeyToken=null</value>
+  </data>
+  <data name="&gt;&gt;grpRX2Meter.Parent" xml:space="preserve">
+    <value>$this</value>
+  </data>
+  <data name="&gt;&gt;grpRX2Meter.ZOrder" xml:space="preserve">
+    <value>12</value>
   </data>
   <data name="lblRX2Meter.Image" type="System.Resources.ResXNullRef, System.Windows.Forms">
     <value />
@@ -18764,38 +18917,44 @@ Right Click: Open PDF PowerSDR_CAT_Command_Reference_Guide
   <data name="&gt;&gt;txtRX2Meter.ZOrder" xml:space="preserve">
     <value>5</value>
   </data>
-  <data name="grpRX2Meter.Font" type="System.Drawing.Font, System.Drawing">
-    <value>Microsoft Sans Serif, 8.25pt</value>
-  </data>
-  <data name="grpRX2Meter.Location" type="System.Drawing.Point, System.Drawing">
-    <value>839, 511</value>
-  </data>
-  <data name="grpRX2Meter.Size" type="System.Drawing.Size, System.Drawing">
-    <value>172, 145</value>
-  </data>
-  <data name="grpRX2Meter.TabIndex" type="System.Int32, mscorlib">
-    <value>90</value>
-  </data>
-  <data name="grpRX2Meter.Text" xml:space="preserve">
-    <value>RX2 Meter        TX Meter (2nd)</value>
-  </data>
-  <data name="&gt;&gt;grpRX2Meter.Name" xml:space="preserve">
-    <value>grpRX2Meter</value>
-  </data>
-  <data name="&gt;&gt;grpRX2Meter.Type" xml:space="preserve">
-    <value>System.Windows.Forms.PanelTS, PowerSDR, Version=3.0.0.13, Culture=neutral, PublicKeyToken=null</value>
-  </data>
-  <data name="&gt;&gt;grpRX2Meter.Parent" xml:space="preserve">
-    <value>$this</value>
-  </data>
-  <data name="&gt;&gt;grpRX2Meter.ZOrder" xml:space="preserve">
-    <value>12</value>
-  </data>
   <data name="panelBandGNRX2.AutoScrollMargin" type="System.Drawing.Size, System.Drawing">
     <value>0, 0</value>
   </data>
   <data name="panelBandGNRX2.AutoScrollMinSize" type="System.Drawing.Size, System.Drawing">
     <value>0, 0</value>
+  </data>
+  <data name="&gt;&gt;btnBandHF1RX2.Name" xml:space="preserve">
+    <value>btnBandHF1RX2</value>
+  </data>
+  <data name="&gt;&gt;btnBandHF1RX2.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ButtonTS, PowerSDR, Version=3.0.0.13, Culture=neutral, PublicKeyToken=null</value>
+  </data>
+  <data name="&gt;&gt;btnBandHF1RX2.Parent" xml:space="preserve">
+    <value>panelBandGNRX2</value>
+  </data>
+  <data name="&gt;&gt;btnBandHF1RX2.ZOrder" xml:space="preserve">
+    <value>14</value>
+  </data>
+  <data name="panelBandGNRX2.Location" type="System.Drawing.Point, System.Drawing">
+    <value>839, 511</value>
+  </data>
+  <data name="panelBandGNRX2.Size" type="System.Drawing.Size, System.Drawing">
+    <value>173, 127</value>
+  </data>
+  <data name="panelBandGNRX2.TabIndex" type="System.Int32, mscorlib">
+    <value>137</value>
+  </data>
+  <data name="&gt;&gt;panelBandGNRX2.Name" xml:space="preserve">
+    <value>panelBandGNRX2</value>
+  </data>
+  <data name="&gt;&gt;panelBandGNRX2.Type" xml:space="preserve">
+    <value>System.Windows.Forms.PanelTS, PowerSDR, Version=3.0.0.13, Culture=neutral, PublicKeyToken=null</value>
+  </data>
+  <data name="&gt;&gt;panelBandGNRX2.Parent" xml:space="preserve">
+    <value>$this</value>
+  </data>
+  <data name="&gt;&gt;panelBandGNRX2.ZOrder" xml:space="preserve">
+    <value>13</value>
   </data>
   <data name="btnBandHF1RX2.FlatStyle" type="System.Windows.Forms.FlatStyle, System.Windows.Forms">
     <value>Flat</value>
@@ -18833,53 +18992,11 @@ Right Click: Open PDF PowerSDR_CAT_Command_Reference_Guide
   <data name="&gt;&gt;btnBandHF1RX2.ZOrder" xml:space="preserve">
     <value>14</value>
   </data>
-  <data name="panelBandGNRX2.Location" type="System.Drawing.Point, System.Drawing">
-    <value>839, 511</value>
-  </data>
-  <data name="panelBandGNRX2.Size" type="System.Drawing.Size, System.Drawing">
-    <value>173, 127</value>
-  </data>
-  <data name="panelBandGNRX2.TabIndex" type="System.Int32, mscorlib">
-    <value>137</value>
-  </data>
-  <data name="&gt;&gt;panelBandGNRX2.Name" xml:space="preserve">
-    <value>panelBandGNRX2</value>
-  </data>
-  <data name="&gt;&gt;panelBandGNRX2.Type" xml:space="preserve">
-    <value>System.Windows.Forms.PanelTS, PowerSDR, Version=3.0.0.13, Culture=neutral, PublicKeyToken=null</value>
-  </data>
-  <data name="&gt;&gt;panelBandGNRX2.Parent" xml:space="preserve">
-    <value>$this</value>
-  </data>
-  <data name="&gt;&gt;panelBandGNRX2.ZOrder" xml:space="preserve">
-    <value>13</value>
-  </data>
   <data name="grpMultimeter.AutoScrollMargin" type="System.Drawing.Size, System.Drawing">
     <value>0, 0</value>
   </data>
   <data name="grpMultimeter.AutoScrollMinSize" type="System.Drawing.Size, System.Drawing">
     <value>0, 0</value>
-  </data>
-  <data name="lblMultiSMeter.Image" type="System.Resources.ResXNullRef, System.Windows.Forms">
-    <value />
-  </data>
-  <data name="lblMultiSMeter.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
-    <value>Off</value>
-  </data>
-  <data name="lblMultiSMeter.Location" type="System.Drawing.Point, System.Drawing">
-    <value>8, 98</value>
-  </data>
-  <data name="lblMultiSMeter.Size" type="System.Drawing.Size, System.Drawing">
-    <value>161, 13</value>
-  </data>
-  <data name="lblMultiSMeter.TabIndex" type="System.Int32, mscorlib">
-    <value>4</value>
-  </data>
-  <data name="lblMultiSMeter.Text" xml:space="preserve">
-    <value>  1   3   5   7   9  +20 +40 +60</value>
-  </data>
-  <data name="lblMultiSMeter.Visible" type="System.Boolean, mscorlib">
-    <value>False</value>
   </data>
   <data name="&gt;&gt;lblMultiSMeter.Name" xml:space="preserve">
     <value>lblMultiSMeter</value>
@@ -18925,6 +19042,39 @@ Right Click: Open PDF PowerSDR_CAT_Command_Reference_Guide
   </data>
   <data name="&gt;&gt;grpMultimeter.ZOrder" xml:space="preserve">
     <value>14</value>
+  </data>
+  <data name="lblMultiSMeter.Image" type="System.Resources.ResXNullRef, System.Windows.Forms">
+    <value />
+  </data>
+  <data name="lblMultiSMeter.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
+    <value>Off</value>
+  </data>
+  <data name="lblMultiSMeter.Location" type="System.Drawing.Point, System.Drawing">
+    <value>8, 98</value>
+  </data>
+  <data name="lblMultiSMeter.Size" type="System.Drawing.Size, System.Drawing">
+    <value>161, 13</value>
+  </data>
+  <data name="lblMultiSMeter.TabIndex" type="System.Int32, mscorlib">
+    <value>4</value>
+  </data>
+  <data name="lblMultiSMeter.Text" xml:space="preserve">
+    <value>  1   3   5   7   9  +20 +40 +60</value>
+  </data>
+  <data name="lblMultiSMeter.Visible" type="System.Boolean, mscorlib">
+    <value>False</value>
+  </data>
+  <data name="&gt;&gt;lblMultiSMeter.Name" xml:space="preserve">
+    <value>lblMultiSMeter</value>
+  </data>
+  <data name="&gt;&gt;lblMultiSMeter.Type" xml:space="preserve">
+    <value>System.Windows.Forms.LabelTS, PowerSDR, Version=3.0.0.13, Culture=neutral, PublicKeyToken=null</value>
+  </data>
+  <data name="&gt;&gt;lblMultiSMeter.Parent" xml:space="preserve">
+    <value>grpMultimeter</value>
+  </data>
+  <data name="&gt;&gt;lblMultiSMeter.ZOrder" xml:space="preserve">
+    <value>0</value>
   </data>
   <data name="panelBandHF.AutoScrollMargin" type="System.Drawing.Size, System.Drawing">
     <value>0, 0</value>
@@ -19048,6 +19198,108 @@ Right Click: Open PDF PowerSDR_CAT_Command_Reference_Guide
   </data>
   <data name="grpVFOB.AutoScrollMinSize" type="System.Drawing.Size, System.Drawing">
     <value>0, 0</value>
+  </data>
+  <data name="&gt;&gt;panelVFOBSubHover.Name" xml:space="preserve">
+    <value>panelVFOBSubHover</value>
+  </data>
+  <data name="&gt;&gt;panelVFOBSubHover.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Panel, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;panelVFOBSubHover.Parent" xml:space="preserve">
+    <value>grpVFOB</value>
+  </data>
+  <data name="&gt;&gt;panelVFOBSubHover.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
+  <data name="&gt;&gt;panelVFOBHover.Name" xml:space="preserve">
+    <value>panelVFOBHover</value>
+  </data>
+  <data name="&gt;&gt;panelVFOBHover.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Panel, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;panelVFOBHover.Parent" xml:space="preserve">
+    <value>grpVFOB</value>
+  </data>
+  <data name="&gt;&gt;panelVFOBHover.ZOrder" xml:space="preserve">
+    <value>2</value>
+  </data>
+  <data name="&gt;&gt;txtVFOBLSD.Name" xml:space="preserve">
+    <value>txtVFOBLSD</value>
+  </data>
+  <data name="&gt;&gt;txtVFOBLSD.Type" xml:space="preserve">
+    <value>System.Windows.Forms.TextBoxTS, PowerSDR, Version=3.0.0.13, Culture=neutral, PublicKeyToken=null</value>
+  </data>
+  <data name="&gt;&gt;txtVFOBLSD.Parent" xml:space="preserve">
+    <value>grpVFOB</value>
+  </data>
+  <data name="&gt;&gt;txtVFOBLSD.ZOrder" xml:space="preserve">
+    <value>3</value>
+  </data>
+  <data name="&gt;&gt;txtVFOBMSD.Name" xml:space="preserve">
+    <value>txtVFOBMSD</value>
+  </data>
+  <data name="&gt;&gt;txtVFOBMSD.Type" xml:space="preserve">
+    <value>System.Windows.Forms.TextBoxTS, PowerSDR, Version=3.0.0.13, Culture=neutral, PublicKeyToken=null</value>
+  </data>
+  <data name="&gt;&gt;txtVFOBMSD.Parent" xml:space="preserve">
+    <value>grpVFOB</value>
+  </data>
+  <data name="&gt;&gt;txtVFOBMSD.ZOrder" xml:space="preserve">
+    <value>4</value>
+  </data>
+  <data name="&gt;&gt;txtVFOBBand.Name" xml:space="preserve">
+    <value>txtVFOBBand</value>
+  </data>
+  <data name="&gt;&gt;txtVFOBBand.Type" xml:space="preserve">
+    <value>System.Windows.Forms.TextBoxTS, PowerSDR, Version=3.0.0.13, Culture=neutral, PublicKeyToken=null</value>
+  </data>
+  <data name="&gt;&gt;txtVFOBBand.Parent" xml:space="preserve">
+    <value>grpVFOB</value>
+  </data>
+  <data name="&gt;&gt;txtVFOBBand.ZOrder" xml:space="preserve">
+    <value>5</value>
+  </data>
+  <data name="&gt;&gt;txtVFOBFreq.Name" xml:space="preserve">
+    <value>txtVFOBFreq</value>
+  </data>
+  <data name="&gt;&gt;txtVFOBFreq.Type" xml:space="preserve">
+    <value>System.Windows.Forms.TextBoxTS, PowerSDR, Version=3.0.0.13, Culture=neutral, PublicKeyToken=null</value>
+  </data>
+  <data name="&gt;&gt;txtVFOBFreq.Parent" xml:space="preserve">
+    <value>grpVFOB</value>
+  </data>
+  <data name="&gt;&gt;txtVFOBFreq.ZOrder" xml:space="preserve">
+    <value>6</value>
+  </data>
+  <data name="grpVFOB.Font" type="System.Drawing.Font, System.Drawing">
+    <value>Microsoft Sans Serif, 8.25pt</value>
+  </data>
+  <data name="grpVFOB.Location" type="System.Drawing.Point, System.Drawing">
+    <value>588, 22</value>
+  </data>
+  <data name="grpVFOB.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
+    <value>0, 0, 0, 0</value>
+  </data>
+  <data name="grpVFOB.Size" type="System.Drawing.Size, System.Drawing">
+    <value>262, 86</value>
+  </data>
+  <data name="grpVFOB.TabIndex" type="System.Int32, mscorlib">
+    <value>3</value>
+  </data>
+  <data name="grpVFOB.Text" xml:space="preserve">
+    <value>VFO B</value>
+  </data>
+  <data name="&gt;&gt;grpVFOB.Name" xml:space="preserve">
+    <value>grpVFOB</value>
+  </data>
+  <data name="&gt;&gt;grpVFOB.Type" xml:space="preserve">
+    <value>System.Windows.Forms.PanelTS, PowerSDR, Version=3.0.0.13, Culture=neutral, PublicKeyToken=null</value>
+  </data>
+  <data name="&gt;&gt;grpVFOB.Parent" xml:space="preserve">
+    <value>$this</value>
+  </data>
+  <data name="&gt;&gt;grpVFOB.ZOrder" xml:space="preserve">
+    <value>26</value>
   </data>
   <data name="panelVFOBSubHover.Anchor" type="System.Windows.Forms.AnchorStyles, System.Windows.Forms">
     <value>Top, Right</value>
@@ -19244,41 +19496,113 @@ Right Click: Open PDF PowerSDR_CAT_Command_Reference_Guide
   <data name="&gt;&gt;txtVFOBFreq.ZOrder" xml:space="preserve">
     <value>6</value>
   </data>
-  <data name="grpVFOB.Font" type="System.Drawing.Font, System.Drawing">
-    <value>Microsoft Sans Serif, 8.25pt</value>
-  </data>
-  <data name="grpVFOB.Location" type="System.Drawing.Point, System.Drawing">
-    <value>588, 22</value>
-  </data>
-  <data name="grpVFOB.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>0, 0, 0, 0</value>
-  </data>
-  <data name="grpVFOB.Size" type="System.Drawing.Size, System.Drawing">
-    <value>262, 86</value>
-  </data>
-  <data name="grpVFOB.TabIndex" type="System.Int32, mscorlib">
-    <value>3</value>
-  </data>
-  <data name="grpVFOB.Text" xml:space="preserve">
-    <value>VFO B</value>
-  </data>
-  <data name="&gt;&gt;grpVFOB.Name" xml:space="preserve">
-    <value>grpVFOB</value>
-  </data>
-  <data name="&gt;&gt;grpVFOB.Type" xml:space="preserve">
-    <value>System.Windows.Forms.PanelTS, PowerSDR, Version=3.0.0.13, Culture=neutral, PublicKeyToken=null</value>
-  </data>
-  <data name="&gt;&gt;grpVFOB.Parent" xml:space="preserve">
-    <value>$this</value>
-  </data>
-  <data name="&gt;&gt;grpVFOB.ZOrder" xml:space="preserve">
-    <value>26</value>
-  </data>
   <data name="grpVFOA.AutoScrollMargin" type="System.Drawing.Size, System.Drawing">
     <value>0, 0</value>
   </data>
   <data name="grpVFOA.AutoScrollMinSize" type="System.Drawing.Size, System.Drawing">
     <value>0, 0</value>
+  </data>
+  <data name="&gt;&gt;panelVFOASubHover.Name" xml:space="preserve">
+    <value>panelVFOASubHover</value>
+  </data>
+  <data name="&gt;&gt;panelVFOASubHover.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Panel, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;panelVFOASubHover.Parent" xml:space="preserve">
+    <value>grpVFOA</value>
+  </data>
+  <data name="&gt;&gt;panelVFOASubHover.ZOrder" xml:space="preserve">
+    <value>1</value>
+  </data>
+  <data name="&gt;&gt;panelVFOAHover.Name" xml:space="preserve">
+    <value>panelVFOAHover</value>
+  </data>
+  <data name="&gt;&gt;panelVFOAHover.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Panel, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;panelVFOAHover.Parent" xml:space="preserve">
+    <value>grpVFOA</value>
+  </data>
+  <data name="&gt;&gt;panelVFOAHover.ZOrder" xml:space="preserve">
+    <value>2</value>
+  </data>
+  <data name="&gt;&gt;txtVFOALSD.Name" xml:space="preserve">
+    <value>txtVFOALSD</value>
+  </data>
+  <data name="&gt;&gt;txtVFOALSD.Type" xml:space="preserve">
+    <value>System.Windows.Forms.TextBoxTS, PowerSDR, Version=3.0.0.13, Culture=neutral, PublicKeyToken=null</value>
+  </data>
+  <data name="&gt;&gt;txtVFOALSD.Parent" xml:space="preserve">
+    <value>grpVFOA</value>
+  </data>
+  <data name="&gt;&gt;txtVFOALSD.ZOrder" xml:space="preserve">
+    <value>3</value>
+  </data>
+  <data name="&gt;&gt;txtVFOAMSD.Name" xml:space="preserve">
+    <value>txtVFOAMSD</value>
+  </data>
+  <data name="&gt;&gt;txtVFOAMSD.Type" xml:space="preserve">
+    <value>System.Windows.Forms.TextBoxTS, PowerSDR, Version=3.0.0.13, Culture=neutral, PublicKeyToken=null</value>
+  </data>
+  <data name="&gt;&gt;txtVFOAMSD.Parent" xml:space="preserve">
+    <value>grpVFOA</value>
+  </data>
+  <data name="&gt;&gt;txtVFOAMSD.ZOrder" xml:space="preserve">
+    <value>5</value>
+  </data>
+  <data name="&gt;&gt;txtVFOAFreq.Name" xml:space="preserve">
+    <value>txtVFOAFreq</value>
+  </data>
+  <data name="&gt;&gt;txtVFOAFreq.Type" xml:space="preserve">
+    <value>System.Windows.Forms.TextBoxTS, PowerSDR, Version=3.0.0.13, Culture=neutral, PublicKeyToken=null</value>
+  </data>
+  <data name="&gt;&gt;txtVFOAFreq.Parent" xml:space="preserve">
+    <value>grpVFOA</value>
+  </data>
+  <data name="&gt;&gt;txtVFOAFreq.ZOrder" xml:space="preserve">
+    <value>6</value>
+  </data>
+  <data name="&gt;&gt;btnHidden.Name" xml:space="preserve">
+    <value>btnHidden</value>
+  </data>
+  <data name="&gt;&gt;btnHidden.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ButtonTS, PowerSDR, Version=3.0.0.13, Culture=neutral, PublicKeyToken=null</value>
+  </data>
+  <data name="&gt;&gt;btnHidden.Parent" xml:space="preserve">
+    <value>grpVFOA</value>
+  </data>
+  <data name="&gt;&gt;btnHidden.ZOrder" xml:space="preserve">
+    <value>7</value>
+  </data>
+  <data name="grpVFOA.Font" type="System.Drawing.Font, System.Drawing">
+    <value>Microsoft Sans Serif, 8.25pt</value>
+  </data>
+  <data name="grpVFOA.Location" type="System.Drawing.Point, System.Drawing">
+    <value>110, 22</value>
+  </data>
+  <data name="grpVFOA.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
+    <value>0, 0, 0, 0</value>
+  </data>
+  <data name="grpVFOA.Size" type="System.Drawing.Size, System.Drawing">
+    <value>262, 86</value>
+  </data>
+  <data name="grpVFOA.TabIndex" type="System.Int32, mscorlib">
+    <value>2</value>
+  </data>
+  <data name="grpVFOA.Text" xml:space="preserve">
+    <value>VFO A</value>
+  </data>
+  <data name="&gt;&gt;grpVFOA.Name" xml:space="preserve">
+    <value>grpVFOA</value>
+  </data>
+  <data name="&gt;&gt;grpVFOA.Type" xml:space="preserve">
+    <value>System.Windows.Forms.PanelTS, PowerSDR, Version=3.0.0.13, Culture=neutral, PublicKeyToken=null</value>
+  </data>
+  <data name="&gt;&gt;grpVFOA.Parent" xml:space="preserve">
+    <value>$this</value>
+  </data>
+  <data name="&gt;&gt;grpVFOA.ZOrder" xml:space="preserve">
+    <value>27</value>
   </data>
   <data name="panelVFOASubHover.Anchor" type="System.Windows.Forms.AnchorStyles, System.Windows.Forms">
     <value>Top, Right</value>
@@ -19472,36 +19796,6 @@ Right Click: Open PDF PowerSDR_CAT_Command_Reference_Guide
   <data name="&gt;&gt;btnHidden.ZOrder" xml:space="preserve">
     <value>7</value>
   </data>
-  <data name="grpVFOA.Font" type="System.Drawing.Font, System.Drawing">
-    <value>Microsoft Sans Serif, 8.25pt</value>
-  </data>
-  <data name="grpVFOA.Location" type="System.Drawing.Point, System.Drawing">
-    <value>110, 22</value>
-  </data>
-  <data name="grpVFOA.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>0, 0, 0, 0</value>
-  </data>
-  <data name="grpVFOA.Size" type="System.Drawing.Size, System.Drawing">
-    <value>262, 86</value>
-  </data>
-  <data name="grpVFOA.TabIndex" type="System.Int32, mscorlib">
-    <value>2</value>
-  </data>
-  <data name="grpVFOA.Text" xml:space="preserve">
-    <value>VFO A</value>
-  </data>
-  <data name="&gt;&gt;grpVFOA.Name" xml:space="preserve">
-    <value>grpVFOA</value>
-  </data>
-  <data name="&gt;&gt;grpVFOA.Type" xml:space="preserve">
-    <value>System.Windows.Forms.PanelTS, PowerSDR, Version=3.0.0.13, Culture=neutral, PublicKeyToken=null</value>
-  </data>
-  <data name="&gt;&gt;grpVFOA.Parent" xml:space="preserve">
-    <value>$this</value>
-  </data>
-  <data name="&gt;&gt;grpVFOA.ZOrder" xml:space="preserve">
-    <value>27</value>
-  </data>
   <data name="panelDisplay2.AutoScrollMargin" type="System.Drawing.Size, System.Drawing">
     <value>0, 0</value>
   </data>
@@ -19600,6 +19894,147 @@ Right Click: Open PDF PowerSDR_CAT_Command_Reference_Guide
   </data>
   <data name="panelModeSpecificPhone.AutoScrollMinSize" type="System.Drawing.Size, System.Drawing">
     <value>0, 0</value>
+  </data>
+  <data name="&gt;&gt;labelTS2.Name" xml:space="preserve">
+    <value>labelTS2</value>
+  </data>
+  <data name="&gt;&gt;labelTS2.Type" xml:space="preserve">
+    <value>System.Windows.Forms.LabelTS, PowerSDR, Version=3.0.0.13, Culture=neutral, PublicKeyToken=null</value>
+  </data>
+  <data name="&gt;&gt;labelTS2.Parent" xml:space="preserve">
+    <value>panelModeSpecificPhone</value>
+  </data>
+  <data name="&gt;&gt;labelTS2.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
+  <data name="&gt;&gt;labelTS1.Name" xml:space="preserve">
+    <value>labelTS1</value>
+  </data>
+  <data name="&gt;&gt;labelTS1.Type" xml:space="preserve">
+    <value>System.Windows.Forms.LabelTS, PowerSDR, Version=3.0.0.13, Culture=neutral, PublicKeyToken=null</value>
+  </data>
+  <data name="&gt;&gt;labelTS1.Parent" xml:space="preserve">
+    <value>panelModeSpecificPhone</value>
+  </data>
+  <data name="&gt;&gt;labelTS1.ZOrder" xml:space="preserve">
+    <value>1</value>
+  </data>
+  <data name="&gt;&gt;picNoiseGate.Name" xml:space="preserve">
+    <value>picNoiseGate</value>
+  </data>
+  <data name="&gt;&gt;picNoiseGate.Type" xml:space="preserve">
+    <value>System.Windows.Forms.PictureBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;picNoiseGate.Parent" xml:space="preserve">
+    <value>panelModeSpecificPhone</value>
+  </data>
+  <data name="&gt;&gt;picNoiseGate.ZOrder" xml:space="preserve">
+    <value>5</value>
+  </data>
+  <data name="&gt;&gt;lblNoiseGateVal.Name" xml:space="preserve">
+    <value>lblNoiseGateVal</value>
+  </data>
+  <data name="&gt;&gt;lblNoiseGateVal.Type" xml:space="preserve">
+    <value>System.Windows.Forms.LabelTS, PowerSDR, Version=3.0.0.13, Culture=neutral, PublicKeyToken=null</value>
+  </data>
+  <data name="&gt;&gt;lblNoiseGateVal.Parent" xml:space="preserve">
+    <value>panelModeSpecificPhone</value>
+  </data>
+  <data name="&gt;&gt;lblNoiseGateVal.ZOrder" xml:space="preserve">
+    <value>6</value>
+  </data>
+  <data name="&gt;&gt;picVOX.Name" xml:space="preserve">
+    <value>picVOX</value>
+  </data>
+  <data name="&gt;&gt;picVOX.Type" xml:space="preserve">
+    <value>System.Windows.Forms.PictureBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;picVOX.Parent" xml:space="preserve">
+    <value>panelModeSpecificPhone</value>
+  </data>
+  <data name="&gt;&gt;picVOX.ZOrder" xml:space="preserve">
+    <value>8</value>
+  </data>
+  <data name="&gt;&gt;lblVOXVal.Name" xml:space="preserve">
+    <value>lblVOXVal</value>
+  </data>
+  <data name="&gt;&gt;lblVOXVal.Type" xml:space="preserve">
+    <value>System.Windows.Forms.LabelTS, PowerSDR, Version=3.0.0.13, Culture=neutral, PublicKeyToken=null</value>
+  </data>
+  <data name="&gt;&gt;lblVOXVal.Parent" xml:space="preserve">
+    <value>panelModeSpecificPhone</value>
+  </data>
+  <data name="&gt;&gt;lblVOXVal.ZOrder" xml:space="preserve">
+    <value>10</value>
+  </data>
+  <data name="&gt;&gt;lblCPDRVal.Name" xml:space="preserve">
+    <value>lblCPDRVal</value>
+  </data>
+  <data name="&gt;&gt;lblCPDRVal.Type" xml:space="preserve">
+    <value>System.Windows.Forms.LabelTS, PowerSDR, Version=3.0.0.13, Culture=neutral, PublicKeyToken=null</value>
+  </data>
+  <data name="&gt;&gt;lblCPDRVal.Parent" xml:space="preserve">
+    <value>panelModeSpecificPhone</value>
+  </data>
+  <data name="&gt;&gt;lblCPDRVal.ZOrder" xml:space="preserve">
+    <value>12</value>
+  </data>
+  <data name="&gt;&gt;lblDXVal.Name" xml:space="preserve">
+    <value>lblDXVal</value>
+  </data>
+  <data name="&gt;&gt;lblDXVal.Type" xml:space="preserve">
+    <value>System.Windows.Forms.LabelTS, PowerSDR, Version=3.0.0.13, Culture=neutral, PublicKeyToken=null</value>
+  </data>
+  <data name="&gt;&gt;lblDXVal.Parent" xml:space="preserve">
+    <value>panelModeSpecificPhone</value>
+  </data>
+  <data name="&gt;&gt;lblDXVal.ZOrder" xml:space="preserve">
+    <value>14</value>
+  </data>
+  <data name="&gt;&gt;lblMicVal.Name" xml:space="preserve">
+    <value>lblMicVal</value>
+  </data>
+  <data name="&gt;&gt;lblMicVal.Type" xml:space="preserve">
+    <value>System.Windows.Forms.LabelTS, PowerSDR, Version=3.0.0.13, Culture=neutral, PublicKeyToken=null</value>
+  </data>
+  <data name="&gt;&gt;lblMicVal.Parent" xml:space="preserve">
+    <value>panelModeSpecificPhone</value>
+  </data>
+  <data name="&gt;&gt;lblMicVal.ZOrder" xml:space="preserve">
+    <value>15</value>
+  </data>
+  <data name="&gt;&gt;lblTransmitProfile.Name" xml:space="preserve">
+    <value>lblTransmitProfile</value>
+  </data>
+  <data name="&gt;&gt;lblTransmitProfile.Type" xml:space="preserve">
+    <value>System.Windows.Forms.LabelTS, PowerSDR, Version=3.0.0.13, Culture=neutral, PublicKeyToken=null</value>
+  </data>
+  <data name="&gt;&gt;lblTransmitProfile.Parent" xml:space="preserve">
+    <value>panelModeSpecificPhone</value>
+  </data>
+  <data name="&gt;&gt;lblTransmitProfile.ZOrder" xml:space="preserve">
+    <value>19</value>
+  </data>
+  <data name="panelModeSpecificPhone.Location" type="System.Drawing.Point, System.Drawing">
+    <value>504, 394</value>
+  </data>
+  <data name="panelModeSpecificPhone.Size" type="System.Drawing.Size, System.Drawing">
+    <value>336, 148</value>
+  </data>
+  <data name="panelModeSpecificPhone.TabIndex" type="System.Int32, mscorlib">
+    <value>125</value>
+  </data>
+  <data name="&gt;&gt;panelModeSpecificPhone.Name" xml:space="preserve">
+    <value>panelModeSpecificPhone</value>
+  </data>
+  <data name="&gt;&gt;panelModeSpecificPhone.Type" xml:space="preserve">
+    <value>System.Windows.Forms.PanelTS, PowerSDR, Version=3.0.0.13, Culture=neutral, PublicKeyToken=null</value>
+  </data>
+  <data name="&gt;&gt;panelModeSpecificPhone.Parent" xml:space="preserve">
+    <value>$this</value>
+  </data>
+  <data name="&gt;&gt;panelModeSpecificPhone.ZOrder" xml:space="preserve">
+    <value>62</value>
   </data>
   <data name="labelTS2.Image" type="System.Resources.ResXNullRef, System.Windows.Forms">
     <value />
@@ -19928,32 +20363,128 @@ Right Click: Open PDF PowerSDR_CAT_Command_Reference_Guide
   <data name="&gt;&gt;lblTransmitProfile.ZOrder" xml:space="preserve">
     <value>19</value>
   </data>
-  <data name="panelModeSpecificPhone.Location" type="System.Drawing.Point, System.Drawing">
-    <value>504, 394</value>
-  </data>
-  <data name="panelModeSpecificPhone.Size" type="System.Drawing.Size, System.Drawing">
-    <value>336, 148</value>
-  </data>
-  <data name="panelModeSpecificPhone.TabIndex" type="System.Int32, mscorlib">
-    <value>125</value>
-  </data>
-  <data name="&gt;&gt;panelModeSpecificPhone.Name" xml:space="preserve">
-    <value>panelModeSpecificPhone</value>
-  </data>
-  <data name="&gt;&gt;panelModeSpecificPhone.Type" xml:space="preserve">
-    <value>System.Windows.Forms.PanelTS, PowerSDR, Version=3.0.0.13, Culture=neutral, PublicKeyToken=null</value>
-  </data>
-  <data name="&gt;&gt;panelModeSpecificPhone.Parent" xml:space="preserve">
-    <value>$this</value>
-  </data>
-  <data name="&gt;&gt;panelModeSpecificPhone.ZOrder" xml:space="preserve">
-    <value>62</value>
-  </data>
   <data name="panelModeSpecificFM.AutoScrollMargin" type="System.Drawing.Size, System.Drawing">
     <value>0, 0</value>
   </data>
   <data name="panelModeSpecificFM.AutoScrollMinSize" type="System.Drawing.Size, System.Drawing">
     <value>0, 0</value>
+  </data>
+  <data name="&gt;&gt;lblFMMemory.Name" xml:space="preserve">
+    <value>lblFMMemory</value>
+  </data>
+  <data name="&gt;&gt;lblFMMemory.Type" xml:space="preserve">
+    <value>System.Windows.Forms.LabelTS, PowerSDR, Version=3.0.0.13, Culture=neutral, PublicKeyToken=null</value>
+  </data>
+  <data name="&gt;&gt;lblFMMemory.Parent" xml:space="preserve">
+    <value>panelModeSpecificFM</value>
+  </data>
+  <data name="&gt;&gt;lblFMMemory.ZOrder" xml:space="preserve">
+    <value>7</value>
+  </data>
+  <data name="&gt;&gt;comboFMMemory.Name" xml:space="preserve">
+    <value>comboFMMemory</value>
+  </data>
+  <data name="&gt;&gt;comboFMMemory.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ComboBoxTS, PowerSDR, Version=3.0.0.13, Culture=neutral, PublicKeyToken=null</value>
+  </data>
+  <data name="&gt;&gt;comboFMMemory.Parent" xml:space="preserve">
+    <value>panelModeSpecificFM</value>
+  </data>
+  <data name="&gt;&gt;comboFMMemory.ZOrder" xml:space="preserve">
+    <value>10</value>
+  </data>
+  <data name="&gt;&gt;lblFMOffset.Name" xml:space="preserve">
+    <value>lblFMOffset</value>
+  </data>
+  <data name="&gt;&gt;lblFMOffset.Type" xml:space="preserve">
+    <value>System.Windows.Forms.LabelTS, PowerSDR, Version=3.0.0.13, Culture=neutral, PublicKeyToken=null</value>
+  </data>
+  <data name="&gt;&gt;lblFMOffset.Parent" xml:space="preserve">
+    <value>panelModeSpecificFM</value>
+  </data>
+  <data name="&gt;&gt;lblFMOffset.ZOrder" xml:space="preserve">
+    <value>12</value>
+  </data>
+  <data name="&gt;&gt;lblFMDeviation.Name" xml:space="preserve">
+    <value>lblFMDeviation</value>
+  </data>
+  <data name="&gt;&gt;lblFMDeviation.Type" xml:space="preserve">
+    <value>System.Windows.Forms.LabelTS, PowerSDR, Version=3.0.0.13, Culture=neutral, PublicKeyToken=null</value>
+  </data>
+  <data name="&gt;&gt;lblFMDeviation.Parent" xml:space="preserve">
+    <value>panelModeSpecificFM</value>
+  </data>
+  <data name="&gt;&gt;lblFMDeviation.ZOrder" xml:space="preserve">
+    <value>14</value>
+  </data>
+  <data name="&gt;&gt;ptbFMMic.Name" xml:space="preserve">
+    <value>ptbFMMic</value>
+  </data>
+  <data name="&gt;&gt;ptbFMMic.Type" xml:space="preserve">
+    <value>PowerSDR.PrettyTrackBar, PowerSDR, Version=3.0.0.13, Culture=neutral, PublicKeyToken=null</value>
+  </data>
+  <data name="&gt;&gt;ptbFMMic.Parent" xml:space="preserve">
+    <value>panelModeSpecificFM</value>
+  </data>
+  <data name="&gt;&gt;ptbFMMic.ZOrder" xml:space="preserve">
+    <value>20</value>
+  </data>
+  <data name="&gt;&gt;lblMicValFM.Name" xml:space="preserve">
+    <value>lblMicValFM</value>
+  </data>
+  <data name="&gt;&gt;lblMicValFM.Type" xml:space="preserve">
+    <value>System.Windows.Forms.LabelTS, PowerSDR, Version=3.0.0.13, Culture=neutral, PublicKeyToken=null</value>
+  </data>
+  <data name="&gt;&gt;lblMicValFM.Parent" xml:space="preserve">
+    <value>panelModeSpecificFM</value>
+  </data>
+  <data name="&gt;&gt;lblMicValFM.ZOrder" xml:space="preserve">
+    <value>21</value>
+  </data>
+  <data name="&gt;&gt;lblFMMic.Name" xml:space="preserve">
+    <value>lblFMMic</value>
+  </data>
+  <data name="&gt;&gt;lblFMMic.Type" xml:space="preserve">
+    <value>System.Windows.Forms.LabelTS, PowerSDR, Version=3.0.0.13, Culture=neutral, PublicKeyToken=null</value>
+  </data>
+  <data name="&gt;&gt;lblFMMic.Parent" xml:space="preserve">
+    <value>panelModeSpecificFM</value>
+  </data>
+  <data name="&gt;&gt;lblFMMic.ZOrder" xml:space="preserve">
+    <value>22</value>
+  </data>
+  <data name="&gt;&gt;labelTS7.Name" xml:space="preserve">
+    <value>labelTS7</value>
+  </data>
+  <data name="&gt;&gt;labelTS7.Type" xml:space="preserve">
+    <value>System.Windows.Forms.LabelTS, PowerSDR, Version=3.0.0.13, Culture=neutral, PublicKeyToken=null</value>
+  </data>
+  <data name="&gt;&gt;labelTS7.Parent" xml:space="preserve">
+    <value>panelModeSpecificFM</value>
+  </data>
+  <data name="&gt;&gt;labelTS7.ZOrder" xml:space="preserve">
+    <value>23</value>
+  </data>
+  <data name="panelModeSpecificFM.Location" type="System.Drawing.Point, System.Drawing">
+    <value>504, 394</value>
+  </data>
+  <data name="panelModeSpecificFM.Size" type="System.Drawing.Size, System.Drawing">
+    <value>336, 148</value>
+  </data>
+  <data name="panelModeSpecificFM.TabIndex" type="System.Int32, mscorlib">
+    <value>134</value>
+  </data>
+  <data name="&gt;&gt;panelModeSpecificFM.Name" xml:space="preserve">
+    <value>panelModeSpecificFM</value>
+  </data>
+  <data name="&gt;&gt;panelModeSpecificFM.Type" xml:space="preserve">
+    <value>System.Windows.Forms.PanelTS, PowerSDR, Version=3.0.0.13, Culture=neutral, PublicKeyToken=null</value>
+  </data>
+  <data name="&gt;&gt;panelModeSpecificFM.Parent" xml:space="preserve">
+    <value>$this</value>
+  </data>
+  <data name="&gt;&gt;panelModeSpecificFM.ZOrder" xml:space="preserve">
+    <value>63</value>
   </data>
   <data name="lblFMMemory.Image" type="System.Resources.ResXNullRef, System.Windows.Forms">
     <value />
@@ -20222,32 +20753,44 @@ Right Click: Open PDF PowerSDR_CAT_Command_Reference_Guide
   <data name="&gt;&gt;labelTS7.ZOrder" xml:space="preserve">
     <value>23</value>
   </data>
-  <data name="panelModeSpecificFM.Location" type="System.Drawing.Point, System.Drawing">
-    <value>504, 394</value>
-  </data>
-  <data name="panelModeSpecificFM.Size" type="System.Drawing.Size, System.Drawing">
-    <value>336, 148</value>
-  </data>
-  <data name="panelModeSpecificFM.TabIndex" type="System.Int32, mscorlib">
-    <value>134</value>
-  </data>
-  <data name="&gt;&gt;panelModeSpecificFM.Name" xml:space="preserve">
-    <value>panelModeSpecificFM</value>
-  </data>
-  <data name="&gt;&gt;panelModeSpecificFM.Type" xml:space="preserve">
-    <value>System.Windows.Forms.PanelTS, PowerSDR, Version=3.0.0.13, Culture=neutral, PublicKeyToken=null</value>
-  </data>
-  <data name="&gt;&gt;panelModeSpecificFM.Parent" xml:space="preserve">
-    <value>$this</value>
-  </data>
-  <data name="&gt;&gt;panelModeSpecificFM.ZOrder" xml:space="preserve">
-    <value>63</value>
-  </data>
   <data name="panelBandGN.AutoScrollMargin" type="System.Drawing.Size, System.Drawing">
     <value>0, 0</value>
   </data>
   <data name="panelBandGN.AutoScrollMinSize" type="System.Drawing.Size, System.Drawing">
     <value>0, 0</value>
+  </data>
+  <data name="&gt;&gt;btnBandHF1.Name" xml:space="preserve">
+    <value>btnBandHF1</value>
+  </data>
+  <data name="&gt;&gt;btnBandHF1.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ButtonTS, PowerSDR, Version=3.0.0.13, Culture=neutral, PublicKeyToken=null</value>
+  </data>
+  <data name="&gt;&gt;btnBandHF1.Parent" xml:space="preserve">
+    <value>panelBandGN</value>
+  </data>
+  <data name="&gt;&gt;btnBandHF1.ZOrder" xml:space="preserve">
+    <value>14</value>
+  </data>
+  <data name="panelBandGN.Location" type="System.Drawing.Point, System.Drawing">
+    <value>839, 163</value>
+  </data>
+  <data name="panelBandGN.Size" type="System.Drawing.Size, System.Drawing">
+    <value>173, 127</value>
+  </data>
+  <data name="panelBandGN.TabIndex" type="System.Int32, mscorlib">
+    <value>136</value>
+  </data>
+  <data name="&gt;&gt;panelBandGN.Name" xml:space="preserve">
+    <value>panelBandGN</value>
+  </data>
+  <data name="&gt;&gt;panelBandGN.Type" xml:space="preserve">
+    <value>System.Windows.Forms.PanelTS, PowerSDR, Version=3.0.0.13, Culture=neutral, PublicKeyToken=null</value>
+  </data>
+  <data name="&gt;&gt;panelBandGN.Parent" xml:space="preserve">
+    <value>$this</value>
+  </data>
+  <data name="&gt;&gt;panelBandGN.ZOrder" xml:space="preserve">
+    <value>61</value>
   </data>
   <data name="btnBandHF1.FlatStyle" type="System.Windows.Forms.FlatStyle, System.Windows.Forms">
     <value>Flat</value>
@@ -20284,27 +20827,6 @@ Right Click: Open PDF PowerSDR_CAT_Command_Reference_Guide
   </data>
   <data name="&gt;&gt;btnBandHF1.ZOrder" xml:space="preserve">
     <value>14</value>
-  </data>
-  <data name="panelBandGN.Location" type="System.Drawing.Point, System.Drawing">
-    <value>839, 163</value>
-  </data>
-  <data name="panelBandGN.Size" type="System.Drawing.Size, System.Drawing">
-    <value>173, 127</value>
-  </data>
-  <data name="panelBandGN.TabIndex" type="System.Int32, mscorlib">
-    <value>136</value>
-  </data>
-  <data name="&gt;&gt;panelBandGN.Name" xml:space="preserve">
-    <value>panelBandGN</value>
-  </data>
-  <data name="&gt;&gt;panelBandGN.Type" xml:space="preserve">
-    <value>System.Windows.Forms.PanelTS, PowerSDR, Version=3.0.0.13, Culture=neutral, PublicKeyToken=null</value>
-  </data>
-  <data name="&gt;&gt;panelBandGN.Parent" xml:space="preserve">
-    <value>$this</value>
-  </data>
-  <data name="&gt;&gt;panelBandGN.ZOrder" xml:space="preserve">
-    <value>61</value>
   </data>
   <data name="panelTSBandStack.Anchor" type="System.Windows.Forms.AnchorStyles, System.Windows.Forms">
     <value>Top, Bottom, Right</value>
@@ -20350,6 +20872,75 @@ Right Click: Open PDF PowerSDR_CAT_Command_Reference_Guide
   </data>
   <data name="panelModeSpecificCW.AutoScrollMinSize" type="System.Drawing.Size, System.Drawing">
     <value>0, 0</value>
+  </data>
+  <data name="&gt;&gt;labelTS6.Name" xml:space="preserve">
+    <value>labelTS6</value>
+  </data>
+  <data name="&gt;&gt;labelTS6.Type" xml:space="preserve">
+    <value>System.Windows.Forms.LabelTS, PowerSDR, Version=3.0.0.13, Culture=neutral, PublicKeyToken=null</value>
+  </data>
+  <data name="&gt;&gt;labelTS6.Parent" xml:space="preserve">
+    <value>panelModeSpecificCW</value>
+  </data>
+  <data name="&gt;&gt;labelTS6.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
+  <data name="&gt;&gt;lblCWSpeed.Name" xml:space="preserve">
+    <value>lblCWSpeed</value>
+  </data>
+  <data name="&gt;&gt;lblCWSpeed.Type" xml:space="preserve">
+    <value>System.Windows.Forms.LabelTS, PowerSDR, Version=3.0.0.13, Culture=neutral, PublicKeyToken=null</value>
+  </data>
+  <data name="&gt;&gt;lblCWSpeed.Parent" xml:space="preserve">
+    <value>panelModeSpecificCW</value>
+  </data>
+  <data name="&gt;&gt;lblCWSpeed.ZOrder" xml:space="preserve">
+    <value>4</value>
+  </data>
+  <data name="&gt;&gt;grpSemiBreakIn.Name" xml:space="preserve">
+    <value>grpSemiBreakIn</value>
+  </data>
+  <data name="&gt;&gt;grpSemiBreakIn.Type" xml:space="preserve">
+    <value>System.Windows.Forms.GroupBoxTS, PowerSDR, Version=3.0.0.13, Culture=neutral, PublicKeyToken=null</value>
+  </data>
+  <data name="&gt;&gt;grpSemiBreakIn.Parent" xml:space="preserve">
+    <value>panelModeSpecificCW</value>
+  </data>
+  <data name="&gt;&gt;grpSemiBreakIn.ZOrder" xml:space="preserve">
+    <value>5</value>
+  </data>
+  <data name="&gt;&gt;lblCWPitchFreq.Name" xml:space="preserve">
+    <value>lblCWPitchFreq</value>
+  </data>
+  <data name="&gt;&gt;lblCWPitchFreq.Type" xml:space="preserve">
+    <value>System.Windows.Forms.LabelTS, PowerSDR, Version=3.0.0.13, Culture=neutral, PublicKeyToken=null</value>
+  </data>
+  <data name="&gt;&gt;lblCWPitchFreq.Parent" xml:space="preserve">
+    <value>panelModeSpecificCW</value>
+  </data>
+  <data name="&gt;&gt;lblCWPitchFreq.ZOrder" xml:space="preserve">
+    <value>6</value>
+  </data>
+  <data name="panelModeSpecificCW.Location" type="System.Drawing.Point, System.Drawing">
+    <value>504, 394</value>
+  </data>
+  <data name="panelModeSpecificCW.Size" type="System.Drawing.Size, System.Drawing">
+    <value>336, 148</value>
+  </data>
+  <data name="panelModeSpecificCW.TabIndex" type="System.Int32, mscorlib">
+    <value>124</value>
+  </data>
+  <data name="&gt;&gt;panelModeSpecificCW.Name" xml:space="preserve">
+    <value>panelModeSpecificCW</value>
+  </data>
+  <data name="&gt;&gt;panelModeSpecificCW.Type" xml:space="preserve">
+    <value>System.Windows.Forms.PanelTS, PowerSDR, Version=3.0.0.13, Culture=neutral, PublicKeyToken=null</value>
+  </data>
+  <data name="&gt;&gt;panelModeSpecificCW.Parent" xml:space="preserve">
+    <value>$this</value>
+  </data>
+  <data name="&gt;&gt;panelModeSpecificCW.ZOrder" xml:space="preserve">
+    <value>64</value>
   </data>
   <data name="labelTS6.Image" type="System.Resources.ResXNullRef, System.Windows.Forms">
     <value />
@@ -20414,24 +21005,6 @@ Right Click: Open PDF PowerSDR_CAT_Command_Reference_Guide
   <data name="&gt;&gt;lblCWSpeed.ZOrder" xml:space="preserve">
     <value>4</value>
   </data>
-  <data name="lblCWBreakInDelay.Image" type="System.Resources.ResXNullRef, System.Windows.Forms">
-    <value />
-  </data>
-  <data name="lblCWBreakInDelay.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
-    <value>Off</value>
-  </data>
-  <data name="lblCWBreakInDelay.Location" type="System.Drawing.Point, System.Drawing">
-    <value>88, 23</value>
-  </data>
-  <data name="lblCWBreakInDelay.Size" type="System.Drawing.Size, System.Drawing">
-    <value>64, 15</value>
-  </data>
-  <data name="lblCWBreakInDelay.TabIndex" type="System.Int32, mscorlib">
-    <value>34</value>
-  </data>
-  <data name="lblCWBreakInDelay.Text" xml:space="preserve">
-    <value>Delay (ms):</value>
-  </data>
   <data name="&gt;&gt;lblCWBreakInDelay.Name" xml:space="preserve">
     <value>lblCWBreakInDelay</value>
   </data>
@@ -20468,6 +21041,36 @@ Right Click: Open PDF PowerSDR_CAT_Command_Reference_Guide
   <data name="&gt;&gt;grpSemiBreakIn.ZOrder" xml:space="preserve">
     <value>5</value>
   </data>
+  <data name="lblCWBreakInDelay.Image" type="System.Resources.ResXNullRef, System.Windows.Forms">
+    <value />
+  </data>
+  <data name="lblCWBreakInDelay.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
+    <value>Off</value>
+  </data>
+  <data name="lblCWBreakInDelay.Location" type="System.Drawing.Point, System.Drawing">
+    <value>88, 23</value>
+  </data>
+  <data name="lblCWBreakInDelay.Size" type="System.Drawing.Size, System.Drawing">
+    <value>64, 15</value>
+  </data>
+  <data name="lblCWBreakInDelay.TabIndex" type="System.Int32, mscorlib">
+    <value>34</value>
+  </data>
+  <data name="lblCWBreakInDelay.Text" xml:space="preserve">
+    <value>Delay (ms):</value>
+  </data>
+  <data name="&gt;&gt;lblCWBreakInDelay.Name" xml:space="preserve">
+    <value>lblCWBreakInDelay</value>
+  </data>
+  <data name="&gt;&gt;lblCWBreakInDelay.Type" xml:space="preserve">
+    <value>System.Windows.Forms.LabelTS, PowerSDR, Version=3.0.0.13, Culture=neutral, PublicKeyToken=null</value>
+  </data>
+  <data name="&gt;&gt;lblCWBreakInDelay.Parent" xml:space="preserve">
+    <value>grpSemiBreakIn</value>
+  </data>
+  <data name="&gt;&gt;lblCWBreakInDelay.ZOrder" xml:space="preserve">
+    <value>1</value>
+  </data>
   <data name="lblCWPitchFreq.Image" type="System.Resources.ResXNullRef, System.Windows.Forms">
     <value />
   </data>
@@ -20497,27 +21100,6 @@ Right Click: Open PDF PowerSDR_CAT_Command_Reference_Guide
   </data>
   <data name="&gt;&gt;lblCWPitchFreq.ZOrder" xml:space="preserve">
     <value>6</value>
-  </data>
-  <data name="panelModeSpecificCW.Location" type="System.Drawing.Point, System.Drawing">
-    <value>504, 394</value>
-  </data>
-  <data name="panelModeSpecificCW.Size" type="System.Drawing.Size, System.Drawing">
-    <value>336, 148</value>
-  </data>
-  <data name="panelModeSpecificCW.TabIndex" type="System.Int32, mscorlib">
-    <value>124</value>
-  </data>
-  <data name="&gt;&gt;panelModeSpecificCW.Name" xml:space="preserve">
-    <value>panelModeSpecificCW</value>
-  </data>
-  <data name="&gt;&gt;panelModeSpecificCW.Type" xml:space="preserve">
-    <value>System.Windows.Forms.PanelTS, PowerSDR, Version=3.0.0.13, Culture=neutral, PublicKeyToken=null</value>
-  </data>
-  <data name="&gt;&gt;panelModeSpecificCW.Parent" xml:space="preserve">
-    <value>$this</value>
-  </data>
-  <data name="&gt;&gt;panelModeSpecificCW.ZOrder" xml:space="preserve">
-    <value>64</value>
   </data>
   <data name="panelAntenna.AutoScrollMargin" type="System.Drawing.Size, System.Drawing">
     <value>0, 0</value>
@@ -20897,24 +21479,6 @@ Right Click: Open PDF PowerSDR_CAT_Command_Reference_Guide
   <data name="panelRX2Display.AutoScrollMinSize" type="System.Drawing.Size, System.Drawing">
     <value>0, 0</value>
   </data>
-  <data name="label7.Font" type="System.Drawing.Font, System.Drawing">
-    <value>Microsoft Sans Serif, 8.25pt</value>
-  </data>
-  <data name="label7.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
-    <value>Off</value>
-  </data>
-  <data name="label7.Location" type="System.Drawing.Point, System.Drawing">
-    <value>5, 5</value>
-  </data>
-  <data name="label7.Size" type="System.Drawing.Size, System.Drawing">
-    <value>100, 23</value>
-  </data>
-  <data name="label7.TabIndex" type="System.Int32, mscorlib">
-    <value>122</value>
-  </data>
-  <data name="label7.Text" xml:space="preserve">
-    <value>RX2 Display Mode</value>
-  </data>
   <data name="&gt;&gt;label7.Name" xml:space="preserve">
     <value>label7</value>
   </data>
@@ -20948,11 +21512,98 @@ Right Click: Open PDF PowerSDR_CAT_Command_Reference_Guide
   <data name="&gt;&gt;panelRX2Display.ZOrder" xml:space="preserve">
     <value>38</value>
   </data>
+  <data name="label7.Font" type="System.Drawing.Font, System.Drawing">
+    <value>Microsoft Sans Serif, 8.25pt</value>
+  </data>
+  <data name="label7.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
+    <value>Off</value>
+  </data>
+  <data name="label7.Location" type="System.Drawing.Point, System.Drawing">
+    <value>5, 5</value>
+  </data>
+  <data name="label7.Size" type="System.Drawing.Size, System.Drawing">
+    <value>100, 23</value>
+  </data>
+  <data name="label7.TabIndex" type="System.Int32, mscorlib">
+    <value>122</value>
+  </data>
+  <data name="label7.Text" xml:space="preserve">
+    <value>RX2 Display Mode</value>
+  </data>
+  <data name="&gt;&gt;label7.Name" xml:space="preserve">
+    <value>label7</value>
+  </data>
+  <data name="&gt;&gt;label7.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;label7.Parent" xml:space="preserve">
+    <value>panelRX2Display</value>
+  </data>
+  <data name="&gt;&gt;label7.ZOrder" xml:space="preserve">
+    <value>5</value>
+  </data>
   <data name="panelRX2Mixer.AutoScrollMargin" type="System.Drawing.Size, System.Drawing">
     <value>0, 0</value>
   </data>
   <data name="panelRX2Mixer.AutoScrollMinSize" type="System.Drawing.Size, System.Drawing">
     <value>0, 0</value>
+  </data>
+  <data name="&gt;&gt;lblRX2Pan.Name" xml:space="preserve">
+    <value>lblRX2Pan</value>
+  </data>
+  <data name="&gt;&gt;lblRX2Pan.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;lblRX2Pan.Parent" xml:space="preserve">
+    <value>panelRX2Mixer</value>
+  </data>
+  <data name="&gt;&gt;lblRX2Pan.ZOrder" xml:space="preserve">
+    <value>2</value>
+  </data>
+  <data name="&gt;&gt;lblRX2Vol.Name" xml:space="preserve">
+    <value>lblRX2Vol</value>
+  </data>
+  <data name="&gt;&gt;lblRX2Vol.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;lblRX2Vol.Parent" xml:space="preserve">
+    <value>panelRX2Mixer</value>
+  </data>
+  <data name="&gt;&gt;lblRX2Vol.ZOrder" xml:space="preserve">
+    <value>3</value>
+  </data>
+  <data name="&gt;&gt;lblRX2Mute.Name" xml:space="preserve">
+    <value>lblRX2Mute</value>
+  </data>
+  <data name="&gt;&gt;lblRX2Mute.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;lblRX2Mute.Parent" xml:space="preserve">
+    <value>panelRX2Mixer</value>
+  </data>
+  <data name="&gt;&gt;lblRX2Mute.ZOrder" xml:space="preserve">
+    <value>4</value>
+  </data>
+  <data name="panelRX2Mixer.Location" type="System.Drawing.Point, System.Drawing">
+    <value>78, 555</value>
+  </data>
+  <data name="panelRX2Mixer.Size" type="System.Drawing.Size, System.Drawing">
+    <value>88, 97</value>
+  </data>
+  <data name="panelRX2Mixer.TabIndex" type="System.Int32, mscorlib">
+    <value>127</value>
+  </data>
+  <data name="&gt;&gt;panelRX2Mixer.Name" xml:space="preserve">
+    <value>panelRX2Mixer</value>
+  </data>
+  <data name="&gt;&gt;panelRX2Mixer.Type" xml:space="preserve">
+    <value>System.Windows.Forms.PanelTS, PowerSDR, Version=3.0.0.13, Culture=neutral, PublicKeyToken=null</value>
+  </data>
+  <data name="&gt;&gt;panelRX2Mixer.Parent" xml:space="preserve">
+    <value>$this</value>
+  </data>
+  <data name="&gt;&gt;panelRX2Mixer.ZOrder" xml:space="preserve">
+    <value>40</value>
   </data>
   <data name="lblRX2Pan.Font" type="System.Drawing.Font, System.Drawing">
     <value>Microsoft Sans Serif, 6.75pt</value>
@@ -21047,32 +21698,80 @@ Right Click: Open PDF PowerSDR_CAT_Command_Reference_Guide
   <data name="&gt;&gt;lblRX2Mute.ZOrder" xml:space="preserve">
     <value>4</value>
   </data>
-  <data name="panelRX2Mixer.Location" type="System.Drawing.Point, System.Drawing">
-    <value>78, 555</value>
-  </data>
-  <data name="panelRX2Mixer.Size" type="System.Drawing.Size, System.Drawing">
-    <value>88, 97</value>
-  </data>
-  <data name="panelRX2Mixer.TabIndex" type="System.Int32, mscorlib">
-    <value>127</value>
-  </data>
-  <data name="&gt;&gt;panelRX2Mixer.Name" xml:space="preserve">
-    <value>panelRX2Mixer</value>
-  </data>
-  <data name="&gt;&gt;panelRX2Mixer.Type" xml:space="preserve">
-    <value>System.Windows.Forms.PanelTS, PowerSDR, Version=3.0.0.13, Culture=neutral, PublicKeyToken=null</value>
-  </data>
-  <data name="&gt;&gt;panelRX2Mixer.Parent" xml:space="preserve">
-    <value>$this</value>
-  </data>
-  <data name="&gt;&gt;panelRX2Mixer.ZOrder" xml:space="preserve">
-    <value>40</value>
-  </data>
   <data name="panelMultiRX.AutoScrollMargin" type="System.Drawing.Size, System.Drawing">
     <value>0, 0</value>
   </data>
   <data name="panelMultiRX.AutoScrollMinSize" type="System.Drawing.Size, System.Drawing">
     <value>0, 0</value>
+  </data>
+  <data name="&gt;&gt;label5.Name" xml:space="preserve">
+    <value>label5</value>
+  </data>
+  <data name="&gt;&gt;label5.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;label5.Parent" xml:space="preserve">
+    <value>panelMultiRX</value>
+  </data>
+  <data name="&gt;&gt;label5.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
+  <data name="&gt;&gt;label3.Name" xml:space="preserve">
+    <value>label3</value>
+  </data>
+  <data name="&gt;&gt;label3.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;label3.Parent" xml:space="preserve">
+    <value>panelMultiRX</value>
+  </data>
+  <data name="&gt;&gt;label3.ZOrder" xml:space="preserve">
+    <value>1</value>
+  </data>
+  <data name="&gt;&gt;label4.Name" xml:space="preserve">
+    <value>label4</value>
+  </data>
+  <data name="&gt;&gt;label4.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;label4.Parent" xml:space="preserve">
+    <value>panelMultiRX</value>
+  </data>
+  <data name="&gt;&gt;label4.ZOrder" xml:space="preserve">
+    <value>2</value>
+  </data>
+  <data name="&gt;&gt;label2.Name" xml:space="preserve">
+    <value>label2</value>
+  </data>
+  <data name="&gt;&gt;label2.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;label2.Parent" xml:space="preserve">
+    <value>panelMultiRX</value>
+  </data>
+  <data name="&gt;&gt;label2.ZOrder" xml:space="preserve">
+    <value>3</value>
+  </data>
+  <data name="panelMultiRX.Location" type="System.Drawing.Point, System.Drawing">
+    <value>264, 477</value>
+  </data>
+  <data name="panelMultiRX.Size" type="System.Drawing.Size, System.Drawing">
+    <value>232, 75</value>
+  </data>
+  <data name="panelMultiRX.TabIndex" type="System.Int32, mscorlib">
+    <value>123</value>
+  </data>
+  <data name="&gt;&gt;panelMultiRX.Name" xml:space="preserve">
+    <value>panelMultiRX</value>
+  </data>
+  <data name="&gt;&gt;panelMultiRX.Type" xml:space="preserve">
+    <value>System.Windows.Forms.PanelTS, PowerSDR, Version=3.0.0.13, Culture=neutral, PublicKeyToken=null</value>
+  </data>
+  <data name="&gt;&gt;panelMultiRX.Parent" xml:space="preserve">
+    <value>$this</value>
+  </data>
+  <data name="&gt;&gt;panelMultiRX.ZOrder" xml:space="preserve">
+    <value>41</value>
   </data>
   <data name="label5.Font" type="System.Drawing.Font, System.Drawing">
     <value>Microsoft Sans Serif, 6.75pt</value>
@@ -21194,27 +21893,6 @@ Right Click: Open PDF PowerSDR_CAT_Command_Reference_Guide
   <data name="&gt;&gt;label2.ZOrder" xml:space="preserve">
     <value>3</value>
   </data>
-  <data name="panelMultiRX.Location" type="System.Drawing.Point, System.Drawing">
-    <value>264, 477</value>
-  </data>
-  <data name="panelMultiRX.Size" type="System.Drawing.Size, System.Drawing">
-    <value>232, 75</value>
-  </data>
-  <data name="panelMultiRX.TabIndex" type="System.Int32, mscorlib">
-    <value>123</value>
-  </data>
-  <data name="&gt;&gt;panelMultiRX.Name" xml:space="preserve">
-    <value>panelMultiRX</value>
-  </data>
-  <data name="&gt;&gt;panelMultiRX.Type" xml:space="preserve">
-    <value>System.Windows.Forms.PanelTS, PowerSDR, Version=3.0.0.13, Culture=neutral, PublicKeyToken=null</value>
-  </data>
-  <data name="&gt;&gt;panelMultiRX.Parent" xml:space="preserve">
-    <value>$this</value>
-  </data>
-  <data name="&gt;&gt;panelMultiRX.ZOrder" xml:space="preserve">
-    <value>41</value>
-  </data>
   <data name="panelDSP.AutoScrollMargin" type="System.Drawing.Size, System.Drawing">
     <value>0, 0</value>
   </data>
@@ -21287,6 +21965,51 @@ Right Click: Open PDF PowerSDR_CAT_Command_Reference_Guide
   <data name="panelDateTime.AutoScrollMinSize" type="System.Drawing.Size, System.Drawing">
     <value>0, 0</value>
   </data>
+  <data name="&gt;&gt;txtTime.Name" xml:space="preserve">
+    <value>txtTime</value>
+  </data>
+  <data name="&gt;&gt;txtTime.Type" xml:space="preserve">
+    <value>System.Windows.Forms.RichTextBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;txtTime.Parent" xml:space="preserve">
+    <value>panelDateTime</value>
+  </data>
+  <data name="&gt;&gt;txtTime.ZOrder" xml:space="preserve">
+    <value>5</value>
+  </data>
+  <data name="&gt;&gt;txtDate.Name" xml:space="preserve">
+    <value>txtDate</value>
+  </data>
+  <data name="&gt;&gt;txtDate.Type" xml:space="preserve">
+    <value>System.Windows.Forms.RichTextBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;txtDate.Parent" xml:space="preserve">
+    <value>panelDateTime</value>
+  </data>
+  <data name="&gt;&gt;txtDate.ZOrder" xml:space="preserve">
+    <value>6</value>
+  </data>
+  <data name="panelDateTime.Location" type="System.Drawing.Point, System.Drawing">
+    <value>8, 420</value>
+  </data>
+  <data name="panelDateTime.Size" type="System.Drawing.Size, System.Drawing">
+    <value>115, 165</value>
+  </data>
+  <data name="panelDateTime.TabIndex" type="System.Int32, mscorlib">
+    <value>119</value>
+  </data>
+  <data name="&gt;&gt;panelDateTime.Name" xml:space="preserve">
+    <value>panelDateTime</value>
+  </data>
+  <data name="&gt;&gt;panelDateTime.Type" xml:space="preserve">
+    <value>System.Windows.Forms.PanelTS, PowerSDR, Version=3.0.0.13, Culture=neutral, PublicKeyToken=null</value>
+  </data>
+  <data name="&gt;&gt;panelDateTime.Parent" xml:space="preserve">
+    <value>$this</value>
+  </data>
+  <data name="&gt;&gt;panelDateTime.ZOrder" xml:space="preserve">
+    <value>43</value>
+  </data>
   <data name="txtTime.Font" type="System.Drawing.Font, System.Drawing">
     <value>Microsoft Sans Serif, 9.75pt</value>
   </data>
@@ -21358,27 +22081,6 @@ Right Click: Open PDF PowerSDR_CAT_Command_Reference_Guide
   </data>
   <data name="&gt;&gt;txtDate.ZOrder" xml:space="preserve">
     <value>6</value>
-  </data>
-  <data name="panelDateTime.Location" type="System.Drawing.Point, System.Drawing">
-    <value>8, 420</value>
-  </data>
-  <data name="panelDateTime.Size" type="System.Drawing.Size, System.Drawing">
-    <value>115, 165</value>
-  </data>
-  <data name="panelDateTime.TabIndex" type="System.Int32, mscorlib">
-    <value>119</value>
-  </data>
-  <data name="&gt;&gt;panelDateTime.Name" xml:space="preserve">
-    <value>panelDateTime</value>
-  </data>
-  <data name="&gt;&gt;panelDateTime.Type" xml:space="preserve">
-    <value>System.Windows.Forms.PanelTS, PowerSDR, Version=3.0.0.13, Culture=neutral, PublicKeyToken=null</value>
-  </data>
-  <data name="&gt;&gt;panelDateTime.Parent" xml:space="preserve">
-    <value>$this</value>
-  </data>
-  <data name="&gt;&gt;panelDateTime.ZOrder" xml:space="preserve">
-    <value>43</value>
   </data>
   <data name="panelSoundControls.AutoScrollMargin" type="System.Drawing.Size, System.Drawing">
     <value>0, 0</value>

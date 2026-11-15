@@ -215,6 +215,13 @@ namespace PowerSDR
             this.chkSpaceNavFlyPanadapter = new System.Windows.Forms.CheckBoxTS();
             this.chkSpaceNavControlVFOs = new System.Windows.Forms.CheckBoxTS();
             this.tpUserInterface = new System.Windows.Forms.TabPage();
+            this.groupBox3 = new System.Windows.Forms.GroupBox();
+            this.labelTS80 = new System.Windows.Forms.LabelTS();
+            this.comboAudioYouTube = new System.Windows.Forms.ComboBoxTS();
+            this.chkYouTube = new System.Windows.Forms.CheckBoxTS();
+            this.chkYouTubeFull = new System.Windows.Forms.CheckBoxTS();
+            this.txtYouTubeKey = new System.Windows.Forms.TextBoxTS();
+            this.labelTS85 = new System.Windows.Forms.LabelTS();
             this.chkBoxHERO = new System.Windows.Forms.CheckBoxTS();
             this.groupBox2 = new System.Windows.Forms.GroupBox();
             this.checkBoxRX2 = new System.Windows.Forms.CheckBoxTS();
@@ -750,6 +757,8 @@ namespace PowerSDR
             this.tpAppearance = new System.Windows.Forms.TabPage();
             this.tcAppearance = new System.Windows.Forms.TabControl();
             this.tpAppearanceGeneral = new System.Windows.Forms.TabPage();
+            this.ud3DY = new System.Windows.Forms.NumericUpDownTS();
+            this.labelTS79 = new System.Windows.Forms.LabelTS();
             this.tb3DScale = new System.Windows.Forms.TrackBarTS();
             this.labelTS45 = new System.Windows.Forms.LabelTS();
             this.tb3DThres = new System.Windows.Forms.TrackBarTS();
@@ -759,7 +768,6 @@ namespace PowerSDR
             this.ud3DZ = new System.Windows.Forms.NumericUpDownTS();
             this.labelTS64 = new System.Windows.Forms.LabelTS();
             this.labelTS46 = new System.Windows.Forms.LabelTS();
-            this.ud3DY = new System.Windows.Forms.NumericUpDownTS();
             this.ud3DX = new System.Windows.Forms.NumericUpDownTS();
             this.groupBoxTS3 = new System.Windows.Forms.GroupBoxTS();
             this.chkBoxConsoleRing = new System.Windows.Forms.CheckBoxTS();
@@ -1304,7 +1312,6 @@ namespace PowerSDR
             this.textBoxSAVE = new System.Windows.Forms.TextBoxTS();
             this.btnResetDB = new System.Windows.Forms.ButtonTS();
             this.chkAlwaysOnTop1 = new System.Windows.Forms.CheckBoxTS();
-            this.labelTS79 = new System.Windows.Forms.LabelTS();
             this.tcSetup.SuspendLayout();
             this.tpGeneral.SuspendLayout();
             this.tcGeneral.SuspendLayout();
@@ -1357,6 +1364,7 @@ namespace PowerSDR
             this.tpGeneralNavigation.SuspendLayout();
             this.grpOptSpaceNav.SuspendLayout();
             this.tpUserInterface.SuspendLayout();
+            this.groupBox3.SuspendLayout();
             this.groupBox2.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.udN1MMfps)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.udN1MMscale)).BeginInit();
@@ -1567,12 +1575,12 @@ namespace PowerSDR
             this.tpAppearance.SuspendLayout();
             this.tcAppearance.SuspendLayout();
             this.tpAppearanceGeneral.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.ud3DY)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.tb3DScale)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.tb3DThres)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.num4d)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.num3d)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.ud3DZ)).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)(this.ud3DY)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.ud3DX)).BeginInit();
             this.groupBoxTS3.SuspendLayout();
             this.grpAppSkins.SuspendLayout();
@@ -4117,6 +4125,7 @@ namespace PowerSDR
             // tpUserInterface
             // 
             this.tpUserInterface.BackColor = System.Drawing.Color.Gray;
+            this.tpUserInterface.Controls.Add(this.groupBox3);
             this.tpUserInterface.Controls.Add(this.chkBoxHERO);
             this.tpUserInterface.Controls.Add(this.groupBox2);
             this.tpUserInterface.Controls.Add(this.groupBox1);
@@ -4127,12 +4136,90 @@ namespace PowerSDR
             this.tpUserInterface.TabIndex = 6;
             this.tpUserInterface.Text = "User Interface";
             // 
+            // groupBox3
+            // 
+            this.groupBox3.Controls.Add(this.labelTS80);
+            this.groupBox3.Controls.Add(this.comboAudioYouTube);
+            this.groupBox3.Controls.Add(this.chkYouTube);
+            this.groupBox3.Controls.Add(this.chkYouTubeFull);
+            this.groupBox3.Controls.Add(this.txtYouTubeKey);
+            this.groupBox3.Controls.Add(this.labelTS85);
+            this.groupBox3.Location = new System.Drawing.Point(33, 129);
+            this.groupBox3.Name = "groupBox3";
+            this.groupBox3.Size = new System.Drawing.Size(309, 80);
+            this.groupBox3.TabIndex = 89;
+            this.groupBox3.TabStop = false;
+            this.groupBox3.Text = "YouTube Live Stream";
+            // 
+            // labelTS80
+            // 
+            this.labelTS80.Image = null;
+            this.labelTS80.Location = new System.Drawing.Point(17, 56);
+            this.labelTS80.Name = "labelTS80";
+            this.labelTS80.Size = new System.Drawing.Size(94, 16);
+            this.labelTS80.TabIndex = 83;
+            this.labelTS80.Text = "Stream Audio:";
+            // 
+            // comboAudioYouTube
+            // 
+            this.comboAudioYouTube.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.comboAudioYouTube.DropDownWidth = 160;
+            this.comboAudioYouTube.ItemHeight = 13;
+            this.comboAudioYouTube.Location = new System.Drawing.Point(123, 53);
+            this.comboAudioYouTube.Name = "comboAudioYouTube";
+            this.comboAudioYouTube.Size = new System.Drawing.Size(160, 21);
+            this.comboAudioYouTube.TabIndex = 29;
+            this.toolTip1.SetToolTip(this.comboAudioYouTube, resources.GetString("comboAudioYouTube.ToolTip"));
+            // 
+            // chkYouTube
+            // 
+            this.chkYouTube.Image = null;
+            this.chkYouTube.Location = new System.Drawing.Point(233, 16);
+            this.chkYouTube.Name = "chkYouTube";
+            this.chkYouTube.Size = new System.Drawing.Size(65, 31);
+            this.chkYouTube.TabIndex = 15;
+            this.chkYouTube.Text = "Enabled";
+            this.toolTip1.SetToolTip(this.chkYouTube, "Check to make Camera button be the YouTube Stream On/Off button\r\nWhen unchecked, " +
+        "the Camera button is a screen shot instead.\r\n");
+            this.chkYouTube.CheckedChanged += new System.EventHandler(this.chkYouTube_CheckedChanged);
+            // 
+            // chkYouTubeFull
+            // 
+            this.chkYouTubeFull.Image = null;
+            this.chkYouTubeFull.Location = new System.Drawing.Point(175, 16);
+            this.chkYouTubeFull.Name = "chkYouTubeFull";
+            this.chkYouTubeFull.Size = new System.Drawing.Size(65, 31);
+            this.chkYouTubeFull.TabIndex = 14;
+            this.chkYouTubeFull.Text = "Full Screen";
+            this.toolTip1.SetToolTip(this.chkYouTubeFull, "Normal Stream is just the Panadapter\r\nCheck for full Console screen stream. \r\n");
+            this.chkYouTubeFull.CheckedChanged += new System.EventHandler(this.chkYouTubeFull_CheckedChanged);
+            // 
+            // txtYouTubeKey
+            // 
+            this.txtYouTubeKey.Location = new System.Drawing.Point(32, 23);
+            this.txtYouTubeKey.MaxLength = 50;
+            this.txtYouTubeKey.Name = "txtYouTubeKey";
+            this.txtYouTubeKey.Size = new System.Drawing.Size(137, 20);
+            this.txtYouTubeKey.TabIndex = 10;
+            this.txtYouTubeKey.Text = "xxxx-xxxx-xxxx-xxxx-xxxx";
+            this.toolTip1.SetToolTip(this.txtYouTubeKey, "This is your YouTube Live Stream Key");
+            this.txtYouTubeKey.UseSystemPasswordChar = true;
+            // 
+            // labelTS85
+            // 
+            this.labelTS85.Image = null;
+            this.labelTS85.Location = new System.Drawing.Point(6, 26);
+            this.labelTS85.Name = "labelTS85";
+            this.labelTS85.Size = new System.Drawing.Size(43, 16);
+            this.labelTS85.TabIndex = 8;
+            this.labelTS85.Text = "Key:";
+            // 
             // chkBoxHERO
             // 
             this.chkBoxHERO.Image = null;
-            this.chkBoxHERO.Location = new System.Drawing.Point(134, 176);
+            this.chkBoxHERO.Location = new System.Drawing.Point(378, 198);
             this.chkBoxHERO.Name = "chkBoxHERO";
-            this.chkBoxHERO.Size = new System.Drawing.Size(205, 22);
+            this.chkBoxHERO.Size = new System.Drawing.Size(176, 22);
             this.chkBoxHERO.TabIndex = 86;
             this.chkBoxHERO.Text = "I2C Band output (see tooltip)";
             this.toolTip1.SetToolTip(this.chkBoxHERO, resources.GetString("chkBoxHERO.ToolTip"));
@@ -4158,7 +4245,7 @@ namespace PowerSDR
             this.groupBox2.Controls.Add(this.labelTS16);
             this.groupBox2.Controls.Add(this.udHttpPort);
             this.groupBox2.Controls.Add(this.chkBoxHTTP);
-            this.groupBox2.Location = new System.Drawing.Point(33, 204);
+            this.groupBox2.Location = new System.Drawing.Point(33, 215);
             this.groupBox2.Name = "groupBox2";
             this.groupBox2.Size = new System.Drawing.Size(521, 100);
             this.groupBox2.TabIndex = 54;
@@ -4462,7 +4549,7 @@ namespace PowerSDR
             this.groupBox1.Controls.Add(this.cbConsoleSelect);
             this.groupBox1.Location = new System.Drawing.Point(32, 11);
             this.groupBox1.Name = "groupBox1";
-            this.groupBox1.Size = new System.Drawing.Size(307, 155);
+            this.groupBox1.Size = new System.Drawing.Size(307, 112);
             this.groupBox1.TabIndex = 3;
             this.groupBox1.TabStop = false;
             this.groupBox1.Text = "DJ Console DH1TW 0.997 User Interface Controller";
@@ -4470,16 +4557,16 @@ namespace PowerSDR
             // labelTS30
             // 
             this.labelTS30.Image = null;
-            this.labelTS30.Location = new System.Drawing.Point(20, 133);
+            this.labelTS30.Location = new System.Drawing.Point(48, 89);
             this.labelTS30.Name = "labelTS30";
-            this.labelTS30.Size = new System.Drawing.Size(268, 16);
+            this.labelTS30.Size = new System.Drawing.Size(240, 16);
             this.labelTS30.TabIndex = 82;
             this.labelTS30.Text = "Supports Hercules MP3e2, MK2, MP3LE";
             // 
             // label1
             // 
             this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(20, 37);
+            this.label1.Location = new System.Drawing.Point(20, 22);
             this.label1.Name = "label1";
             this.label1.Size = new System.Drawing.Size(54, 13);
             this.label1.TabIndex = 6;
@@ -4488,7 +4575,7 @@ namespace PowerSDR
             // btnConfigure
             // 
             this.btnConfigure.BackColor = System.Drawing.SystemColors.ButtonFace;
-            this.btnConfigure.Location = new System.Drawing.Point(23, 97);
+            this.btnConfigure.Location = new System.Drawing.Point(27, 52);
             this.btnConfigure.Name = "btnConfigure";
             this.btnConfigure.Size = new System.Drawing.Size(272, 30);
             this.btnConfigure.TabIndex = 5;
@@ -4500,7 +4587,7 @@ namespace PowerSDR
             // 
             this.cbConsoleSelect.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.cbConsoleSelect.FormattingEnabled = true;
-            this.cbConsoleSelect.Location = new System.Drawing.Point(80, 34);
+            this.cbConsoleSelect.Location = new System.Drawing.Point(80, 19);
             this.cbConsoleSelect.Name = "cbConsoleSelect";
             this.cbConsoleSelect.Size = new System.Drawing.Size(215, 21);
             this.cbConsoleSelect.TabIndex = 4;
@@ -12674,6 +12761,44 @@ namespace PowerSDR
             this.tpAppearanceGeneral.Text = "General";
             this.tpAppearanceGeneral.Click += new System.EventHandler(this.tpAppearanceGeneral_Click);
             // 
+            // ud3DY
+            // 
+            this.ud3DY.Increment = new decimal(new int[] {
+            1,
+            0,
+            0,
+            0});
+            this.ud3DY.Location = new System.Drawing.Point(77, 211);
+            this.ud3DY.Maximum = new decimal(new int[] {
+            10,
+            0,
+            0,
+            0});
+            this.ud3DY.Minimum = new decimal(new int[] {
+            1,
+            0,
+            0,
+            0});
+            this.ud3DY.Name = "ud3DY";
+            this.ud3DY.Size = new System.Drawing.Size(40, 20);
+            this.ud3DY.TabIndex = 88;
+            this.toolTip1.SetToolTip(this.ud3DY, "3D Y offset (how many pixels to jump up per line of data)");
+            this.ud3DY.Value = new decimal(new int[] {
+            1,
+            0,
+            0,
+            0});
+            this.ud3DY.ValueChanged += new System.EventHandler(this.number3DY_ValueChanged);
+            // 
+            // labelTS79
+            // 
+            this.labelTS79.Image = null;
+            this.labelTS79.Location = new System.Drawing.Point(26, 190);
+            this.labelTS79.Name = "labelTS79";
+            this.labelTS79.Size = new System.Drawing.Size(102, 24);
+            this.labelTS79.TabIndex = 98;
+            this.labelTS79.Text = "3D Panadapter";
+            // 
             // tb3DScale
             // 
             this.tb3DScale.AutoSize = false;
@@ -12825,35 +12950,6 @@ namespace PowerSDR
             this.labelTS46.Size = new System.Drawing.Size(64, 24);
             this.labelTS46.TabIndex = 89;
             this.labelTS46.Text = "3D y offset:";
-            // 
-            // ud3DY
-            // 
-            this.ud3DY.Increment = new decimal(new int[] {
-            1,
-            0,
-            0,
-            0});
-            this.ud3DY.Location = new System.Drawing.Point(77, 211);
-            this.ud3DY.Maximum = new decimal(new int[] {
-            10,
-            0,
-            0,
-            0});
-            this.ud3DY.Minimum = new decimal(new int[] {
-            1,
-            0,
-            0,
-            0});
-            this.ud3DY.Name = "ud3DY";
-            this.ud3DY.Size = new System.Drawing.Size(40, 20);
-            this.ud3DY.TabIndex = 88;
-            this.toolTip1.SetToolTip(this.ud3DY, "3D Y offset (how many pixels to jump up per line of data)");
-            this.ud3DY.Value = new decimal(new int[] {
-            1,
-            0,
-            0,
-            0});
-            this.ud3DY.ValueChanged += new System.EventHandler(this.number3DY_ValueChanged);
             // 
             // ud3DX
             // 
@@ -19247,15 +19343,6 @@ namespace PowerSDR
             this.chkAlwaysOnTop1.Text = "Always On Top";
             this.chkAlwaysOnTop1.CheckedChanged += new System.EventHandler(this.ChkAlwaysOnTop1_CheckedChanged);
             // 
-            // labelTS79
-            // 
-            this.labelTS79.Image = null;
-            this.labelTS79.Location = new System.Drawing.Point(26, 190);
-            this.labelTS79.Name = "labelTS79";
-            this.labelTS79.Size = new System.Drawing.Size(102, 24);
-            this.labelTS79.TabIndex = 98;
-            this.labelTS79.Text = "3D Panadapter";
-            // 
             // Setup
             // 
             this.AutoScaleBaseSize = new System.Drawing.Size(5, 13);
@@ -19339,6 +19426,8 @@ namespace PowerSDR
             this.grpOptSpaceNav.ResumeLayout(false);
             this.grpOptSpaceNav.PerformLayout();
             this.tpUserInterface.ResumeLayout(false);
+            this.groupBox3.ResumeLayout(false);
+            this.groupBox3.PerformLayout();
             this.groupBox2.ResumeLayout(false);
             this.groupBox2.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.udN1MMfps)).EndInit();
@@ -19556,12 +19645,12 @@ namespace PowerSDR
             this.tpAppearance.ResumeLayout(false);
             this.tcAppearance.ResumeLayout(false);
             this.tpAppearanceGeneral.ResumeLayout(false);
+            ((System.ComponentModel.ISupportInitialize)(this.ud3DY)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.tb3DScale)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.tb3DThres)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.num4d)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.num3d)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.ud3DZ)).EndInit();
-            ((System.ComponentModel.ISupportInitialize)(this.ud3DY)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.ud3DX)).EndInit();
             this.groupBoxTS3.ResumeLayout(false);
             this.grpAppSkins.ResumeLayout(false);
@@ -20905,6 +20994,13 @@ namespace PowerSDR
         private System.Windows.Forms.LabelTS labelTS45;
         public System.Windows.Forms.TrackBarTS tb3DScale;
         private System.Windows.Forms.LabelTS labelTS79;
+        public System.Windows.Forms.GroupBox groupBox3;
+        public System.Windows.Forms.CheckBoxTS chkYouTubeFull;
+        public System.Windows.Forms.TextBoxTS txtYouTubeKey;
+        private System.Windows.Forms.LabelTS labelTS85;
+        public System.Windows.Forms.CheckBoxTS chkYouTube;
+        private System.Windows.Forms.LabelTS labelTS80;
+        public System.Windows.Forms.ComboBoxTS comboAudioYouTube;
     } // class setup
 
 

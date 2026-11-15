@@ -1108,6 +1108,7 @@
     <Compile Include="xvtr.Designer.cs">
       <DependentUpon>xvtr.cs</DependentUpon>
     </Compile>
+    <Compile Include="YouTube.cs" />
     <EmbeddedResource Include="DJConsoleUI\DJConsoleSelect.resx">
       <DependentUpon>DJConsoleSelect.cs</DependentUpon>
     </EmbeddedResource>
