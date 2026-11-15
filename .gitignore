@@ -3,12 +3,15 @@
 ##
 ## Get latest from https://github.com/github/gitignore/blob/master/VisualStudio.gitignore
 
+PowerSDR KE9NS v3.0.0-cache/
+
 # User-specific files
 *.rsuser
 *.suo
 *.user
 *.userosscache
 *.sln.docstates
+
 
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
@@ -178,6 +181,8 @@ DocProject/Help/html
 
 # Click-Once directory
 publish/
+
+PowerSDR KE9NS v3.0.0-cache/
 
 # Publish Web Output
 *.[Pp]ublish.xml
