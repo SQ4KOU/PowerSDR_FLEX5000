@@ -22,25 +22,33 @@
 // You may contact us via email at: ke9ns@ke9ns.com
 //=================================================================
 
+using Microsoft.JScript;
+using NAudio.Wave;
 using System;
+using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
-using System.Diagnostics;
+using System.Runtime.InteropServices;
 using System.Threading;
 using System.Windows.Forms;
-using NAudio.Wave;
-using System.Runtime.InteropServices;
+using System.Windows.Media.Media3D;
 
 namespace PowerSDR
 {
     public class YouTubeStreamer
     {
+        // used for capturing the entire console window to a bitmap for streaming
         [DllImport("user32.dll")]
-        private static extern bool PrintWindow(IntPtr hWnd, IntPtr hdcBlt, uint nFlags);
-        private const uint PW_RENDERFULLCONTENT = 0x00000002; // Flag constants:
-                                                              // 0x0 = Captures the entire window (title bar, borders, client area)
-                                                              // 0x1 (PW_CLIENTONLY) = Captures only the client drawing area (excluding borders/title bar)
+        private static extern IntPtr GetWindowDC(IntPtr hWnd);
+
+        [DllImport("gdi32.dll")]
+        private static extern bool BitBlt(IntPtr hdcDest, int nXDest, int nYDest, int nWidth, int nHeight, IntPtr hdcSrc, int nXSrc, int nYSrc, int dwRop);
+
+        [DllImport("user32.dll")]
+        private static extern int ReleaseDC(IntPtr hWnd, IntPtr hDC);
+
+        private const int SRCCOPY = 0x00CC0020;
 
         private PictureBox _targetDisplay;
         private string _rtmpUrl;
@@ -51,19 +59,16 @@ namespace PowerSDR
         private volatile bool _isStreaming = false;
 
         private Process _ffmpegProcess;
-     //   private WasapiLoopbackCapture _audioCapture;  
-     //   private BufferedWaveProvider _audioProvider;
-     //   private bool _hasSavedDebugImage = false; // 
-
-        private int _fps = 30;
+    
+        private int _fps = 30;  // YouTube recommends 30 fps for live streaming
         private int _width = 0;
         private int _height = 0;
 
-        public static Console console;          //.14 ke9ns mod  to allow console to pass back values to setup screen
-        public Setup setupForm;                 //.14 ke9ns communications with setupform  (i.e. allow combometertype.text update from inside console.cs) 
+        public static Console console;          // ke9ns mod  to allow console to pass back values to setup screen
+        public Setup setupForm;                 // ke9ns communications with setupform  (i.e. allow combometertype.text update from inside console.cs) 
 
        
-        public YouTubeStreamer(PictureBox targetDisplay, string rtmpUrl, string streamKey, string audio)
+        public YouTubeStreamer(PictureBox targetDisplay, string rtmpUrl, string streamKey, string audio) //called from console.cs to start the streaming thread
         {
            
             _targetDisplay = targetDisplay;
@@ -76,28 +81,32 @@ namespace PowerSDR
         {
             if (_isStreaming) return;
 
-            // Ensure dimensions are fetched safely from the UI thread
-            _targetDisplay.Invoke((MethodInvoker)delegate {
+            if (console.setupForm.chkYouTubeFull.Checked == true)
+            {
+                _width = console.Width;
+                _height = console.Height;
+            }
+            else
+            {
                 _width = _targetDisplay.Width;
                 _height = _targetDisplay.Height;
-                // FFmpeg H.264 encoder requires dimensions to be even numbers
-                _width = _width & ~1;
-                _height = _height & ~1;
-            });
+            }
+
+            _width = _width & ~1;   // FFmpeg H.264 encoder requires dimensions to be even numbers
+            _height = _height & ~1;
 
             if (_width <= 0 || _height <= 0) return;
-
+          
             _isStreaming = true;
-            _streamThread = new Thread(StreamingLoop)
-            {
-                IsBackground = true,
-                Priority = ThreadPriority.AboveNormal
-            };
+            _streamThread = new Thread(StreamingLoop);
+            _streamThread.Name = "YouTube Streaming Thread";
+            _streamThread.IsBackground = true;  
+            _streamThread.Priority = ThreadPriority.AboveNormal;
             _streamThread.Start();
 
             Debug.WriteLine("YOUTUBE STARTED...........................");
 
-        }
+        } //Start()
 
         public void Stop()
         {
@@ -105,21 +114,25 @@ namespace PowerSDR
             if (_streamThread != null && _streamThread.IsAlive)
             {
                 _streamThread.Join(2000);
+                
             }
 
             Debug.WriteLine("YOUTUBE STOPPED...........................");
 
-        }
+        } //Stop()
 
+
+        //=================================================================
+        //Thread method for streaming loop
+        //=================================================================
         private void StreamingLoop()
         {
          
             try
             {
+                string fullRtmpUrl = $"{_rtmpUrl}/{_streamKey}"; // get from setup form
 
-                string fullRtmpUrl = $"{_rtmpUrl}/{_streamKey}";
-
-                string speakerLoopbackDevice = _YouTubeAudio; //.14
+                string speakerLoopbackDevice = _YouTubeAudio; 
 
               //  Debug.WriteLine("YOUTUBE..." + _YouTubeAudio);
 
@@ -134,8 +147,9 @@ namespace PowerSDR
                 //CABLE-B Output (VB-Audio Virtual Cable B)
                 //CABLE-D Output (VB-Audio Cable D)
                 //Stereo Mix (Realtek(R) Audio)
+
 /*
-                // mix 2 audio channels togther
+                // mix 2 audio channels togther (not used at this time)
                string ffmpegArgs =
                     $"-y -f rawvideo -vcodec rawvideo -pix_fmt bgr24 -s {_width}x{_height} -r {_fps} -i pipe:0 " +
                     $"-f dshow -i audio=\"{micDevice}\" " +
@@ -165,12 +179,12 @@ namespace PowerSDR
                     UseShellExecute = false,
                     CreateNoWindow = true,
                     RedirectStandardInput = true,
-                    RedirectStandardError = true // Crucial for diagnosing silent failures
+                    RedirectStandardError = true // diagnostics 
                 };
 
-                _ffmpegProcess = Process.Start(psi);
+                _ffmpegProcess = Process.Start(psi);  // startup ffmpeg.exe to stream to youtube using the above command line args
 
-                string ffmpegsize = "Kib";
+                string ffmpegsize = "Kib";  // used for bottom right corner of console to show streaming size, bit rate and fps
                 string ffmpegbit = "kbit";
                 string ffmpegfps = "fps";
 
@@ -197,39 +211,32 @@ namespace PowerSDR
                     }
                 }; //  _ffmpegProcess.ErrorDataReceived
 
-
                 _ffmpegProcess.BeginErrorReadLine();
-
              
                 Stream ffmpegStdin = _ffmpegProcess.StandardInput.BaseStream;
 
-                int frameIntervalMs = 1000 / _fps;
+              
                 byte[] videoBuffer = null;
 
-
-                //==================================================================================
+           
                 Debug.WriteLine("YOUTUBE STREAMING...........................");
 
-                // 3. Main Streaming Frame Loop
+
+                //-----------------------------------------------------------------
+                // main streaming loop part of thread
                 while (_isStreaming && !_ffmpegProcess.HasExited)
                 {
-                    long loopStart = DateTime.UtcNow.Ticks;
-
-                    // Capture frame from PictureBox safely via Invoke
-
+                  
                     Bitmap bmp = null;
 
                     if (console.setupForm.chkYouTubeFull.Checked == true)
                     {
-                        bmp = CaptureConsoleWindow();
+                        bmp = CaptureConsoleWindow(); //having issues with speed and performance when capturing the entire console window, so this is disabled for now.  It works, but it is slow and causes some stuttering in the video stream.  I will work on this later to see if I can improve the performance.  For now, just capture the picDisplay PictureBox instead.
                     }
                     else
                     {
-                      //  Debug.WriteLine("YOUTUBE pan");
-                        bmp = CapturePictureBox();
-                        
+                       bmp = CapturePictureBox();
                     }
-
 
                     if (bmp != null)
                     {
@@ -284,14 +291,10 @@ namespace PowerSDR
 
                     } //bmp != null
 
-                    // Maintain steady 30 FPS frame pacing
-                    long elapsedMs = (DateTime.UtcNow.Ticks - loopStart) / TimeSpan.TicksPerMillisecond;
-                    int sleepTime = frameIntervalMs - (int)elapsedMs;
-                    if (sleepTime > 0)
-                    {
-                        Thread.Sleep(sleepTime);
-                    }
-                }
+                    Thread.Sleep(10);  // .14 ke9ns added to reduce CPU usage and allow other threads to run.  This is a bit of a hack, but it works.  The frame pacing is handled by FFmpeg, so we don't need to worry about it here. 
+                 
+                } //while (_isStreaming && !_ffmpegProcess.HasExited)
+
                 Debug.WriteLine("YOUTUBE STREAMING done...........................");
               
             }
@@ -305,108 +308,77 @@ namespace PowerSDR
             }
         } //SteamingLoop
 
-      
+        //--------------------------------------------------------------
+        // Capture picDisplay PictureBox to Bitmap
         private Bitmap CapturePictureBox()
         {
+            _width = _targetDisplay.Width;
+            _height = _targetDisplay.Height;
+            _width = _width & ~1;                   // FFmpeg H.264 encoder requires dimensions to be even numbers
+            _height = _height & ~1;
+
             Bitmap bmp = null;
+            if (_width > 0 && _height > 0)
+            {
+                try
+                {
+                    if (_width > 0 && _height > 0)
+                    {
+                        bmp = new Bitmap(_width, _height);
 
-                        try
-                        {
-                            _targetDisplay.Invoke((MethodInvoker)delegate {
-                                if (_width > 0 && _height > 0)
-                                {
-                                   bmp = new Bitmap(_width, _height);
-
-                                    _targetDisplay.DrawToBitmap(bmp, new Rectangle(0, 0, _width, _height));
-                                }
-                            });
-                        }
-                        catch (Exception ex)
-                        {
-                            Debug.WriteLine("YOUTUBE CAPTURE EXCEPTION: " + ex.Message);
-                        }
-
-           
+                        _targetDisplay.DrawToBitmap(bmp, new Rectangle(0, 0, _width, _height));
+                    }
+                    
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine("YOUTUBE CAPTURE EXCEPTION: " + ex.Message);
+                }
+            } //if (_width > 0 && _height > 0)
 
             return bmp;
         } //CapturePictureBox()
 
+        //--------------------------------------------------------------
+        // Capture the entire console window to Bitmap
         private Bitmap CaptureConsoleWindow()
         {
             Bitmap bmp = null;
-            int w = console.Width;
-            int h = console.Height;
+          
+            _width = console.Width;
+            _height = console.Height;
+            _width = _width & ~1;   // FFmpeg H.264 encoder requires dimensions to be even numbers
+            _height = _height & ~1;
 
-            if (w > 0 && h > 0)
+            if (_width > 0 && _height > 0)
             {
-                bmp = new Bitmap(w, h);
+                bmp = new Bitmap(_width, _height);
                 using (Graphics g = Graphics.FromImage(bmp))
                 {
-                    IntPtr hdc = g.GetHdc();
+                    IntPtr hdcSrc = GetWindowDC(console.Handle);
+                    IntPtr hdcDest = g.GetHdc();
                     try
                     {
-                       
-                        PrintWindow(console.Handle, hdc, PW_RENDERFULLCONTENT); // Call native PrintWindow using the form's window handle
+                        BitBlt(hdcDest, 0, 0, _width, _height, hdcSrc, 0, 0, SRCCOPY);
                     }
                     finally
                     {
-                        g.ReleaseHdc(hdc);
+                        g.ReleaseHdc(hdcDest);
+                        ReleaseDC(console.Handle, hdcSrc);
                     }
-                }
-            }
+                } // using (Graphics g = Graphics.FromImage(bmp))
+
+            } //if (_width > 0 && _height > 0)
+
             return bmp;
-
-
-            /*
-                        Bitmap bmp = null;
-                        try
-                        {
-                                    // Assuming _consoleForm is a reference to your active console.cs instance
-                                    console.Invoke(new Action(() =>
-                                    {
-                                        int w = console.Width;
-                                        int h = console.Height;
-
-                                        bmp = new Bitmap(w, h);
-                                        console.DrawToBitmap(bmp, new Rectangle(0, 0, w, h));
-                                    }));
-                                }
-                        catch (Exception ex)
-                        {
-                            Debug.WriteLine("Console Capture Error: " + ex.Message);
-                        }
-                        return bmp;
-            */
-            /*
-                        Graphics myGraphics = this.CreateGraphics(); // graphics control for the full PSDR console
-                        Size s = this.Size;                          // current size of the PSDR console
-
-                        bitmap = new Bitmap(s.Width, s.Height, myGraphics);                                 // create bitmap the exact size of the full console screen
-                        Graphics memGraph = Graphics.FromImage(bitmap);                                     // make graphic the size of the PSDR console
-                        memGraph.CopyFromScreen(this.Location.X, this.Location.Y, 0, 0, s);                 // copy the full console screen to memGraph
-
-                        ImageCodecInfo jpgEncoder = GetEncoder(ImageFormat.Jpeg);                           // create JPEG format
-                        System.Drawing.Imaging.Encoder myEncoder = System.Drawing.Imaging.Encoder.Quality;  // create JPEG encoder
-                        EncoderParameters myEncoderParameters = new EncoderParameters(1);                   // parameters
-                        EncoderParameter myEncoderParameter = new EncoderParameter(myEncoder, 99L);         // 99% quality  (reduction to reduce byte size since this is the entire console screen)
-                        myEncoderParameters.Param[0] = myEncoderParameter;                                  // set paramaters
-
-                        bitmap.Save(file_name, jpgEncoder, myEncoderParameters);                            // save FILE as JPEG using Parameters
-
-                        */
+   
         }//CaptureConsoleWindow()
-
 
         private void Cleanup()
         {
             try
             {
-             //   if (_audioCapture != null)
-              //  {
-               //     _audioCapture.StopRecording();
-                //    _audioCapture.Dispose();
-                 //   _audioCapture = null;
-              //  }
+             
                 if (_ffmpegProcess != null && !_ffmpegProcess.HasExited)
                 {
                     _ffmpegProcess.StandardInput.Close();
@@ -416,7 +388,9 @@ namespace PowerSDR
                 }
             }
             catch { }
-        }
+        }//Cleanup()
+
+
     } // Youtubestream class
 
 

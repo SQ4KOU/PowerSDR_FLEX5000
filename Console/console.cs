@@ -92194,14 +92194,12 @@ namespace PowerSDR
         } //  public void Refresh_Tables()
 
 
-//=================================================================================================
-//.14
-
+        //=================================================================================================
+        //.14 YouTube Live Stream Start/Stop (see youtube.cs)
 
         private YouTubeStreamer _ytStreamer;
-
-        // When user clicks "Start Streaming" in your UI menu:
-        private void btnStartStream_Click(object sender, EventArgs e)
+     
+        private void btnStartStream_Click(object sender, EventArgs e)          
         {
             string rtmpUrl = "rtmp://a.rtmp.youtube.com/live2";
             string streamKey = setupForm.txtYouTubeKey.Text; //
@@ -92212,10 +92210,8 @@ namespace PowerSDR
 
              Debug.WriteLine("YOUTUBE START");
         }
-          
-
-        // When user clicks "Stop Streaming":
-        private void btnStopStream_Click(object sender, EventArgs e)
+   
+        private void btnStopStream_Click(object sender, EventArgs e)        
         {
             if (_ytStreamer != null)
             {
