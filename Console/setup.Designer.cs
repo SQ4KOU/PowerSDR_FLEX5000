@@ -216,8 +216,9 @@ namespace PowerSDR
             this.chkSpaceNavControlVFOs = new System.Windows.Forms.CheckBoxTS();
             this.tpUserInterface = new System.Windows.Forms.TabPage();
             this.groupBox3 = new System.Windows.Forms.GroupBox();
-            this.labelTS80 = new System.Windows.Forms.LabelTS();
             this.comboAudioYouTube = new System.Windows.Forms.ComboBoxTS();
+            this.chkYouTubePublic = new System.Windows.Forms.CheckBoxTS();
+            this.labelTS80 = new System.Windows.Forms.LabelTS();
             this.chkYouTube = new System.Windows.Forms.CheckBoxTS();
             this.chkYouTubeFull = new System.Windows.Forms.CheckBoxTS();
             this.txtYouTubeKey = new System.Windows.Forms.TextBoxTS();
@@ -4138,60 +4139,71 @@ namespace PowerSDR
             // 
             // groupBox3
             // 
-            this.groupBox3.Controls.Add(this.labelTS80);
             this.groupBox3.Controls.Add(this.comboAudioYouTube);
+            this.groupBox3.Controls.Add(this.chkYouTubePublic);
+            this.groupBox3.Controls.Add(this.labelTS80);
             this.groupBox3.Controls.Add(this.chkYouTube);
             this.groupBox3.Controls.Add(this.chkYouTubeFull);
             this.groupBox3.Controls.Add(this.txtYouTubeKey);
             this.groupBox3.Controls.Add(this.labelTS85);
-            this.groupBox3.Location = new System.Drawing.Point(33, 129);
+            this.groupBox3.Location = new System.Drawing.Point(33, 123);
             this.groupBox3.Name = "groupBox3";
-            this.groupBox3.Size = new System.Drawing.Size(309, 80);
+            this.groupBox3.Size = new System.Drawing.Size(309, 97);
             this.groupBox3.TabIndex = 89;
             this.groupBox3.TabStop = false;
             this.groupBox3.Text = "YouTube Live Stream";
-            // 
-            // labelTS80
-            // 
-            this.labelTS80.Image = null;
-            this.labelTS80.Location = new System.Drawing.Point(17, 56);
-            this.labelTS80.Name = "labelTS80";
-            this.labelTS80.Size = new System.Drawing.Size(94, 16);
-            this.labelTS80.TabIndex = 83;
-            this.labelTS80.Text = "Stream Audio:";
             // 
             // comboAudioYouTube
             // 
             this.comboAudioYouTube.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.comboAudioYouTube.DropDownWidth = 160;
             this.comboAudioYouTube.ItemHeight = 13;
-            this.comboAudioYouTube.Location = new System.Drawing.Point(123, 53);
+            this.comboAudioYouTube.Location = new System.Drawing.Point(80, 54);
             this.comboAudioYouTube.Name = "comboAudioYouTube";
-            this.comboAudioYouTube.Size = new System.Drawing.Size(160, 21);
+            this.comboAudioYouTube.Size = new System.Drawing.Size(143, 21);
             this.comboAudioYouTube.TabIndex = 29;
             this.toolTip1.SetToolTip(this.comboAudioYouTube, resources.GetString("comboAudioYouTube.ToolTip"));
+            // 
+            // chkYouTubePublic
+            // 
+            this.chkYouTubePublic.Image = null;
+            this.chkYouTubePublic.Location = new System.Drawing.Point(241, 50);
+            this.chkYouTubePublic.Name = "chkYouTubePublic";
+            this.chkYouTubePublic.Size = new System.Drawing.Size(65, 28);
+            this.chkYouTubePublic.TabIndex = 84;
+            this.chkYouTubePublic.Text = "Public";
+            this.toolTip1.SetToolTip(this.chkYouTubePublic, resources.GetString("chkYouTubePublic.ToolTip"));
+            // 
+            // labelTS80
+            // 
+            this.labelTS80.Image = null;
+            this.labelTS80.Location = new System.Drawing.Point(6, 56);
+            this.labelTS80.Name = "labelTS80";
+            this.labelTS80.Size = new System.Drawing.Size(94, 16);
+            this.labelTS80.TabIndex = 83;
+            this.labelTS80.Text = "Stream Audio:";
             // 
             // chkYouTube
             // 
             this.chkYouTube.Image = null;
-            this.chkYouTube.Location = new System.Drawing.Point(233, 16);
+            this.chkYouTube.Location = new System.Drawing.Point(240, 19);
             this.chkYouTube.Name = "chkYouTube";
-            this.chkYouTube.Size = new System.Drawing.Size(65, 31);
+            this.chkYouTube.Size = new System.Drawing.Size(54, 28);
             this.chkYouTube.TabIndex = 15;
-            this.chkYouTube.Text = "Enabled";
-            this.toolTip1.SetToolTip(this.chkYouTube, "Check to make Camera button be the YouTube Stream On/Off button\r\nWhen unchecked, " +
-        "the Camera button is a screen shot instead.\r\n");
+            this.chkYouTube.Text = "Allow";
+            this.toolTip1.SetToolTip(this.chkYouTube, "Check this to make Camera button be the YouTube Stream On/Off button\r\nWhen unchec" +
+        "ked, the Camera button is a screen shots only (original use)\r\n\r\n");
             this.chkYouTube.CheckedChanged += new System.EventHandler(this.chkYouTube_CheckedChanged);
             // 
             // chkYouTubeFull
             // 
             this.chkYouTubeFull.Image = null;
-            this.chkYouTubeFull.Location = new System.Drawing.Point(175, 16);
+            this.chkYouTubeFull.Location = new System.Drawing.Point(173, 18);
             this.chkYouTubeFull.Name = "chkYouTubeFull";
             this.chkYouTubeFull.Size = new System.Drawing.Size(65, 31);
             this.chkYouTubeFull.TabIndex = 14;
-            this.chkYouTubeFull.Text = "Full Screen";
-            this.toolTip1.SetToolTip(this.chkYouTubeFull, "Normal Stream is just the Panadapter\r\nCheck for full Console screen stream. \r\n");
+            this.chkYouTubeFull.Text = "Console";
+            this.toolTip1.SetToolTip(this.chkYouTubeFull, "Check to stream your entire Console\r\nUnchecked streams just the Panadapter.\r\n");
             this.chkYouTubeFull.CheckedChanged += new System.EventHandler(this.chkYouTubeFull_CheckedChanged);
             // 
             // txtYouTubeKey
@@ -4202,7 +4214,7 @@ namespace PowerSDR
             this.txtYouTubeKey.Size = new System.Drawing.Size(137, 20);
             this.txtYouTubeKey.TabIndex = 10;
             this.txtYouTubeKey.Text = "xxxx-xxxx-xxxx-xxxx-xxxx";
-            this.toolTip1.SetToolTip(this.txtYouTubeKey, "This is your YouTube Live Stream Key");
+            this.toolTip1.SetToolTip(this.txtYouTubeKey, resources.GetString("txtYouTubeKey.ToolTip"));
             this.txtYouTubeKey.UseSystemPasswordChar = true;
             // 
             // labelTS85
@@ -4245,9 +4257,9 @@ namespace PowerSDR
             this.groupBox2.Controls.Add(this.labelTS16);
             this.groupBox2.Controls.Add(this.udHttpPort);
             this.groupBox2.Controls.Add(this.chkBoxHTTP);
-            this.groupBox2.Location = new System.Drawing.Point(33, 215);
+            this.groupBox2.Location = new System.Drawing.Point(33, 225);
             this.groupBox2.Name = "groupBox2";
-            this.groupBox2.Size = new System.Drawing.Size(521, 100);
+            this.groupBox2.Size = new System.Drawing.Size(521, 90);
             this.groupBox2.TabIndex = 54;
             this.groupBox2.TabStop = false;
             this.groupBox2.Text = "HttpServer";
@@ -4255,9 +4267,9 @@ namespace PowerSDR
             // checkBoxRX2
             // 
             this.checkBoxRX2.Image = null;
-            this.checkBoxRX2.Location = new System.Drawing.Point(464, 74);
+            this.checkBoxRX2.Location = new System.Drawing.Point(465, 60);
             this.checkBoxRX2.Name = "checkBoxRX2";
-            this.checkBoxRX2.Size = new System.Drawing.Size(56, 24);
+            this.checkBoxRX2.Size = new System.Drawing.Size(50, 24);
             this.checkBoxRX2.TabIndex = 88;
             this.checkBoxRX2.Text = "RX2";
             this.toolTip1.SetToolTip(this.checkBoxRX2, "N1MM Spectrum data transmit\r\n\r\nRX2 sent to spectrum is checked, otherwise RX1\r\n\r\n" +
@@ -4268,7 +4280,7 @@ namespace PowerSDR
             // labelTS39
             // 
             this.labelTS39.Image = null;
-            this.labelTS39.Location = new System.Drawing.Point(264, 61);
+            this.labelTS39.Location = new System.Drawing.Point(272, 52);
             this.labelTS39.Name = "labelTS39";
             this.labelTS39.Size = new System.Drawing.Size(34, 16);
             this.labelTS39.TabIndex = 87;
@@ -4281,7 +4293,7 @@ namespace PowerSDR
             0,
             0,
             65536});
-            this.udN1MMfps.Location = new System.Drawing.Point(267, 76);
+            this.udN1MMfps.Location = new System.Drawing.Point(274, 67);
             this.udN1MMfps.Maximum = new decimal(new int[] {
             7,
             0,
@@ -4306,7 +4318,7 @@ namespace PowerSDR
             // labelTS29
             // 
             this.labelTS29.Image = null;
-            this.labelTS29.Location = new System.Drawing.Point(332, 60);
+            this.labelTS29.Location = new System.Drawing.Point(339, 53);
             this.labelTS29.Name = "labelTS29";
             this.labelTS29.Size = new System.Drawing.Size(34, 16);
             this.labelTS29.TabIndex = 85;
@@ -4320,7 +4332,7 @@ namespace PowerSDR
             0,
             0,
             131072});
-            this.udN1MMscale.Location = new System.Drawing.Point(332, 76);
+            this.udN1MMscale.Location = new System.Drawing.Point(330, 67);
             this.udN1MMscale.Maximum = new decimal(new int[] {
             1,
             0,
@@ -4344,7 +4356,7 @@ namespace PowerSDR
             // labelTS27
             // 
             this.labelTS27.Image = null;
-            this.labelTS27.Location = new System.Drawing.Point(394, 60);
+            this.labelTS27.Location = new System.Drawing.Point(401, 53);
             this.labelTS27.Name = "labelTS27";
             this.labelTS27.Size = new System.Drawing.Size(34, 16);
             this.labelTS27.TabIndex = 84;
@@ -4357,7 +4369,7 @@ namespace PowerSDR
             0,
             0,
             65536});
-            this.udN1MMport.Location = new System.Drawing.Point(397, 77);
+            this.udN1MMport.Location = new System.Drawing.Point(397, 67);
             this.udN1MMport.Maximum = new decimal(new int[] {
             20000,
             0,
@@ -4381,7 +4393,7 @@ namespace PowerSDR
             // checkBoxN1MM
             // 
             this.checkBoxN1MM.Image = null;
-            this.checkBoxN1MM.Location = new System.Drawing.Point(149, 72);
+            this.checkBoxN1MM.Location = new System.Drawing.Point(149, 53);
             this.checkBoxN1MM.Name = "checkBoxN1MM";
             this.checkBoxN1MM.Size = new System.Drawing.Size(112, 24);
             this.checkBoxN1MM.TabIndex = 82;
@@ -4393,7 +4405,7 @@ namespace PowerSDR
             // checkBoxHTTP1
             // 
             this.checkBoxHTTP1.Image = null;
-            this.checkBoxHTTP1.Location = new System.Drawing.Point(27, 38);
+            this.checkBoxHTTP1.Location = new System.Drawing.Point(28, 35);
             this.checkBoxHTTP1.Name = "checkBoxHTTP1";
             this.checkBoxHTTP1.Size = new System.Drawing.Size(90, 24);
             this.checkBoxHTTP1.TabIndex = 81;
@@ -4404,7 +4416,7 @@ namespace PowerSDR
             // chkBoxHttp2
             // 
             this.chkBoxHttp2.Image = null;
-            this.chkBoxHttp2.Location = new System.Drawing.Point(6, 68);
+            this.chkBoxHttp2.Location = new System.Drawing.Point(22, 65);
             this.chkBoxHttp2.Name = "chkBoxHttp2";
             this.chkBoxHttp2.Size = new System.Drawing.Size(105, 22);
             this.chkBoxHttp2.TabIndex = 14;
@@ -4416,7 +4428,7 @@ namespace PowerSDR
             // labelTS19
             // 
             this.labelTS19.Image = null;
-            this.labelTS19.Location = new System.Drawing.Point(192, 19);
+            this.labelTS19.Location = new System.Drawing.Point(199, 12);
             this.labelTS19.Name = "labelTS19";
             this.labelTS19.Size = new System.Drawing.Size(103, 16);
             this.labelTS19.TabIndex = 13;
@@ -4429,7 +4441,7 @@ namespace PowerSDR
             0,
             0,
             65536});
-            this.udHttpRefresh.Location = new System.Drawing.Point(195, 37);
+            this.udHttpRefresh.Location = new System.Drawing.Point(202, 30);
             this.udHttpRefresh.Maximum = new decimal(new int[] {
             10000,
             0,
@@ -4451,7 +4463,7 @@ namespace PowerSDR
             // 
             // txtHttpPass
             // 
-            this.txtHttpPass.Location = new System.Drawing.Point(396, 35);
+            this.txtHttpPass.Location = new System.Drawing.Point(403, 28);
             this.txtHttpPass.MaxLength = 50;
             this.txtHttpPass.Name = "txtHttpPass";
             this.txtHttpPass.Size = new System.Drawing.Size(90, 20);
@@ -4463,7 +4475,7 @@ namespace PowerSDR
             // 
             // txtHttpUser
             // 
-            this.txtHttpUser.Location = new System.Drawing.Point(298, 36);
+            this.txtHttpUser.Location = new System.Drawing.Point(305, 29);
             this.txtHttpUser.MaxLength = 50;
             this.txtHttpUser.Name = "txtHttpUser";
             this.txtHttpUser.Size = new System.Drawing.Size(90, 20);
@@ -4476,7 +4488,7 @@ namespace PowerSDR
             // labelTS18
             // 
             this.labelTS18.Image = null;
-            this.labelTS18.Location = new System.Drawing.Point(396, 19);
+            this.labelTS18.Location = new System.Drawing.Point(403, 12);
             this.labelTS18.Name = "labelTS18";
             this.labelTS18.Size = new System.Drawing.Size(73, 16);
             this.labelTS18.TabIndex = 9;
@@ -4485,7 +4497,7 @@ namespace PowerSDR
             // labelTS17
             // 
             this.labelTS17.Image = null;
-            this.labelTS17.Location = new System.Drawing.Point(301, 19);
+            this.labelTS17.Location = new System.Drawing.Point(308, 12);
             this.labelTS17.Name = "labelTS17";
             this.labelTS17.Size = new System.Drawing.Size(73, 16);
             this.labelTS17.TabIndex = 8;
@@ -4494,7 +4506,7 @@ namespace PowerSDR
             // labelTS16
             // 
             this.labelTS16.Image = null;
-            this.labelTS16.Location = new System.Drawing.Point(120, 19);
+            this.labelTS16.Location = new System.Drawing.Point(127, 12);
             this.labelTS16.Name = "labelTS16";
             this.labelTS16.Size = new System.Drawing.Size(34, 16);
             this.labelTS16.TabIndex = 7;
@@ -4507,7 +4519,7 @@ namespace PowerSDR
             0,
             0,
             65536});
-            this.udHttpPort.Location = new System.Drawing.Point(123, 35);
+            this.udHttpPort.Location = new System.Drawing.Point(130, 28);
             this.udHttpPort.Maximum = new decimal(new int[] {
             10000,
             0,
@@ -4532,7 +4544,7 @@ namespace PowerSDR
             // chkBoxHTTP
             // 
             this.chkBoxHTTP.Image = null;
-            this.chkBoxHTTP.Location = new System.Drawing.Point(6, 14);
+            this.chkBoxHTTP.Location = new System.Drawing.Point(13, 15);
             this.chkBoxHTTP.Name = "chkBoxHTTP";
             this.chkBoxHTTP.Size = new System.Drawing.Size(105, 24);
             this.chkBoxHTTP.TabIndex = 7;
@@ -21001,6 +21013,7 @@ namespace PowerSDR
         public System.Windows.Forms.CheckBoxTS chkYouTube;
         private System.Windows.Forms.LabelTS labelTS80;
         public System.Windows.Forms.ComboBoxTS comboAudioYouTube;
+        public System.Windows.Forms.CheckBoxTS chkYouTubePublic;
     } // class setup
 
 
