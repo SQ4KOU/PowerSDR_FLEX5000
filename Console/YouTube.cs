@@ -1,7 +1,38 @@
 //=================================================================
 // YouTube.cs
-// Written by KE9nS
+// Written by KE9NS and the help of copilot and Gemini 
 // for Live Streaming PowerSDR to YouTube
+// one click live streaming from PowerSDR to YouTube Studio OR
+// optional OAuth 2.0 authentication to allow PowerSDR to create and bind a new broadcast to your existing YouTube stream key
+// this allows you to live stream without having to manually click "Go Live" in YouTube Studio.  PowerSDR will do it for you automatically when you start streaming, and will end the broadcast when you stop streaming.
+// requires client_secrets.json file from Google Cloud Console for OAuth 2.0 authentication
+// go to console.cloud.google.com and create a new project, then enable the YouTube Data API v3, then create OAuth 2.0 credentials for a desktop app, then download the JSON file and save it as client_secrets.json in the same folder as PowerSDR.exe
+// console.cloud.google.com -> APIs & Services -> Library -> YouTube Data API v3 -> Enable
+// console.cloud.google.com -> APIs & Services -> OAuth consent screen -> fill in required fields and save
+// console.cloud.google.com -> APIs & Services -> Credentials -> Create Credentials -> OAuth client ID -> Desktop App -> Create
+// then click Download JSON and save it as client_secrets.json in the same folder as PowerSDR.exe
+// also requires ffmpeg.exe in the same folder as PowerSDR.exe
+// also requires NAudio.dll in the same folder as PowerSDR.exe
+// also requires Google.Apis.YouTube.v3.dll in the same folder as PowerSDR.exe
+// also requires Google.Apis.Auth.dll in the same folder as PowerSDR.exe
+// also requires Google.Apis.Core.dll in the same folder as PowerSDR.exe
+// also requires Google.Apis.dll in the same folder as PowerSDR.exe
+// also requires Google.Apis.Util.dll in the same folder as PowerSDR.exe
+// also requires Google.Apis.OAuth2.dll in the same folder as PowerSDR.exe
+// also requires Google.Apis.PlatformServices.dll in the same folder as PowerSDR.exe
+// also requires Google.Apis.Auth.PlatformServices.dll in the same folder as PowerSDR.exe
+// also requires Google.Apis.Auth.PlatformServices.dll in the same folder as PowerSDR.exe
+// use NuGet to install the following packages:
+// Google.Apis.YouTube.v3
+// Google.Apis.Auth
+// Google.Apis.Core
+// Google.Apis
+// Google.Apis.Util
+// Google.Apis.OAuth2
+// Google.Apis.PlatformServices
+// Google.Apis.Auth.PlatformServices
+// NAudio
+//
 //=================================================================
 // PowerSDR is a C# implementation of a Software Defined Radio.
 // 
