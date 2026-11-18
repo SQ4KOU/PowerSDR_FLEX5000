@@ -6,11 +6,13 @@
 // optional OAuth 2.0 authentication to allow PowerSDR to create and bind a new broadcast to your existing YouTube stream key
 // this allows you to live stream without having to manually click "Go Live" in YouTube Studio.  PowerSDR will do it for you automatically when you start streaming, and will end the broadcast when you stop streaming.
 // requires client_secrets.json file from Google Cloud Console for OAuth 2.0 authentication
+//
 // go to console.cloud.google.com and create a new project, then enable the YouTube Data API v3, then create OAuth 2.0 credentials for a desktop app, then download the JSON file and save it as client_secrets.json in the same folder as PowerSDR.exe
 // console.cloud.google.com -> APIs & Services -> Library -> YouTube Data API v3 -> Enable
 // console.cloud.google.com -> APIs & Services -> OAuth consent screen -> fill in required fields and save
 // console.cloud.google.com -> APIs & Services -> Credentials -> Create Credentials -> OAuth client ID -> Desktop App -> Create
 // then click Download JSON and save it as client_secrets.json in the same folder as PowerSDR.exe
+//
 // also requires ffmpeg.exe in the same folder as PowerSDR.exe
 // also requires NAudio.dll in the same folder as PowerSDR.exe
 // also requires Google.Apis.YouTube.v3.dll in the same folder as PowerSDR.exe
@@ -96,7 +98,7 @@ namespace PowerSDR
 
         private Process _ffmpegProcess;
     
-        private int _fps = 30;  // YouTube recommends 30 fps for live streaming
+        private int _fps = 30;                  // YouTube recommends 30 fps for live streaming
         private int _width = 0;
         private int _height = 0;
 
@@ -108,9 +110,6 @@ namespace PowerSDR
         private string _activeBroadcastId;
         private string _boundStreamId;
         private volatile bool _stopRequested = false;
-
-
-
 
 
         //=================================================================
@@ -125,13 +124,14 @@ namespace PowerSDR
 
         string YouTubeType = "Public";  //ke9ns added to allow user to select public or unlisted for YouTube streaming
 
-        bool oauth = false;
+        bool oauth = false;     //ke9ns added to select either manual streaming false, or OAuth 2.0 streaming true.  If false, user must manually click "Go Live" in YouTube Studio.  If true, PowerSDR will automatically create and bind a new broadcast to your existing stream key and start streaming when you click Start in PowerSDR.
+
         //=================================================================
         public void Start()
         {
             if (_isStreaming) return;
 
-            if (console.setupForm.chkYouTubeFull.Checked == true) 
+            if (console.setupForm.chkYouTubePublic.Checked == true) 
             {
                 YouTubeType = "public";  //ke9ns added to allow user to select public or unlisted for YouTube streaming
             }
@@ -152,7 +152,7 @@ namespace PowerSDR
                 _height = _targetDisplay.Height;
             }
 
-            _width = _width & ~1;   // FFmpeg H.264 encoder requires dimensions to be even numbers
+            _width = _width & ~1;                           // FFmpeg H.264 encoder requires dimensions to be even numbers
             _height = _height & ~1;
 
             if (_width <= 0 || _height <= 0) return;
@@ -223,23 +223,7 @@ namespace PowerSDR
                     );
                 }
 
-                string speakerLoopbackDevice = _YouTubeAudio;
-
-                //  Debug.WriteLine("YOUTUBE..." + _YouTubeAudio);
-
-                //    string micDevice = "Microphone (Logi USB Headset)";                    
-                //   string speakerLoopbackDevice = "CABLE Output (VB-Audio Virtual Cable)"; 
-
-                //CABLE Output (VB-Audio Virtual Cable)
-                //Microphone (Logi USB Headset)
-                //CABLE Output (VB-Audio Virtual Cable)
-                //CABLE-A Output (VB-Audio Virtual Cable A)
-                //CABLE-C Output (VB-Audio Cable C)
-                //CABLE-B Output (VB-Audio Virtual Cable B)
-                //CABLE-D Output (VB-Audio Cable D)
-                //Stereo Mix (Realtek(R) Audio)
-
-               
+                string speakerLoopbackDevice = _YouTubeAudio;       // setup->general->User Interface->YouTube Audio Device combobox value, e.g. "Speakers (Realtek(R) Audio)" or "CABLE Input (VB-Audio Virtual Cable)"
 
                 string ffmpegArgs =
                         $"-y -use_wallclock_as_timestamps 1 -f rawvideo -vcodec rawvideo -pix_fmt bgr24 -s {_width}x{_height} -r {_fps} -i pipe:0 " +
@@ -250,7 +234,7 @@ namespace PowerSDR
                         $"-f flv \"{fullRtmpUrl}\"";
 
                
-                ProcessStartInfo psi = new ProcessStartInfo
+                ProcessStartInfo psi = new ProcessStartInfo     // setup ffmpeg.exe process to stream to youtube
                 {
                     FileName = "ffmpeg.exe",
                     Arguments = ffmpegArgs,
@@ -260,9 +244,9 @@ namespace PowerSDR
                     RedirectStandardError = true // diagnostics 
                 };
 
-                _ffmpegProcess = Process.Start(psi);  // startup ffmpeg.exe to stream to youtube using the above command line args
+                _ffmpegProcess = Process.Start(psi);            // startup ffmpeg.exe to stream to youtube using the above command line args
 
-                string ffmpegsize = "Kib";  // used for bottom right corner of console to show streaming size, bit rate and fps
+                string ffmpegsize = "Kib";                      // used for bottom right corner of console to show streaming size, bit rate and fps
                 string ffmpegbit = "kbit";
                 string ffmpegfps = "fps";
 
@@ -305,13 +289,19 @@ namespace PowerSDR
                 //----------------------------------------------------------------------------------------
                 //----------------------------------------------------------------------------------------
                 // main streaming loop part of thread
+                //----------------------------------------------------------------------------------------
+                //----------------------------------------------------------------------------------------
                 while (_isStreaming && !_ffmpegProcess.HasExited)
                 {
                     long nowMs = frameTimer.ElapsedMilliseconds;
-                    if (nowMs < nextFrameTimeMs)
+
+                    // this is to sync up the audio and video streams to avoid drift.  If we are ahead of schedule, sleep until it's time for the next frame.  If we are behind schedule, skip frames to catch up.
+                    if (nowMs < nextFrameTimeMs)                            // if we are ahead of schedule, sleep until it's time for the next frame
                     {
-                        int sleepMs = (int)(nextFrameTimeMs - nowMs);
-                        if (sleepMs > 1) Thread.Sleep(sleepMs - 1);
+                        int sleepMs = (int)(nextFrameTimeMs - nowMs);       // calculate how long to sleep to maintain target frame rate
+
+                        if (sleepMs > 1) Thread.Sleep(sleepMs - 1);         // sleep a bit less than the target frame time to avoid overshooting
+
                         continue;
                     }
                     nextFrameTimeMs += (long)targetFrameMs;
@@ -321,11 +311,11 @@ namespace PowerSDR
 
                     if (console.setupForm.chkYouTubeFull.Checked == true)
                     {
-                        bmp = CaptureConsoleWindow(); //having issues with speed and performance when capturing the entire console window, so this is disabled for now.  It works, but it is slow and causes some stuttering in the video stream.  I will work on this later to see if I can improve the performance.  For now, just capture the picDisplay PictureBox instead.
+                        bmp = CaptureConsoleWindow(); // capture the entire console window to bitmap for streaming
                     }
                     else
                     {
-                       bmp = CapturePictureBox();
+                       bmp = CapturePictureBox(); // capture the target picDisplay to bitmap for streaming
                     }
 
                     if (bmp != null)
@@ -337,10 +327,7 @@ namespace PowerSDR
                             videoBuffer = new byte[byteCount];
                         }
 
-                        BitmapData bmpData = bmp.LockBits(
-                          new Rectangle(0, 0, _width, _height),
-                          ImageLockMode.ReadOnly,
-                          PixelFormat.Format24bppRgb);
+                        BitmapData bmpData = bmp.LockBits(new Rectangle(0, 0, _width, _height),ImageLockMode.ReadOnly,PixelFormat.Format24bppRgb);
 
                         int bytesPerPixel = 3;
                         int targetStride = _width * bytesPerPixel;
@@ -371,13 +358,11 @@ namespace PowerSDR
                             }
                         }
 
-                        bmp.UnlockBits(bmpData);
+                        bmp.UnlockBits(bmpData); // Unlock the bitmap data after copying to videoBuffer   
                         bmp.Dispose();
-
-                        // Push corrected bytes to FFmpeg stdin
-                        ffmpegStdin.Write(videoBuffer, 0, videoBuffer.Length);
-                        ffmpegStdin.Flush();
-
+                      
+                        ffmpegStdin.Write(videoBuffer, 0, videoBuffer.Length);  // Push corrected bytes to FFmpeg stdin
+                        ffmpegStdin.Flush();                                    // Flush to ensure timely delivery to FFmpeg
 
                     } //bmp != null
 
@@ -451,18 +436,18 @@ namespace PowerSDR
             if (_width > 0 && _height > 0)
             {
                 bmp = new Bitmap(_width, _height);
-                using (Graphics g = Graphics.FromImage(bmp))
+                using (Graphics g = Graphics.FromImage(bmp)) // create a graphics object from the bitmap to draw the console window onto it
                 {
-                    IntPtr hdcSrc = GetWindowDC(console.Handle);
-                    IntPtr hdcDest = g.GetHdc();
+                    IntPtr hdcSrc = GetWindowDC(console.Handle); // get the device context of the console window
+                    IntPtr hdcDest = g.GetHdc();    // get the device context of the bitmap
                     try
                     {
-                        BitBlt(hdcDest, 0, 0, _width, _height, hdcSrc, 0, 0, SRCCOPY);
+                        BitBlt(hdcDest, 0, 0, _width, _height, hdcSrc, 0, 0, SRCCOPY); // bitblt the console window onto the bitmap
                     }
                     finally
                     {
                         g.ReleaseHdc(hdcDest);
-                        ReleaseDC(console.Handle, hdcSrc);
+                        ReleaseDC(console.Handle, hdcSrc); //
                     }
                 } // using (Graphics g = Graphics.FromImage(bmp))
 
@@ -472,7 +457,7 @@ namespace PowerSDR
    
         }//CaptureConsoleWindow()
 
-        private void Cleanup()
+        private void Cleanup() // called when stopping streaming to clean up FFmpeg process
         {
             try
             {
@@ -540,17 +525,16 @@ namespace PowerSDR
                 ApplicationName = "PowerSDR-ke9ns"
             });
 
-            // Find the YouTube LiveStream resource that matches your setup form's _streamKey
-            var streamRequest = _youtubeService.LiveStreams.List("id,cdn,status");
+            var streamRequest = _youtubeService.LiveStreams.List("id,cdn,status");  // Find the YouTube LiveStream resource that matches your _streamKey (entered in setup->general->user interface->YouTube Stream Key)
             streamRequest.Mine = true;
             var streamResponse = streamRequest.Execute();
 
             _boundStreamId = null;
             if (streamResponse.Items != null)
             {
-                foreach (var item in streamResponse.Items)
+                foreach (var item in streamResponse.Items) // for loop through the user's live streams to find the one that matches the provided stream key
                 {
-                    if (item.Cdn?.IngestionInfo?.StreamName == streamKey)
+                    if (item.Cdn?.IngestionInfo?.StreamName == streamKey) // Check if the stream name matches the provided stream key
                     {
                         _boundStreamId = item.Id;
                         break;
@@ -563,8 +547,8 @@ namespace PowerSDR
                 throw new Exception("The Stream Key entered in PowerSDR Setup was not found on this YouTube account.");
             }
 
-            // Create the broadcast and bind it to your existing _streamKey
-            var broadcast = new LiveBroadcast
+           
+            var broadcast = new LiveBroadcast    // Create the broadcast and bind it to your existing _streamKey
             {
                 Snippet = new LiveBroadcastSnippet
                 {
