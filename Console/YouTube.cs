@@ -74,7 +74,7 @@ using Google.Apis.YouTube.v3.Data;
 
 namespace PowerSDR
 {
-    public class YouTubeStreamer
+    public class YouTubeStreamer    //.14 //.15
     {
         // used for capturing the entire console window to a bitmap for streaming
         [DllImport("user32.dll")]
@@ -106,7 +106,7 @@ namespace PowerSDR
         public Setup setupForm;                 // ke9ns communications with setupform  (i.e. allow combometertype.text update from inside console.cs) 
 
 
-        private YouTubeService _youtubeService;     //.14c
+        private YouTubeService _youtubeService;     //.15
         private string _activeBroadcastId;
         private string _boundStreamId;
         private volatile bool _stopRequested = false;
@@ -157,22 +157,12 @@ namespace PowerSDR
 
             if (_width <= 0 || _height <= 0) return;
 
-            string secretsPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "client_secrets.json");
+          
+            console.setupForm.IsOAuthEnabled();   //.15 check for client_secrets.json file and set OAuthEnabled true or false
+            oauth = console.setupForm.OAuthEnabled;  //.15 get the value from setup form
 
-            Debug.WriteLine("YOUTUBE client_secrets.json path: " + secretsPath);
+            Debug.WriteLine("YOUTUBE OAuthEnabled: " + oauth);
 
-            if (!File.Exists(secretsPath))
-            {
-                // Fallback Mode: No credentials file found. 
-                // Expects user to manually click "Go Live" at studio.youtube.com
-                Debug.WriteLine("YOUTUBE client_secrets.json not found. Falling back to manual Studio streaming mode.");
-                oauth = false;
-            }
-            else
-            {
-                oauth = true;
-                Debug.WriteLine("YOUTUBE client_secrets.json found. Live streaming enabled.");
-            }
 
             _isStreaming = true;
             _streamThread = new Thread(StreamingLoop);

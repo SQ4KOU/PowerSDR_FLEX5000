@@ -28,6 +28,7 @@
 
 //using Flex.Control;     //.250  ke9ns add
 //using FlexCW; // .250          //
+//using EnvDTE; // ke9ns removed //.15  not sure why its here
 using System;
 using System.Collections;
 using System.ComponentModel;
@@ -504,6 +505,10 @@ namespace PowerSDR
 
         private void InitGeneralTab() // called 1 time at very start before setupForm is not considered null
         {
+
+            IsOAuthEnabled();   //.15 check for client_secrets.json file and set OAuthEnabled true or false
+
+
             if (console.Hdw != null) comboGeneralLPTAddr.Text = Convert.ToString(console.Hdw.LPTAddr, 16);
             udGeneralLPTDelay.Value = console.LatchDelay;
 
@@ -17167,14 +17172,57 @@ namespace PowerSDR
             Display.Data3DScale = tb3DScale.Value; //.13a
         }
 
+       
+
         private void chkYouTube_CheckedChanged(object sender, EventArgs e)
         {
-
+            IsOAuthEnabled();   // check for client_secrets.json file and set OAuthEnabled true or false
         }
+
+        string secretsPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "client_secrets.json"); //.15
+        public bool OAuthEnabled = false; //.15
+
+        public void IsOAuthEnabled() //.15
+        {
+
+            if (!File.Exists(secretsPath))
+            {
+                // Fallback Mode: No credentials file found. 
+                // Expects user to manually click "Go Live" at studio.youtube.com
+                Debug.WriteLine("YOUTUBE client_secrets.json not found. Falling back to manual Studio streaming mode.");
+                OAuthEnabled = false;
+                OAuth.Checked = false;
+            }
+            else
+            {
+                // OAuth Mode: client_secrets.json found. 
+                // Expects user to authorize the app to stream to their channel.
+                Debug.WriteLine("YOUTUBE client_secrets.json found. Using OAuth streaming mode.");
+                OAuthEnabled = true;
+                OAuth.Checked = true;
+            }
+
+            
+        } // IsOAuthEnabled
 
         private void chkYouTubeFull_CheckedChanged(object sender, EventArgs e)
         {
+            IsOAuthEnabled();   //.15 check for client_secrets.json file and set OAuthEnabled true or false
+        }
 
+        private void chkYouTubePublic_CheckedChanged(object sender, EventArgs e)
+        {
+            IsOAuthEnabled();   //.15 check for client_secrets.json file and set OAuthEnabled true or false
+        }
+
+        private void txtYouTubeKey_TextChanged(object sender, EventArgs e)
+        {
+            IsOAuthEnabled();   //.15 check for client_secrets.json file and set OAuthEnabled true or false
+        }
+
+        private void OAuth_Click(object sender, EventArgs e)
+        {
+            IsOAuthEnabled();   //.15 check for client_secrets.json file and set OAuthEnabled true or false
         }
 
         //setupForm.gridBoxTS.CheckedChanged -= setupForm.gridBoxTS_CheckedChanged;  // ke9ns turn off checkchanged temporarily   

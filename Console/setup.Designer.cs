@@ -216,6 +216,7 @@ namespace PowerSDR
             this.chkSpaceNavControlVFOs = new System.Windows.Forms.CheckBoxTS();
             this.tpUserInterface = new System.Windows.Forms.TabPage();
             this.groupBox3 = new System.Windows.Forms.GroupBox();
+            this.OAuth = new System.Windows.Forms.RadioButton();
             this.comboAudioYouTube = new System.Windows.Forms.ComboBoxTS();
             this.chkYouTubePublic = new System.Windows.Forms.CheckBoxTS();
             this.labelTS80 = new System.Windows.Forms.LabelTS();
@@ -4139,6 +4140,7 @@ namespace PowerSDR
             // 
             // groupBox3
             // 
+            this.groupBox3.Controls.Add(this.OAuth);
             this.groupBox3.Controls.Add(this.comboAudioYouTube);
             this.groupBox3.Controls.Add(this.chkYouTubePublic);
             this.groupBox3.Controls.Add(this.labelTS80);
@@ -4153,12 +4155,25 @@ namespace PowerSDR
             this.groupBox3.TabStop = false;
             this.groupBox3.Text = "YouTube Live Stream";
             // 
+            // OAuth
+            // 
+            this.OAuth.AutoSize = true;
+            this.OAuth.Location = new System.Drawing.Point(106, 77);
+            this.OAuth.Name = "OAuth";
+            this.OAuth.Size = new System.Drawing.Size(107, 17);
+            this.OAuth.TabIndex = 85;
+            this.OAuth.TabStop = true;
+            this.OAuth.Text = "OAuth File Found";
+            this.toolTip1.SetToolTip(this.OAuth, resources.GetString("OAuth.ToolTip"));
+            this.OAuth.UseVisualStyleBackColor = true;
+            this.OAuth.Click += new System.EventHandler(this.OAuth_Click);
+            // 
             // comboAudioYouTube
             // 
             this.comboAudioYouTube.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.comboAudioYouTube.DropDownWidth = 160;
             this.comboAudioYouTube.ItemHeight = 13;
-            this.comboAudioYouTube.Location = new System.Drawing.Point(80, 54);
+            this.comboAudioYouTube.Location = new System.Drawing.Point(80, 50);
             this.comboAudioYouTube.Name = "comboAudioYouTube";
             this.comboAudioYouTube.Size = new System.Drawing.Size(143, 21);
             this.comboAudioYouTube.TabIndex = 29;
@@ -4167,17 +4182,18 @@ namespace PowerSDR
             // chkYouTubePublic
             // 
             this.chkYouTubePublic.Image = null;
-            this.chkYouTubePublic.Location = new System.Drawing.Point(241, 50);
+            this.chkYouTubePublic.Location = new System.Drawing.Point(241, 40);
             this.chkYouTubePublic.Name = "chkYouTubePublic";
-            this.chkYouTubePublic.Size = new System.Drawing.Size(65, 28);
+            this.chkYouTubePublic.Size = new System.Drawing.Size(65, 20);
             this.chkYouTubePublic.TabIndex = 84;
             this.chkYouTubePublic.Text = "Public";
             this.toolTip1.SetToolTip(this.chkYouTubePublic, resources.GetString("chkYouTubePublic.ToolTip"));
+            this.chkYouTubePublic.CheckedChanged += new System.EventHandler(this.chkYouTubePublic_CheckedChanged);
             // 
             // labelTS80
             // 
             this.labelTS80.Image = null;
-            this.labelTS80.Location = new System.Drawing.Point(6, 56);
+            this.labelTS80.Location = new System.Drawing.Point(6, 50);
             this.labelTS80.Name = "labelTS80";
             this.labelTS80.Size = new System.Drawing.Size(94, 16);
             this.labelTS80.TabIndex = 83;
@@ -4186,9 +4202,9 @@ namespace PowerSDR
             // chkYouTube
             // 
             this.chkYouTube.Image = null;
-            this.chkYouTube.Location = new System.Drawing.Point(240, 19);
+            this.chkYouTube.Location = new System.Drawing.Point(240, 15);
             this.chkYouTube.Name = "chkYouTube";
-            this.chkYouTube.Size = new System.Drawing.Size(54, 28);
+            this.chkYouTube.Size = new System.Drawing.Size(54, 20);
             this.chkYouTube.TabIndex = 15;
             this.chkYouTube.Text = "Allow";
             this.toolTip1.SetToolTip(this.chkYouTube, "Check this to make Camera button be the YouTube Stream On/Off button\r\nWhen unchec" +
@@ -4198,9 +4214,9 @@ namespace PowerSDR
             // chkYouTubeFull
             // 
             this.chkYouTubeFull.Image = null;
-            this.chkYouTubeFull.Location = new System.Drawing.Point(173, 18);
+            this.chkYouTubeFull.Location = new System.Drawing.Point(173, 15);
             this.chkYouTubeFull.Name = "chkYouTubeFull";
-            this.chkYouTubeFull.Size = new System.Drawing.Size(65, 31);
+            this.chkYouTubeFull.Size = new System.Drawing.Size(65, 20);
             this.chkYouTubeFull.TabIndex = 14;
             this.chkYouTubeFull.Text = "Console";
             this.toolTip1.SetToolTip(this.chkYouTubeFull, "Check to stream your entire Console\r\nUnchecked streams just the Panadapter.\r\n");
@@ -4216,6 +4232,7 @@ namespace PowerSDR
             this.txtYouTubeKey.Text = "xxxx-xxxx-xxxx-xxxx-xxxx";
             this.toolTip1.SetToolTip(this.txtYouTubeKey, resources.GetString("txtYouTubeKey.ToolTip"));
             this.txtYouTubeKey.UseSystemPasswordChar = true;
+            this.txtYouTubeKey.TextChanged += new System.EventHandler(this.txtYouTubeKey_TextChanged);
             // 
             // labelTS85
             // 
@@ -21014,6 +21031,7 @@ namespace PowerSDR
         private System.Windows.Forms.LabelTS labelTS80;
         public System.Windows.Forms.ComboBoxTS comboAudioYouTube;
         public System.Windows.Forms.CheckBoxTS chkYouTubePublic;
+        public System.Windows.Forms.RadioButton OAuth;
     } // class setup
 
 
