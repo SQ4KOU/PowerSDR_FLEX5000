@@ -65,13 +65,101 @@ jobs:
           try {
             & git -c merge.conflictStyle=diff3 merge --no-commit --no-ff $oldPatched 2>&1 | Tee-Object -FilePath (Join-Path $log 'merge.log')
             $mergeRc=$LASTEXITCODE
+            $resolver=Join-Path $env:RUNNER_TEMP 'resolve-p51-v3.py'
+            @'
+          import subprocess, pathlib, re, tempfile, sys
+          def git(*args):
+              return subprocess.check_output(['git',*args])
+          def txt(b):
+              return b.decode('utf-8-sig').replace('\r\n','\n').replace('\r','\n')
+          def stage(n,p):
+              return git('show',f':{n}:{p}')
+          def write(p,s):
+              raw=stage(2,p)
+              bom=b'\xef\xbb\xbf' if raw.startswith(b'\xef\xbb\xbf') else b''
+              if raw.count(b'\r\n')>raw.count(b'\n')/2: s=s.replace('\n','\r\n')
+              pathlib.Path(p).write_bytes(bom+s.encode('utf-8'))
+              subprocess.run(['git','add','--',p],check=True)
+          def replace_method(s,signature,new):
+              i=s.index(signature)
+              j=s.index('{',i)
+              count=1
+              k=j+1
+              while count:
+                  count += (s[k]=='{')-(s[k]=='}')
+                  k+=1
+              return s[:i]+new+s[k:]
+          def method(s,signature):
+              i=s.index(signature); j=s.index('{',i); k=j+1; count=1
+              while count:
+                  count += (s[k]=='{')-(s[k]=='}'); k+=1
+              return s[i:k]
+          def merge_normalized(p):
+              with tempfile.TemporaryDirectory() as td:
+                  paths=[]
+                  for n in (2,1,3):
+                      f=pathlib.Path(td,str(n));f.write_bytes(txt(stage(n,p)).encode('utf-8'));paths.append(str(f))
+                  cmd=['git','merge-file','-p','--diff3','-L','NEW','-L','BASE','-L','P51',*paths]
+                  r=subprocess.run(cmd,capture_output=True)
+                  if r.returncode<0 or r.returncode>127: raise RuntimeError(r.stderr.decode(errors='replace'))
+                  return r.stdout.decode('utf-8'),r.returncode
+          rx=re.compile(r'^<<<<<<< NEW\n(.*?)^\|\|\|\|\|\|\| BASE\n(.*?)^=======\n(.*?)^>>>>>>> P51\n',re.M|re.S)
+          def resolve(p):
+              s,rc=merge_normalized(p)
+              blocks=list(rx.finditer(s))
+              if p=='Console/database.cs':
+                  # The new WriteDatabase entry point must receive the P49 write lock,
+                  # validation and atomic transaction, not bypass them.
+                  if any('WriteDatabase()' not in m[1] for m in blocks): raise RuntimeError('unreviewed DB conflict')
+                  s=rx.sub(lambda m:m[3],s)
+                  orig=txt(stage(3,p))
+                  update=method(orig,'public static void Update()')
+                  lock=method(update,'lock (db_io_lock)')
+                  assert all(t in lock for t in ('P49ValidateLogicalDatabase','AtomicWriteDataSet','db_io_lock'))
+                  update=update.replace(lock,'WriteDatabase();',1)
+                  s=replace_method(s,'public static void Update()',update)
+                  s=replace_method(s,'internal static void WriteDatabase()','internal static void WriteDatabase()\n        {\n            '+lock+'\n        }')
+              elif p=='Console/display.cs':
+                  for m in blocks:
+                      if 'waterfallBitmapChanged' not in m[1] or 'duration >= waterfall_update_period' not in m[3]:raise RuntimeError('unreviewed display conflict')
+                  s=rx.sub(lambda m:m[1].replace('duration > waterfall_update_period','duration >= waterfall_update_period'),s)
+              elif p=='Console/splash.Designer.cs':
+                  for m in blocks:
+                      if not any(t in m[3] for t in ('pnlStatus.Location','lblStatus.Location','lblTimeRemaining.Location')):raise RuntimeError('unreviewed splash layout conflict')
+                  s=rx.sub(lambda m:m[3],s)
+              elif p=='Console/splash.cs':
+                  for m in blocks:
+                      if 'pictureBox1.Visible = false;' not in m[3]:raise RuntimeError('unreviewed splash conflict')
+                  s=rx.sub(lambda m:m[3],s)
+              # Console: report actual conflicts after fixing newline-only mismatch.
+              if rx.search(s) or '<<<<<<< NEW' in s:
+                  pathlib.Path(p).write_bytes(s.encode('utf-8'))
+                  print('[UNRESOLVED]',p,len(list(rx.finditer(s))),flush=True)
+                  for i,m in enumerate(rx.finditer(s),1):
+                      print('=== CONFLICT',i,p,'===',flush=True)
+                      for label,n in [('NEW',1),('BASE',2),('P51',3)]:
+                          q=m[n].splitlines()
+                          print(label,len(q),'lines',flush=True)
+                          print('\n'.join(q[:70]),flush=True)
+                          if len(q)>70:print('... remaining lines in audit file',flush=True)
+                  return
+              write(p,s)
+              print('[RESOLVED]',p,flush=True)
+          for p in git('diff','--name-only','--diff-filter=U').decode().splitlines():
+              if p in ['Console/console.cs','Console/database.cs','Console/display.cs','Console/splash.Designer.cs','Console/splash.cs']:
+                  try: resolve(p)
+                  except Exception as e:print('[UNRESOLVED]',p,str(e),flush=True)
+          
+          '@ | Set-Content -LiteralPath $resolver -Encoding utf8
+            & python $resolver | Tee-Object -FilePath (Join-Path $log 'resolution.log')
+            if($LASTEXITCODE -ne 0){throw 'resolver error'}
             $conflicts=@(git diff --name-only --diff-filter=U)
             $conflicts | Set-Content (Join-Path $log 'conflicts.txt')
             git status --short | Set-Content (Join-Path $log 'merge-status.txt')
             git diff --cached --stat | Set-Content (Join-Path $log 'merged-stat.txt')
-            git diff --cached --binary --output="$(Join-Path $log 'clean-hunks.patch')"
-            if($mergeRc -ne 0 -or $conflicts.Count){
-              git diff --cc --output="$(Join-Path $log 'conflicts.diff')"
+            git diff --cached --binary | Out-File -FilePath (Join-Path $log 'clean-hunks.patch') -Encoding utf8
+            if($conflicts.Count){
+              git diff --cc | Out-File -FilePath (Join-Path $log 'conflicts.diff') -Encoding utf8
               foreach($file in $conflicts){
                 $name=$file -replace '[\\/:]','_'
                 $full=Join-Path $new $file
@@ -94,3 +182,20 @@ jobs:
           name: PowerSDR-v3-P51-compatibility
           path: port-audit/
           if-no-files-found: error
+  runtime-discovery:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Identify official KE9NS v3 installer URLs
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import urllib.request,re,html,urllib.parse
+          u='https://www.ke9ns.com/flexpage.html'
+          data=urllib.request.urlopen(u,timeout=60).read().decode('utf-8',errors='replace')
+          for m in re.finditer(r'''["']([^"'<>]*(?:3\.0\.0|v3\.0)[^"'<>]*\.(?:exe|msi|zip))["']''',data,re.I):
+              print(urllib.parse.urljoin(u,html.unescape(m.group(1))))
+          for x in data.splitlines():
+              if re.search(r'(?:3\.0\.0|v3\.0).*(?:msi|\.exe|installer)|(?:msi|\.exe|installer).*(?:3\.0\.0|v3\.0)',x,re.I):
+                  print(x[:1000])
+          PY
