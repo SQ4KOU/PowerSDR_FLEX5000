@@ -1,0 +1,111 @@
+name: Repackage PowerSDR v3 P51 interactive MSI
+on:
+  push:
+    branches: [feature/ke9ns-v3.0.0.15d-sq4kou-p51]
+    paths: [.github/workflows/repackage-p51-v3.yml]
+permissions:
+  contents: read
+  actions: read
+jobs:
+  repackage:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: PowerSDR-v3-P51-audit-and-test
+          run-id: 44792161017
+          github-token: ${{ github.token }}
+          path: previous
+      - name: Extract verified build and generate MSI with native wizard
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $old=Get-ChildItem previous -Recurse -File -Filter '*.msi' | Select-Object -First 1
+          if(!$old -or (Get-FileHash $old.FullName).Hash -ne '7512E63B8F35FC85A228CC797D8AC439CDFC814EF899DEC7DD2A0FCE6C12DA7B'){throw 'Original MSI missing or hash mismatch'}
+          $stage=Join-Path $env:RUNNER_TEMP 'p51-payload'
+          $out=Join-Path $env:GITHUB_WORKSPACE 'repack'
+          New-Item -ItemType Directory -Force $stage,$out | Out-Null
+          $p=Start-Process msiexec.exe -ArgumentList @('/a',('"{0}"' -f $old.FullName),'/qn',('TARGETDIR="{0}"' -f $stage),'/L*v',('"{0}"' -f (Join-Path $out 'EXTRACT.log'))) -Wait -PassThru
+          if($p.ExitCode -ne 0){throw "Admin extraction failed: $($p.ExitCode)"}
+          $exe=Get-ChildItem $stage -Recurse -File -Filter PowerSDR.exe | Select-Object -First 1
+          if(!$exe -or (Get-FileHash $exe.FullName).Hash -ne '404121F338B0ABC910311BF17E2CEE082A67EC7E251D921806D24F3A3FB28A0B'){throw 'Original executable hash mismatch'}
+          $app=$exe.Directory.FullName
+          $candle=Get-Command candle.exe -ErrorAction SilentlyContinue
+          if(!$candle){$candle=Get-ChildItem 'C:\Program Files (x86)' -Recurse -Filter candle.exe -ErrorAction SilentlyContinue | Select-Object -First 1}
+          if(!$candle){throw 'WiX 3 missing'}
+          $wix=Split-Path ($candle.Source ?? $candle.FullName) -Parent
+          $work=Join-Path $env:RUNNER_TEMP 'wix-ui'
+          New-Item -ItemType Directory -Force $work | Out-Null
+          Push-Location $work
+          try{
+            & "$wix\heat.exe" dir $app -cg AppFiles -dr INSTALLFOLDER -gg -scom -sreg -sfrag -srd -var var.SourceDir -out Harvest.wxs
+            if($LASTEXITCODE -ne 0){throw 'heat failed'}
+            @'
+          <?xml version="1.0" encoding="utf-8"?>
+          <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+            <Product Id="*" Name="PowerSDR SQ4KOU v3 Test" Language="1033" Version="3.0.16" Manufacturer="FlexRadio Systems / KE9NS / SQ4KOU" UpgradeCode="3C3A2813-0FF2-4D97-A0D3-3344F10B60A8">
+              <Package InstallerVersion="500" Compressed="yes" InstallScope="perMachine" Platform="x86"/>
+              <MajorUpgrade DowngradeErrorMessage="A newer test package is installed."/>
+              <MediaTemplate EmbedCab="yes"/>
+              <Property Id="WIXUI_INSTALLDIR" Value="INSTALLFOLDER"/>
+              <UIRef Id="WixUI_InstallDir"/>
+              <Directory Id="TARGETDIR" Name="SourceDir">
+                <Directory Id="ProgramFilesFolder"><Directory Id="FlexRadioDir" Name="FlexRadio Systems"><Directory Id="INSTALLFOLDER" Name="PowerSDR SQ4KOU v3 Test"/></Directory></Directory>
+                <Directory Id="ProgramMenuFolder"><Directory Id="SQ4KOUMenu" Name="PowerSDR SQ4KOU v3 Test">
+                  <Component Id="MenuShortcut" Guid="*">
+                    <Shortcut Id="PowerSDRMenu" Name="PowerSDR SQ4KOU v3 Test" Target="[INSTALLFOLDER]PowerSDR.exe" WorkingDirectory="INSTALLFOLDER"/>
+                    <RemoveFolder Id="RemoveMenu" On="uninstall"/>
+                    <RegistryValue Root="HKCU" Key="Software\SQ4KOU\PowerSDRv3Test" Name="Menu" Type="integer" Value="1" KeyPath="yes"/>
+                  </Component>
+                </Directory></Directory>
+                <Directory Id="DesktopFolder">
+                  <Component Id="DesktopShortcut" Guid="*">
+                    <Shortcut Id="PowerSDRDesktop" Name="PowerSDR SQ4KOU v3 Test" Target="[INSTALLFOLDER]PowerSDR.exe" WorkingDirectory="INSTALLFOLDER"/>
+                    <RegistryValue Root="HKCU" Key="Software\SQ4KOU\PowerSDRv3Test" Name="Desktop" Type="integer" Value="1" KeyPath="yes"/>
+                  </Component>
+                </Directory>
+              </Directory>
+              <Feature Id="MainFeature" Title="PowerSDR SQ4KOU" Level="1"><ComponentGroupRef Id="AppFiles"/><ComponentRef Id="MenuShortcut"/><ComponentRef Id="DesktopShortcut"/></Feature>
+            </Product>
+          </Wix>
+          '@ | Set-Content Product.wxs -Encoding utf8
+            $msi=Join-Path $out 'PowerSDR-SQ4KOU-3.0.0.15d-P51-INSTALL-FIX-x86.msi'
+            & "$wix\candle.exe" -arch x86 "-dSourceDir=$app" -ext WixUIExtension Product.wxs Harvest.wxs
+            if($LASTEXITCODE -ne 0){throw 'candle failed'}
+            & "$wix\light.exe" -ext WixUIExtension -out $msi Product.wixobj Harvest.wixobj
+            if($LASTEXITCODE -ne 0){throw 'light failed'}
+            "MSI=$msi" | Out-File $env:GITHUB_ENV -Append
+            "OUT=$out" | Out-File $env:GITHUB_ENV -Append
+            $sha=(Get-FileHash $msi).Hash.ToLowerInvariant()
+            "$sha  $(Split-Path $msi -Leaf)" | Set-Content "$msi.sha256"
+            Write-Host "MSI_SHA256=$sha"
+          } finally{Pop-Location}
+      - name: Verify MSI UI tables and actual installation
+        shell: powershell
+        run: |
+          $ErrorActionPreference='Stop'
+          $wi=New-Object -ComObject WindowsInstaller.Installer
+          $db=$wi.GetType().InvokeMember('OpenDatabase','InvokeMethod',$null,$wi,@($env:MSI,0))
+          foreach($table in @('Dialog','Control','InstallUISequence','Shortcut')){
+            $query='SELECT * FROM '+[char]96+$table+[char]96
+            $view=$db.GetType().InvokeMember('OpenView','InvokeMethod',$null,$db,@($query))
+            $view.GetType().InvokeMember('Execute','InvokeMethod',$null,$view,$null) | Out-Null
+            $rec=$view.GetType().InvokeMember('Fetch','InvokeMethod',$null,$view,$null)
+            if(!$rec){throw "Empty MSI table $table"}
+            Write-Host "[PASS] MSI table $table"
+            $view.GetType().InvokeMember('Close','InvokeMethod',$null,$view,$null) | Out-Null
+          }
+          [void][Runtime.InteropServices.Marshal]::ReleaseComObject($db)
+          $p=Start-Process msiexec.exe -ArgumentList @('/i',('"{0}"' -f $env:MSI),'/qn','/norestart','/L*v',('"{0}"' -f (Join-Path $env:OUT 'MSI_INSTALL.log'))) -Wait -PassThru
+          if($p.ExitCode -notin @(0,3010)){throw "Install failed: $($p.ExitCode)"}
+          $installed=Join-Path ([Environment]::GetFolderPath('ProgramFilesX86')) 'FlexRadio Systems\PowerSDR SQ4KOU v3 Test\PowerSDR.exe'
+          if(!(Test-Path $installed) -or (Get-FileHash $installed).Hash -ne '404121F338B0ABC910311BF17E2CEE082A67EC7E251D921806D24F3A3FB28A0B'){throw 'Installed EXE mismatch'}
+          $shortcut=Join-Path $env:ProgramData 'Microsoft\Windows\Start Menu\Programs\PowerSDR SQ4KOU v3 Test\PowerSDR SQ4KOU v3 Test.lnk'
+          if(!(Test-Path $shortcut)){throw 'Start menu shortcut missing'}
+          Write-Host '[PASS] Installed EXE matches original, Start Menu shortcut present'
+      - name: Upload fixed MSI
+        uses: actions/upload-artifact@v4
+        with:
+          name: PowerSDR-P51-INSTALL-FIX
+          path: repack/
+          if-no-files-found: error
