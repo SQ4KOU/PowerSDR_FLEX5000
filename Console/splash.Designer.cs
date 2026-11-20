@@ -45,16 +45,17 @@ namespace PowerSDR
             this.pictureBox1 = new System.Windows.Forms.PictureBox();
             this.lblTimeRemaining = new System.Windows.Forms.LabelTS();
             this.lblStatus = new System.Windows.Forms.LabelTS();
+            this.lblCallsign = new System.Windows.Forms.Label();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
             this.SuspendLayout();
             // 
             // pnlStatus
             // 
-            this.pnlStatus.BackColor = System.Drawing.Color.Black;
-            this.pnlStatus.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(192)))), ((int)(((byte)(0)))));
-            this.pnlStatus.Location = new System.Drawing.Point(64, 240);
+            this.pnlStatus.BackColor = System.Drawing.Color.Transparent;
+            this.pnlStatus.ForeColor = System.Drawing.Color.White;
+            this.pnlStatus.Location = new System.Drawing.Point(50, 247);
             this.pnlStatus.Name = "pnlStatus";
-            this.pnlStatus.Size = new System.Drawing.Size(475, 2);
+            this.pnlStatus.Size = new System.Drawing.Size(475, 24);
             this.pnlStatus.TabIndex = 2;
             this.pnlStatus.Paint += new System.Windows.Forms.PaintEventHandler(this.pnlStatus_Paint);
             // 
@@ -76,23 +77,25 @@ namespace PowerSDR
             this.textBox1.TabStop = false;
             this.textBox1.Text = "v3.0.0.0";
             this.textBox1.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
+            this.textBox1.Visible = false;
             // 
             // pictureBox1
             // 
-            this.pictureBox1.Location = new System.Drawing.Point(-2, -1);
+            this.pictureBox1.Location = new System.Drawing.Point(0, 0);
             this.pictureBox1.Name = "pictureBox1";
-            this.pictureBox1.Size = new System.Drawing.Size(604, 384);
+            this.pictureBox1.Size = new System.Drawing.Size(1, 1);
             this.pictureBox1.TabIndex = 4;
             this.pictureBox1.TabStop = false;
+            this.pictureBox1.Visible = false;
             // 
             // lblTimeRemaining
             // 
             this.lblTimeRemaining.BackColor = System.Drawing.Color.Transparent;
             this.lblTimeRemaining.ForeColor = System.Drawing.Color.White;
             this.lblTimeRemaining.Image = null;
-            this.lblTimeRemaining.Location = new System.Drawing.Point(476, 208);
+            this.lblTimeRemaining.Location = new System.Drawing.Point(296, 289);
             this.lblTimeRemaining.Name = "lblTimeRemaining";
-            this.lblTimeRemaining.Size = new System.Drawing.Size(100, 14);
+            this.lblTimeRemaining.Size = new System.Drawing.Size(100, 16);
             this.lblTimeRemaining.TabIndex = 1;
             this.lblTimeRemaining.Text = "Time";
             // 
@@ -101,18 +104,33 @@ namespace PowerSDR
             this.lblStatus.BackColor = System.Drawing.Color.Transparent;
             this.lblStatus.ForeColor = System.Drawing.Color.White;
             this.lblStatus.Image = null;
-            this.lblStatus.Location = new System.Drawing.Point(61, 208);
+            this.lblStatus.Location = new System.Drawing.Point(0, 287);
             this.lblStatus.Name = "lblStatus";
             this.lblStatus.Size = new System.Drawing.Size(400, 16);
             this.lblStatus.TabIndex = 0;
             this.lblStatus.Text = "Status";
             this.lblStatus.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             // 
+            // lblCallsign
+            // 
+            this.lblCallsign.BackColor = System.Drawing.Color.Transparent;
+            this.lblCallsign.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.lblCallsign.ForeColor = System.Drawing.Color.White;
+            this.lblCallsign.Location = new System.Drawing.Point(468, 350);
+            this.lblCallsign.Name = "lblCallsign";
+            this.lblCallsign.Size = new System.Drawing.Size(112, 22);
+            this.lblCallsign.TabIndex = 5;
+            this.lblCallsign.Text = "SQ4KOU";
+            this.lblCallsign.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
+            this.lblCallsign.Visible = false; // P21: callsign is in approved artwork
+            // 
             // Splash
             // 
             this.AutoScaleBaseSize = new System.Drawing.Size(5, 13);
+            this.BackgroundImage = ((System.Drawing.Image)(resources.GetObject("$this.BackgroundImage")));
             this.BackgroundImageLayout = System.Windows.Forms.ImageLayout.None;
             this.ClientSize = new System.Drawing.Size(600, 384);
+            this.Controls.Add(this.lblCallsign);
             this.Controls.Add(this.textBox1);
             this.Controls.Add(this.pnlStatus);
             this.Controls.Add(this.lblTimeRemaining);
@@ -138,6 +156,7 @@ namespace PowerSDR
         public System.Windows.Forms.TextBox textBox1;
         private System.ComponentModel.IContainer components = null;
         private System.Windows.Forms.PictureBox pictureBox1;
+        private System.Windows.Forms.Label lblCallsign;
     } // class Splash 
 
     

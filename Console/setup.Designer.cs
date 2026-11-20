@@ -1961,7 +1961,7 @@ namespace PowerSDR
             this.lblF3KFanTempThresh.Name = "lblF3KFanTempThresh";
             this.lblF3KFanTempThresh.Size = new System.Drawing.Size(88, 32);
             this.lblF3KFanTempThresh.TabIndex = 13;
-            this.lblF3KFanTempThresh.Text = "Fan Temp Threshold (°C):";
+            this.lblF3KFanTempThresh.Text = "Fan Temp Threshold (ï¿½C):";
             this.lblF3KFanTempThresh.Visible = false;
             // 
             // chkGenFLEX5000ExtRef
@@ -7725,7 +7725,7 @@ namespace PowerSDR
             this.udDisplayFPS.TabIndex = 32;
             this.toolTip1.SetToolTip(this.udDisplayFPS, "Frames Per Second (approximate)");
             this.udDisplayFPS.Value = new decimal(new int[] {
-            20,
+            30,
             0,
             0,
             0});
@@ -10087,7 +10087,7 @@ namespace PowerSDR
             this.udDSPLevelerThreshold.Name = "udDSPLevelerThreshold";
             this.udDSPLevelerThreshold.Size = new System.Drawing.Size(40, 20);
             this.udDSPLevelerThreshold.TabIndex = 6;
-            this.toolTip1.SetToolTip(this.udDSPLevelerThreshold, "This provides for a “threshold” AGC.  Irrespective of how weak a signal is, no ga" +
+            this.toolTip1.SetToolTip(this.udDSPLevelerThreshold, "This provides for a ï¿½thresholdï¿½ AGC.  Irrespective of how weak a signal is, no ga" +
         "in over this Max Gain is applied.");
             this.udDSPLevelerThreshold.Value = new decimal(new int[] {
             5,
@@ -10340,7 +10340,7 @@ namespace PowerSDR
             this.udDSPALCThreshold.Name = "udDSPALCThreshold";
             this.udDSPALCThreshold.Size = new System.Drawing.Size(48, 20);
             this.udDSPALCThreshold.TabIndex = 6;
-            this.toolTip1.SetToolTip(this.udDSPALCThreshold, "This provides for a “threshold” AGC.  Irrespective of how weak a signal is, no ga" +
+            this.toolTip1.SetToolTip(this.udDSPALCThreshold, "This provides for a ï¿½thresholdï¿½ AGC.  Irrespective of how weak a signal is, no ga" +
         "in over this Max Gain is applied.");
             this.udDSPALCThreshold.Value = new decimal(new int[] {
             120,

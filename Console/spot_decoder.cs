@@ -1,4 +1,4 @@
-//=================================================================
+﻿//=================================================================
 // spot_decoder.cs
 //=================================================================
 // PowerSDR is a C# implementation of a Software Defined Radio.
@@ -69,7 +69,11 @@ namespace PowerSDR
             //
             InitializeComponent();
             console = c;
-            Common.RestoreForm(this, "SpotOptions", false);
+            // P49: SpotDecoder and SpotOptions were incorrectly sharing one DB table.
+            if (DB.GetVars("SpotDecoder").Count > 0)
+                Common.RestoreForm(this, "SpotDecoder", false);
+            else
+                Common.RestoreForm(this, "SpotOptions", false); // one-time migration fallback
 
 
         }
@@ -324,7 +328,7 @@ namespace PowerSDR
 
             this.Hide();
             e.Cancel = true;
-            Common.SaveForm(this, "SpotOptions");
+            Common.SaveForm(this, "SpotDecoder");
         }
 
 

@@ -1,4 +1,4 @@
-//=================================================================
+﻿//=================================================================
 // wave.cs
 //=================================================================
 // PowerSDR is a C# implementation of a Software Defined Radio.
@@ -79,7 +79,11 @@ namespace PowerSDR
             currently_playing = -1;
             WaveOptions = new WaveOptions();
             this.ActiveControl = btnAdd;
-            Common.RestoreForm(this, "WaveOptions", false);
+            // P49: Wave and WaveOptions were incorrectly sharing one DB table.
+            if (DB.GetVars("WaveForm").Count > 0)
+                Common.RestoreForm(this, "WaveForm", false);
+            else
+                Common.RestoreForm(this, "WaveOptions", false); // one-time migration fallback
         }
 
         protected override void Dispose(bool disposing)
@@ -727,7 +731,7 @@ namespace PowerSDR
         {
             e.Cancel = true;
             this.Hide();
-            Common.SaveForm(this, "WaveOptions");
+            Common.SaveForm(this, "WaveForm");
         }
 
         private void checkBoxPause_CheckedChanged(object sender, System.EventArgs e)

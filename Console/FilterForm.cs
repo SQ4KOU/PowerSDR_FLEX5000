@@ -1,4 +1,4 @@
-//=================================================================
+﻿//=================================================================
 // FilterForm.cs
 //=================================================================
 // PowerSDR is a C# implementation of a Software Defined Radio.
@@ -65,6 +65,7 @@ namespace PowerSDR
                 radFilter10.Enabled = false;
             }
             Common.RestoreForm(this, "FilterForm", false);
+            this.FormClosing += new FormClosingEventHandler(FilterForm_FormClosing);
         }
 
         /// <summary>
@@ -499,5 +500,9 @@ namespace PowerSDR
         }
 
         #endregion
+        private void FilterForm_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            Common.SaveForm(this, "FilterForm");
+        }
     }
 }

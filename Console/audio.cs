@@ -4507,6 +4507,10 @@ namespace PowerSDR
 #endif
 
 
+            // SQ4KOU P46: TCI RX1 IQ capture. Copying/packet I/O is deferred
+            // to the P46 worker; the PortAudio callback never performs socket writes.
+            P46TCIStreaming.CaptureIQ(rx1_in_l, rx1_in_r, frameCount, sample_rate1);
+
             //---------------------------------------------------------------------------------
             // handle Direct IQ for VAC1
             #region vac1IQ
@@ -4615,6 +4619,10 @@ namespace PowerSDR
             //---------------------------------------------------------------------------------
             // ke9ns DttSP 
 
+            // SQ4KOU P46: when trx:0,true,tci owns TX, replace the physical/VAC
+            // microphone block with TCI TX_AUDIO_STREAM samples immediately before DSP.
+            P46TCIStreaming.FillTxAudio(tx_in_l, tx_in_r, frameCount, sample_rate1);
+
             if (localmox && (tx_dsp_mode == DSPMode.CWL || tx_dsp_mode == DSPMode.CWU))
             {
                 DspBackend.ProcessMultiChannel(ex_input, ex_output, frameCount, !localmox);
@@ -4651,6 +4659,13 @@ namespace PowerSDR
                 DspBackend.ProcessMultiChannel(ex_input, ex_output, frameCount, !localmox);    // ke9ns for standard audio do this routine found in winmain.c as Audio_Callback2
 
             }
+
+            // SQ4KOU P46: post-DSP RX audio follows Thetis TCI semantics.
+            // During TX publish the TX monitor path into RX1's TCI audio stream.
+            if (localmox)
+                P46TCIStreaming.CaptureAudio(tx_out_l, tx_out_r, frameCount, sample_rate1);
+            else
+                P46TCIStreaming.CaptureAudio(rx1_out_l, rx1_out_r, frameCount, sample_rate1);
 
 
 #if (MINMAX)
@@ -7362,40 +7377,74 @@ namespace PowerSDR
         } //  PortAudioErrorMessageBox
 
 
+        // SQ4KOU P04: only application exit uses the immediate PortAudio/ASIO
+        // abort path. Normal Start/Stop operation keeps the native KE9NS
+        // graceful PA_StopStream behaviour unchanged.
+        private static bool fast_application_shutdown = false;
+        public static bool FastApplicationShutdown
+        {
+            get { return fast_application_shutdown; }
+            set { fast_application_shutdown = value; }
+        }
+
         // FireWire Flex-3000, Flex-5000 Stop ASIO IQ stream 
-        public unsafe static void StopAudio() 
+        public unsafe static void StopAudio()
         {
             int error = 0;
-            Debug.WriteLine("STOP ASIO"); // when windows kms started on vac1
+            Debug.WriteLine("STOP ASIO");
 
-            // PA19.PA_AbortStream(stream1);
+            if (fast_application_shutdown)
+            {
+                Debug.WriteLine("SQ4KOU P04 FAST APPLICATION ASIO EXIT");
+                if (stream1 != (void*)IntPtr.Zero)
+                {
+                    PA19.PA_AbortStream(stream1);
+                    error = PA19.PA_CloseStream(stream1);
+                    stream1 = (void*)IntPtr.Zero;
+                    if (error != 0) PortAudioErrorMessageBox(error);
+                }
+                return;
+            }
+
             int error1 = PA19.PA_StopStream(stream1); //.323a
 
             if (error1 != 0)
             {
                 Debug.WriteLine("PA_StopStream1 error: " + PA19.PA_GetErrorText(error));
                 PA19.PA_AbortStream(stream1);
-
             }
+
             Thread.Sleep(100);  // .323a
             int cnt = 0;
-            while (PA19.PA_IsStreamActive(stream1) == 1 && cnt < 50)  // Increase retries from 10 to 20   //ke9ns .323
+            while (PA19.PA_IsStreamActive(stream1) == 1 && cnt < 50)
             {
-                Thread.Sleep(200);  // Add 100ms delay per retry for driver stabilization
+                Thread.Sleep(200);
                 cnt++;
             }
 
             error = PA19.PA_CloseStream(stream1);
             stream1 = (void*)IntPtr.Zero;
             if (error != 0) PortAudioErrorMessageBox(error);
-            Thread.Sleep(200);  // give some time to settle //.323
+            Thread.Sleep(200);  // native normal Stop/Start settle delay
         }
 
         public unsafe static void StopAudioVAC()
         {
             int error = 0;
             Debug.WriteLine("StopAudioVAC");
-          //  PA19.PA_AbortStream(stream2);
+
+            if (fast_application_shutdown)
+            {
+                Debug.WriteLine("SQ4KOU P04 FAST APPLICATION VAC EXIT");
+                if (stream2 != (void*)IntPtr.Zero)
+                {
+                    PA19.PA_AbortStream(stream2);
+                    error = PA19.PA_CloseStream(stream2);
+                    stream2 = (void*)IntPtr.Zero;
+                    if (error != 0) PortAudioErrorMessageBox(error);
+                }
+                return;
+            }
 
             int error1 = PA19.PA_StopStream(stream2); //.323a
 
@@ -7403,13 +7452,11 @@ namespace PowerSDR
             {
                 Debug.WriteLine("PA_StopStream2 error: " + PA19.PA_GetErrorText(error));
                 PA19.PA_AbortStream(stream2);
-
             }
 
             Thread.Sleep(100);  // .323a
-
             error = PA19.PA_CloseStream(stream2);
-
+            stream2 = (void*)IntPtr.Zero;
             if (error != 0) PortAudioErrorMessageBox(error);
         }
 
@@ -7418,7 +7465,18 @@ namespace PowerSDR
             int error = 0;
             Debug.WriteLine("StopAudioVAC2");
 
-            //   PA19.PA_AbortStream(stream3);
+            if (fast_application_shutdown)
+            {
+                Debug.WriteLine("SQ4KOU P04 FAST APPLICATION VAC2 EXIT");
+                if (stream3 != (void*)IntPtr.Zero)
+                {
+                    PA19.PA_AbortStream(stream3);
+                    error = PA19.PA_CloseStream(stream3);
+                    stream3 = (void*)IntPtr.Zero;
+                    if (error != 0) PortAudioErrorMessageBox(error);
+                }
+                return;
+            }
 
             int error1 = PA19.PA_StopStream(stream3); //.323a
 
@@ -7426,12 +7484,11 @@ namespace PowerSDR
             {
                 Debug.WriteLine("PA_StopStream3 error: " + PA19.PA_GetErrorText(error));
                 PA19.PA_AbortStream(stream3);
-
             }
 
             Thread.Sleep(100);  // .323a
-
             error = PA19.PA_CloseStream(stream3);
+            stream3 = (void*)IntPtr.Zero;
             if (error != 0) PortAudioErrorMessageBox(error);
         }
 

@@ -1,4 +1,4 @@
-//=================================================================
+﻿//=================================================================
 // SpotWatchBox.cs .269 created
 //=================================================================
 // PowerSDR is a C# implementation of a Software Defined Radio.
@@ -171,7 +171,7 @@ namespace PowerSDR
 
             this.Hide();
             e.Cancel = true;
-            Common.SaveForm(this, " SpotWatchBox");
+            Common.SaveForm(this, "SpotWatchBox");
 
         }
 

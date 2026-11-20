@@ -41,6 +41,7 @@ namespace PowerSDR
             InitializeComponent();
             console = c;
             mox = c.MOX;
+            Common.RestoreForm(this, "PreSelForm", false);
             UpdatePreSel();
         }
 

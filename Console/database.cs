@@ -95,6 +95,359 @@ namespace PowerSDR
             set { file_name1 = value; }
         }
 
+        // SQ4KOU DB reliability layer.
+        // Keeps the native KE9NS DataSet schema/semantics, but makes disk I/O
+        // transactional and recovery non-destructive.
+        private static readonly object db_io_lock = new object();
+
+        private static string DatabaseSiblingPath(string suffix)
+        {
+            string directory = Path.GetDirectoryName(file_name);
+            string stem = Path.GetFileNameWithoutExtension(file_name);
+            string extension = Path.GetExtension(file_name);
+            if (String.IsNullOrEmpty(extension)) extension = ".xml";
+            string name = stem + suffix + extension;
+            return String.IsNullOrEmpty(directory) ? name : Path.Combine(directory, name);
+        }
+
+        private static string last_logical_repair_summary = "";
+
+        private static bool P49HasColumns(DataTable table, params string[] names)
+        {
+            if (table == null) return false;
+            foreach (string name in names)
+                if (!table.Columns.Contains(name)) return false;
+            return true;
+        }
+
+        private static bool P49IsKnownKeyValueTableName(string name)
+        {
+            if (String.IsNullOrEmpty(name)) return false;
+            if (name == "State" ||
+                name == "Options" ||
+                name == "SQ4KOU_TCI" ||
+                name == "SQ4KOU_LegacyItems" ||
+                name == "SQ4KOU_ThetisMeters")
+                return true;
+
+            if (name.StartsWith("MeterDisplay_", StringComparison.Ordinal))
+                return true;
+
+            return false;
+        }
+
+        private static bool P49ValidateLogicalDatabase(
+            DataSet candidate,
+            out string repairSummary,
+            out string fatalError)
+        {
+            repairSummary = "";
+            fatalError = "";
+
+            if (candidate == null)
+            {
+                fatalError = "Database DataSet is null.";
+                return false;
+            }
+
+            if (candidate.Tables.Count == 0)
+            {
+                fatalError = "Database contains no tables.";
+                return false;
+            }
+
+            // Core tables may be absent in an older database and VerifyTables()
+            // will create them. If present, however, their structural schema must
+            // be usable or the database is logically corrupt.
+            DataTable t;
+            if (candidate.Tables.Contains("BandText"))
+            {
+                t = candidate.Tables["BandText"];
+                if (!P49HasColumns(t, "Low", "High", "Name", "TX"))
+                {
+                    fatalError = "BandText table schema is incomplete.";
+                    return false;
+                }
+            }
+
+            if (candidate.Tables.Contains("BandStack"))
+            {
+                t = candidate.Tables["BandStack"];
+                if (!P49HasColumns(t, "BandName", "Mode", "Filter", "Freq"))
+                {
+                    fatalError = "BandStack table schema is incomplete.";
+                    return false;
+                }
+            }
+
+            if (candidate.Tables.Contains("TXProfile"))
+            {
+                t = candidate.Tables["TXProfile"];
+                if (!t.Columns.Contains("Name"))
+                {
+                    fatalError = "TXProfile table has no Name column.";
+                    return false;
+                }
+            }
+
+            if (candidate.Tables.Contains("TXProfileDef"))
+            {
+                t = candidate.Tables["TXProfileDef"];
+                if (!t.Columns.Contains("Name"))
+                {
+                    fatalError = "TXProfileDef table has no Name column.";
+                    return false;
+                }
+            }
+
+            int duplicateRowsRemoved = 0;
+            int emptyKeysRemoved = 0;
+            int keyValueTablesChecked = 0;
+
+            foreach (DataTable table in candidate.Tables)
+            {
+                bool hasKey = table.Columns.Contains("Key");
+                bool hasValue = table.Columns.Contains("Value");
+                bool knownKeyValue = P49IsKnownKeyValueTableName(table.TableName);
+
+                if (knownKeyValue && (!hasKey || !hasValue))
+                {
+                    fatalError = "Key/value table '" + table.TableName +
+                        "' has a damaged schema (Key/Value column missing).";
+                    return false;
+                }
+
+                if (!hasKey || !hasValue)
+                    continue;
+
+                keyValueTablesChecked++;
+
+                System.Collections.Generic.Dictionary<string, DataRow> lastByKey =
+                    new System.Collections.Generic.Dictionary<string, DataRow>(
+                        System.StringComparer.Create(table.Locale, !table.CaseSensitive));
+
+                System.Collections.Generic.List<DataRow> remove =
+                    new System.Collections.Generic.List<DataRow>();
+
+                foreach (DataRow row in table.Rows)
+                {
+                    if (row.RowState == DataRowState.Deleted ||
+                        row.RowState == DataRowState.Detached)
+                        continue;
+
+                    if (row.IsNull("Key") || String.IsNullOrEmpty(row["Key"].ToString()))
+                    {
+                        remove.Add(row);
+                        emptyKeysRemoved++;
+                        continue;
+                    }
+
+                    string key = row["Key"].ToString();
+                    DataRow previous;
+                    if (lastByKey.TryGetValue(key, out previous))
+                    {
+                        // Keep the most recently appended row. This matches the
+                        // only deterministic ordering available in legacy XML.
+                        remove.Add(previous);
+                        duplicateRowsRemoved++;
+                    }
+                    lastByKey[key] = row;
+                }
+
+                foreach (DataRow row in remove)
+                {
+                    if (row.RowState != DataRowState.Detached &&
+                        row.RowState != DataRowState.Deleted)
+                        table.Rows.Remove(row);
+                }
+            }
+
+            if (duplicateRowsRemoved > 0 || emptyKeysRemoved > 0)
+            {
+                repairSummary =
+                    "key/value tables checked=" + keyValueTablesChecked.ToString() +
+                    ", duplicate rows removed=" + duplicateRowsRemoved.ToString() +
+                    ", empty-key rows removed=" + emptyKeysRemoved.ToString();
+            }
+
+            return true;
+        }
+        private static bool TryLoadDatabaseFile(string path, out DataSet loaded, out string error)
+        {
+            loaded = null;
+            error = "";
+            last_logical_repair_summary = "";
+
+            if (String.IsNullOrEmpty(path) || !File.Exists(path))
+            {
+                error = "File does not exist: " + path;
+                return false;
+            }
+
+            try
+            {
+                DataSet candidate = new DataSet("Data");
+                using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read))
+                {
+                    candidate.ReadXml(stream, XmlReadMode.ReadSchema);
+                }
+
+                string repairs;
+                string fatal;
+                if (!P49ValidateLogicalDatabase(candidate, out repairs, out fatal))
+                    throw new InvalidDataException("Logical database validation failed: " + fatal);
+
+                last_logical_repair_summary = repairs;
+                loaded = candidate;
+                return true;
+            }
+            catch (Exception ex)
+            {
+                error = path + ": " + ex.Message;
+                return false;
+            }
+        }
+
+        private static bool TryLoadFirstValidBackup(out DataSet loaded, out string source, out string errors)
+        {
+            loaded = null;
+            source = "";
+            errors = "";
+
+            string[] candidates = new string[]
+            {
+                DatabaseSiblingPath("_sbu"),
+                DatabaseSiblingPath("_bak1"),
+                DatabaseSiblingPath("_bak2"),
+                DatabaseSiblingPath("_bak3")
+            };
+
+            foreach (string candidate in candidates)
+            {
+                if (!File.Exists(candidate)) continue;
+
+                DataSet recovered;
+                string error;
+                if (TryLoadDatabaseFile(candidate, out recovered, out error))
+                {
+                    loaded = recovered;
+                    source = candidate;
+                    return true;
+                }
+
+                if (errors.Length > 0) errors += Environment.NewLine;
+                errors += error;
+            }
+
+            return false;
+        }
+
+        private static void PreserveCorruptDatabase(string path)
+        {
+            if (String.IsNullOrEmpty(path) || !File.Exists(path)) return;
+
+            try
+            {
+                string directory = Path.GetDirectoryName(path);
+                string stem = Path.GetFileNameWithoutExtension(path);
+                string extension = Path.GetExtension(path);
+                string stamp = DateTime.UtcNow.ToString("yyyyMMdd-HHmmss");
+                string name = stem + "_corrupt_" + stamp + extension;
+                string target = String.IsNullOrEmpty(directory) ? name : Path.Combine(directory, name);
+
+                int copy = 1;
+                while (File.Exists(target))
+                {
+                    name = stem + "_corrupt_" + stamp + "_" + copy.ToString() + extension;
+                    target = String.IsNullOrEmpty(directory) ? name : Path.Combine(directory, name);
+                    copy++;
+                }
+
+                File.Copy(path, target, false);
+                Debug.WriteLine("Preserved corrupt PowerSDR database: " + target);
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine("Could not preserve corrupt PowerSDR database: " + ex.Message);
+            }
+        }
+
+        private static void AtomicWriteDataSet(DataSet source, string destination)
+        {
+            if (source == null) throw new InvalidOperationException("Database DataSet is null.");
+            if (String.IsNullOrEmpty(destination)) throw new InvalidOperationException("Database filename is empty.");
+
+            string directory = Path.GetDirectoryName(destination);
+            if (!String.IsNullOrEmpty(directory) && !Directory.Exists(directory))
+                Directory.CreateDirectory(directory);
+
+            string temp = destination + ".tmp." + Process.GetCurrentProcess().Id.ToString();
+            try
+            {
+                if (File.Exists(temp)) File.Delete(temp);
+
+                using (FileStream stream = new FileStream(
+                    temp, FileMode.CreateNew, FileAccess.Write, FileShare.None, 65536, FileOptions.WriteThrough))
+                {
+                    source.WriteXml(stream, XmlWriteMode.WriteSchema);
+                    stream.Flush(true);
+                }
+
+                FileInfo tempInfo = new FileInfo(temp);
+                if (!tempInfo.Exists || tempInfo.Length == 0)
+                    throw new InvalidDataException("Database write verification failed: temporary XML file is empty.");
+
+                System.Xml.XmlReaderSettings verifySettings = new System.Xml.XmlReaderSettings();
+                verifySettings.DtdProcessing = System.Xml.DtdProcessing.Prohibit;
+                verifySettings.CloseInput = true;
+                using (System.Xml.XmlReader reader = System.Xml.XmlReader.Create(temp, verifySettings))
+                {
+                    while (reader.Read()) { }
+                }
+
+                if (File.Exists(destination))
+                    File.Replace(temp, destination, null);
+                else
+                    File.Move(temp, destination);
+            }
+            finally
+            {
+                if (File.Exists(temp))
+                {
+                    try { File.Delete(temp); }
+                    catch { }
+                }
+            }
+        }
+
+        private static void RotateValidBackup(string source, string destination)
+        {
+            if (!File.Exists(source)) return;
+
+            DataSet candidate;
+            string error;
+            if (!TryLoadDatabaseFile(source, out candidate, out error))
+            {
+                Debug.WriteLine("Skipping invalid database backup during rotation: " + error);
+                return;
+            }
+
+            AtomicWriteDataSet(candidate, destination);
+        }
+
+        private static void CreateValidatedSessionBackup()
+        {
+            string sbu = DatabaseSiblingPath("_sbu");
+            string bak1 = DatabaseSiblingPath("_bak1");
+            string bak2 = DatabaseSiblingPath("_bak2");
+            string bak3 = DatabaseSiblingPath("_bak3");
+
+            RotateValidBackup(bak2, bak3);
+            RotateValidBackup(bak1, bak2);
+            RotateValidBackup(sbu, bak1);
+            AtomicWriteDataSet(ds, sbu);
+        }
+
 
 
         #endregion
@@ -11851,204 +12204,162 @@ namespace PowerSDR
         // Public Member Functions 
         // ======================================================
 
-        public static bool Init(Model model) // ke9ns first sets up a default FRSRegion.US, then in console.cs changes it
+        public static bool Init(Model model)
         {
-
-
-
-            if (file_name.Contains("database_F") || file_name.Contains("database_D")) // ke9ns add  make sure your now looking at RevQ database only
+            if (file_name.Contains("database_F") || file_name.Contains("database_D"))
             {
-                file_name1 = file_name; // ke9ns use your original to copy into new RevQ database as starting point
+                file_name1 = file_name;
                 file_name = file_name.Replace("database_", "database-RevQ_");
             }
 
-            string backup_filename1 = file_name.Remove(file_name.Length - 4) + "_sbu.xml";     // current session backup (sbu)
-            string backup_filename2 = file_name.Remove(file_name.Length - 4) + "_bak1.xml";    // 1st gen BU, copy of SBU
-            string backup_filename3 = file_name.Remove(file_name.Length - 4) + "_bak2.xml";    // 2nd gen BU, copy of bak
-            string backup_filename4 = file_name.Remove(file_name.Length - 4) + "_bak3.xml";    // 3rd gen BU, copy of bak2
-
             bool database_exists = false;
-
+            bool loaded_from_legacy = false;
             ds = new DataSet("Data");
 
-
-
-            if (File.Exists(file_name))  // ke9ns mod  file_name is now looking for RevQ database first
+            if (File.Exists(file_name))
             {
-                //   Trace.WriteLine("reading RevQ database " + file_name);
-
-
-                try
+                DataSet loaded;
+                string loadError;
+                if (TryLoadDatabaseFile(file_name, out loaded, out loadError))
                 {
-
-                    ds.ReadXml(file_name);
+                    string logicalRepairs = last_logical_repair_summary;
+                    ds = loaded;
                     database_exists = true;
+
+                    if (!String.IsNullOrEmpty(logicalRepairs))
+                    {
+                        PreserveCorruptDatabase(file_name);
+                        MessageBox.Show(
+                            "Logical database damage was detected even though the XML file was readable.\n\n" +
+                            "PowerSDR repaired the database in memory and preserved the pre-repair file for diagnosis.\n\n" +
+                            logicalRepairs,
+                            "Database Logical Repair",
+                            MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    }
                 }
-                catch (Exception ex)
+                else
                 {
-                    MessageBox.Show("The database schema is corrupted and unusable.  " +
-                        "The database exception error was:\n\n" + ex.Message + "\n\n" +
-                        "Auto database recovery using the most recent valid database backup will be attempted.",
-                        "ERROR: Database is Unusable",
-                        MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    PreserveCorruptDatabase(file_name);
 
-                    string recovery_db = "";
-
-                    if (File.Exists(backup_filename4)) recovery_db = backup_filename4;
-                    if (File.Exists(backup_filename3)) recovery_db = backup_filename3;
-                    if (File.Exists(backup_filename2)) recovery_db = backup_filename2;
-                    if (File.Exists(backup_filename1)) recovery_db = backup_filename1;
-
-                    try
+                    DataSet recovered;
+                    string recoverySource;
+                    string recoveryErrors;
+                    if (TryLoadFirstValidBackup(out recovered, out recoverySource, out recoveryErrors))
                     {
-                        ds.ReadXml(recovery_db);
+                        ds = recovered;
                         database_exists = true;
+                        MessageBox.Show(
+                            "The active database failed structural/logical validation and has been preserved for diagnosis.\n\n" +
+                            "PowerSDR recovered the most recent valid backup:\n" + recoverySource +
+                            (String.IsNullOrEmpty(last_logical_repair_summary) ? "" :
+                                "\n\nThe backup also required safe key/value repair:\n" + last_logical_repair_summary),
+                            "Database Recovered",
+                            MessageBoxButtons.OK, MessageBoxIcon.Warning);
                     }
-                    catch (Exception ex2)
+                    else
                     {
-                        MessageBox.Show("A database backup does not exist or the backup database schema is corrupted.  " +
-                            "The database exception error was:\n\n " + ex2.Message + "\n\n" +
-                            "A new default database will be created.",
-                            "ERROR: Database Backup is Unusable",
+                        MessageBox.Show(
+                            "The active database is unusable and no structurally/logically valid backup could be loaded.\n\n" +
+                            "Primary error:\n" + loadError +
+                            (recoveryErrors.Length > 0 ? "\n\nBackup errors:\n" + recoveryErrors : "") +
+                            "\n\nThe unreadable database was preserved. A new default database will be created.",
+                            "ERROR: Database Recovery Failed",
                             MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        ds = new DataSet("Data");
                     }
-                } // catch
-
-            } // if file exists
-
-            else // ke9ns add copy over your good original Flex database into RevQdatabase.xml so we dont touch the original just in case
+                }
+            }
+            else if (!String.IsNullOrEmpty(file_name1) && File.Exists(file_name1))
             {
-
-                //   Trace.WriteLine("Must copy original Database " + file_name1); // file_name1 is old database.xml file
-                //  Trace.WriteLine("To new REVQ database " + file_name); // file_name1 is old database.xml file
-
-
-
-                if (File.Exists(file_name1)) File.Copy(file_name1, file_name, true);  // ke9ns add   File.Copy(old, new)
-
-
-                if (File.Exists(file_name))  // ke9ns mod  file_name is now looking for RevQ database first
+                DataSet legacy;
+                string legacyError;
+                if (TryLoadDatabaseFile(file_name1, out legacy, out legacyError))
                 {
-                    //   Trace.WriteLine("Now we have RevQ database " + file_name);
+                    ds = legacy;
+                    database_exists = true;
+                    loaded_from_legacy = true;
+                }
+                else
+                {
+                    PreserveCorruptDatabase(file_name1);
+                    MessageBox.Show(
+                        "The legacy PowerSDR database failed structural/logical validation.\n\n" + legacyError +
+                        "\n\nThe original file was left unchanged and a new default RevQ database will be created.",
+                        "ERROR: Legacy Database Import Failed",
+                        MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            }
 
-                    try
-                    {
+            if (loaded_from_legacy)
+                AddBandStackSWL();
 
-                        ds.ReadXml(file_name);
-                        database_exists = true;
-                    }
-                    catch (Exception ex)
-                    {
-                        MessageBox.Show("The database schema is corrupted and unusable.  " +
-                            "The database exception error was:\n\n" + ex.Message + "\n\n" +
-                            "Auto database recovery using the most recent valid database backup will be attempted.",
-                            "ERROR: Database is Unusable",
-                            MessageBoxButtons.OK, MessageBoxIcon.Error);
-
-                        string recovery_db = "";
-
-                        if (File.Exists(backup_filename4)) recovery_db = backup_filename4;
-                        if (File.Exists(backup_filename3)) recovery_db = backup_filename3;
-                        if (File.Exists(backup_filename2)) recovery_db = backup_filename2;
-                        if (File.Exists(backup_filename1)) recovery_db = backup_filename1;
-
-                        try
-                        {
-                            ds.ReadXml(recovery_db);
-                            database_exists = true;
-                        }
-                        catch (Exception ex2)
-                        {
-                            MessageBox.Show("A database backup does not exist or the backup database schema is corrupted.  " +
-                                "The database exception error was:\n\n " + ex2.Message + "\n\n" +
-                                "A new default database will be created.",
-                                "ERROR: Database Backup is Unusable",
-                                MessageBoxButtons.OK, MessageBoxIcon.Error);
-                        }
-                    } // catch
-
-                    if (database_exists == true)
-                    {
-                        AddBandStackSWL(); // ke9ns add put in database just copied over from original
-                    }
-
-                } // if file exists
-            } // file did not exist
-
-            VerifyTables(model); // setup database
-
+            VerifyTables(model);
             CheckBandTextValid();
 
-            if (database_exists == false) return database_exists;
-            else
+            if (database_exists)
             {
                 try
                 {
-                    // copy 2nd gen BU to create 3rd gen BU
-                    if (File.Exists(backup_filename3)) File.Copy(backup_filename3, backup_filename4, true);
-
-                    // copy 1st gen BU to create 2nd gen BU
-                    if (File.Exists(backup_filename2)) File.Copy(backup_filename2, backup_filename3, true);
-
-                    // copy SBU to create 1st gen BU
-                    if (File.Exists(backup_filename1)) File.Copy(backup_filename1, backup_filename2, true);
-
-                    // create SBU from the current validated database
-                    ds.WriteXml(backup_filename1, XmlWriteMode.WriteSchema);
+                    lock (db_io_lock)
+                    {
+                        CreateValidatedSessionBackup();
+                    }
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show("A database backup or copy operation failed.  " +
-                        "The exception error was:\n\n" + ex.Message + "\n\n" +
-                        "This will not adversly effect the operation of your radio.",
+                    MessageBox.Show(
+                        "A database backup operation failed.\n\n" + ex.Message +
+                        "\n\nThe active database remains in use and existing valid backups are left intact.",
                         "ERROR: Database Backup Creation Error",
                         MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
             }
-            return database_exists;
 
+            return database_exists;
         } // init()
 
-        public static void Update()  // ke9ns write database file
+        public static void Update()
         {
-            //  StreamWriter writer = new StreamWriter(@"C: \Users\RADIO\AppData\Roaming\FlexRadio Systems\PowerSDR v2.8.0\PowerDown_4of4.log"); //   // look for %userprofile%\AppData\Roaming\FlexRadio Systems\PowerSDR v2.8.0\
-            //   writer.AutoFlush = true;
-
-            //   writer.WriteLine("DB WRITE FILE: (1 of 1 jobs)");
-
-            //   writer.WriteLine("1) Attempt to write DB file");
+            if (ds == null || String.IsNullOrEmpty(file_name)) return;
 
             try
             {
-
                 WriteDatabase();
-                                                                  //  writer.WriteLine("1) Done");
-
             }
             catch (Exception ex)
             {
-                //   writer.WriteLine("1) FAILURE to write file");
-
-                MessageBox.Show("A database write to file operation failed.  " +
-                    "The exception error was:\n\n" + ex.Message,
+                MessageBox.Show(
+                    "A database write operation was blocked because the database could not be safely validated/written.\n\n" +
+                    "The previous database file was not intentionally deleted.\n\n" +
+                    ex.Message,
                     "ERROR: Database Write Error",
                     MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
-
-            //  writer.Close();
-
-
         } // Update()
 
         internal static void WriteDatabase()
         {
-            ds.WriteXml(file_name, XmlWriteMode.WriteSchema);
+            lock (db_io_lock)
+                {
+                    string repairs;
+                    string fatal;
+                    if (!P49ValidateLogicalDatabase(ds, out repairs, out fatal))
+                        throw new InvalidDataException("Logical database validation failed before write: " + fatal);
+
+                    if (!String.IsNullOrEmpty(repairs))
+                        Debug.WriteLine("P49 repaired logical database before write: " + repairs);
+
+                    AtomicWriteDataSet(ds, file_name);
+                }
         }
 
         public static void Exit()
         {
-            Update();
-            ds = null;
+            lock (db_io_lock)
+            {
+                Update();
+                ds = null;
+            }
         }
 
         public static bool BandText(double freq, out string outStr)
@@ -12469,64 +12780,105 @@ namespace PowerSDR
         // ke9ns: SaveState() console_closing("State", ref a) to update state variables
         public static void SaveVars(string tableName, ref ArrayList list)
         {
-            if (!ds.Tables.Contains(tableName)) AddFormTable(tableName);
-
-            foreach (string s in list)
+            lock (db_io_lock)
             {
-                string[] vals = s.Split('/');
+                if (ds == null) return;
+                if (!ds.Tables.Contains(tableName)) AddFormTable(tableName);
 
-                if (vals.Length > 2)
+                DataTable table = ds.Tables[tableName];
+
+                System.StringComparer keyComparer =
+                    System.StringComparer.Create(table.Locale, !table.CaseSensitive);
+
+                System.Collections.Generic.Dictionary<string, DataRow> rowsByKey =
+                    new System.Collections.Generic.Dictionary<string, DataRow>(keyComparer);
+
+                System.Collections.Generic.List<DataRow> duplicateRows =
+                    new System.Collections.Generic.List<DataRow>();
+
+                foreach (DataRow row in table.Rows)
                 {
-                    for (int i = 2; i < vals.Length; i++)
+                    if (row.RowState == DataRowState.Deleted ||
+                        row.RowState == DataRowState.Detached ||
+                        row.IsNull(0) ||
+                        String.IsNullOrEmpty(row[0].ToString()))
+                        continue;
+
+                    string key = row[0].ToString();
+                    DataRow existing;
+                    if (rowsByKey.TryGetValue(key, out existing))
+                        duplicateRows.Add(existing); // keep the newest row
+                    rowsByKey[key] = row;
+                }
+
+                foreach (DataRow duplicate in duplicateRows)
+                {
+                    if (duplicate.RowState != DataRowState.Deleted &&
+                        duplicate.RowState != DataRowState.Detached)
+                        table.Rows.Remove(duplicate);
+                }
+
+                foreach (string s in list)
+                {
+                    if (s == null) continue;
+                    int separator = s.IndexOf('/');
+                    if (separator < 0) continue;
+
+                    string key = s.Substring(0, separator);
+                    string value = s.Substring(separator + 1);
+
+                    DataRow row;
+                    if (rowsByKey.TryGetValue(key, out row))
                     {
-                        vals[1] += "/" + vals[i];
+                        row[1] = value;
+                    }
+                    else
+                    {
+                        DataRow newRow = table.NewRow();
+                        newRow[0] = key;
+                        newRow[1] = value;
+                        table.Rows.Add(newRow);
+                        rowsByKey.Add(key, newRow);
                     }
                 }
-
-                if (vals.Length <= 1) continue;  // skip it as no data was provided
-
-
-                DataRow[] rows = ds.Tables[tableName].Select("Key = '" + vals[0] + "'");
-
-                if (rows.Length == 0)   // name is not in list
-                {
-                    DataRow newRow = ds.Tables[tableName].NewRow();
-                    newRow[0] = vals[0];
-                    newRow[1] = vals[1];
-                    ds.Tables[tableName].Rows.Add(newRow);
-                }
-                else if (rows.Length == 1)
-                {
-                    rows[0][1] = vals[1];
-                }
-
-            } //foreach
-
-
+            }
         } // SaveVars()
 
+        // P28: replace-all persistence for data sets where deletion must be authoritative.
+        // SaveVars remains unchanged for legacy callers.
+        public static void ReplaceVars(string tableName, ref ArrayList list)
+        {
+            lock (db_io_lock)
+            {
+                if (ds == null) return;
+                if (!ds.Tables.Contains(tableName)) AddFormTable(tableName);
+                ds.Tables[tableName].Rows.Clear();
+                SaveVars(tableName, ref list);
+            }
+        }
         public static ArrayList GetVars(string tableName)
         {
-            ArrayList list = new ArrayList();
-            if (!ds.Tables.Contains(tableName))
-                return list;
-
-            DataTable t = ds.Tables[tableName];
-
-            for (int i = 0; i < t.Rows.Count; i++)
+            lock (db_io_lock)
             {
-                list.Add(t.Rows[i][0].ToString() + "/" + t.Rows[i][1].ToString());
-            }
+                ArrayList list = new ArrayList();
+                if (ds == null || !ds.Tables.Contains(tableName))
+                    return list;
 
-            return list;
+                DataTable t = ds.Tables[tableName];
+                for (int i = 0; i < t.Rows.Count; i++)
+                {
+                    if (t.Rows[i].RowState == DataRowState.Deleted ||
+                        t.Rows[i].RowState == DataRowState.Detached)
+                        continue;
+                    list.Add(t.Rows[i][0].ToString() + "/" + t.Rows[i][1].ToString());
+                }
+                return list;
+            }
         }
 
         public static bool ImportDatabase(string filename)
         {
-            // if(!File.Exists(filename)) return false;
-
             DataSet file = new DataSet();
-
             try
             {
                 file.ReadXml(filename);
@@ -12536,13 +12888,17 @@ namespace PowerSDR
                 return false;
             }
 
-            ds = file;
+            if (file.Tables.Contains("BandStack"))
+            {
+                DataRow[] rows = file.Tables["BandStack"].Select("Mode = 'FMN'");
+                foreach (DataRow dr in rows)
+                    dr["Mode"] = "FM";
+            }
 
-            // Handle change of mode from FMN to just FM
-            DataRow[] rows = ds.Tables["BandStack"].Select("Mode = 'FMN'");
-            foreach (DataRow dr in rows)
-                dr["Mode"] = "FM";
-
+            lock (db_io_lock)
+            {
+                ds = file;
+            }
             return true;
         }
 

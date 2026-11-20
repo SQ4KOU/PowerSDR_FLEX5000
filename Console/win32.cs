@@ -38,6 +38,9 @@ namespace PowerSDR
         [DllImport("msvcrt.dll", CallingConvention = CallingConvention.Cdecl, EntryPoint = "memcpy")]
         public static extern void memcpy(void* destptr, void* srcptr, int n);
 
+        [DllImport("msvcrt.dll", CallingConvention = CallingConvention.Cdecl, EntryPoint = "memmove")]
+        public static extern void memmove(void* destptr, void* srcptr, int n);
+
         [DllImport("kernel32.dll", EntryPoint = "EnterCriticalSection")]
         public static extern void EnterCriticalSection(void* cs_ptr);
 

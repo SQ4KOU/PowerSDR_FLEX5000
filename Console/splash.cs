@@ -97,29 +97,11 @@ namespace PowerSDR
             this.ShowInTaskbar = false;
 
 
-            Random random = new Random();  
-            bool randomBool = random.Next(2) == 0;  // Returns true or false randomly
-
-            if (randomBool) pictureBox1.Image = Properties.Resources.moonearth8;
-            else pictureBox1.Image = Properties.Resources.moonearth8;
-
-
-            pictureBox1.SizeMode = PictureBoxSizeMode.StretchImage;
-           
-            var pos = this.PointToScreen(lblStatus.Location);
-            pos = pictureBox1.PointToClient(pos);
-
-            lblStatus.Parent = pictureBox1;
+            // SQ4KOU P20: restore the original FlexRadio PowerSDR splash artwork.
+            // Do not use the later KE9NS random Earth/Moon images.
+            pictureBox1.Visible = false;
             lblStatus.BackColor = Color.Transparent;
-            lblStatus.Location = pos;
-
-            lblTimeRemaining.Parent = pictureBox1;
             lblTimeRemaining.BackColor = Color.Transparent;
-
-            pos = this.PointToScreen(lblTimeRemaining.Location);
-            pos = pictureBox1.PointToClient(pos);
-
-            lblTimeRemaining.Location = pos;
 
 
         }

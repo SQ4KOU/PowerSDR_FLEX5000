@@ -1608,6 +1608,7 @@ namespace PowerSDR
         public Console(string[] args)                  // ke9ns: Main() called first
         {
 
+            SQ4KOUUIDiagnostics.Mark("STARTUP", "CONSOLE_CTOR_BODY_BEGIN", null);
             Debug.WriteLine("===START=== Console here");
 
             //====================================================================================
@@ -2016,7 +2017,31 @@ namespace PowerSDR
 
             Splash.SetStatus("Initializing Components");        // Set progress point
 
+            long sq4kouInitComponentsStart = SQ4KOUUIDiagnostics.OperationBegin("STARTUP", "INITIALIZE_COMPONENTS", null);
             InitializeComponent();                              // Windows Forms Generated Code
+            this.Shown += new EventHandler(P25ThetisMetersShown);
+            SQ4KOUUIDiagnostics.OperationEnd(sq4kouInitComponentsStart, "STARTUP", "INITIALIZE_COMPONENTS", null);
+            SQ4KOUUIDiagnostics.AttachUI(this);
+            SQ4KOUStartupPresentation.Install(this, picDisplay, delegate
+            {
+                if (setupForm != null &&
+                    setupForm.chkBoxAutoStart.Checked == true &&
+                    chkPower.Checked == false)
+                {
+                    long sq4kouAutoStartAfterReveal = SQ4KOUUIDiagnostics.OperationBegin(
+                        "STARTUP",
+                        "AUTOSTART_POWER_ON",
+                        "phase=after_reveal");
+
+                    chkPower.Checked = true;
+
+                    SQ4KOUUIDiagnostics.OperationEnd(
+                        sq4kouAutoStartAfterReveal,
+                        "STARTUP",
+                        "AUTOSTART_POWER_ON",
+                        "phase=after_reveal;power=" + chkPower.Checked);
+                }
+            });
 
             //  SetProcessShutdownParameters(0x3FF, 0x00000001);  // ke9ns add: part of wndProc to allow shutdown
             //   ShutdownBlockReasonDestroy(this.Handle);
@@ -2026,7 +2051,9 @@ namespace PowerSDR
             MinimumSize = this.Size;
 
             Splash.SetStatus("Initializing Database");			// Set progress point
+            long sq4kouDbInitStart = SQ4KOUUIDiagnostics.OperationBegin("STARTUP", "DB_INIT", null);
             DB_Exists = DB.Init(radio_to_use.Model);		    // Initialize the database and pass the current radio model
+            SQ4KOUUIDiagnostics.OperationEnd(sq4kouDbInitStart, "STARTUP", "DB_INIT", "exists=" + DB_Exists);
 
             InitCTCSS();
             Splash.SetStatus("Initializing Hardware");			// Set progress point
@@ -2261,8 +2288,15 @@ namespace PowerSDR
             dsp = new DSP();								    // Initialize the Radio processor
 
             Splash.SetStatus("Initializing PortAudio");			// Set progress point
+            long sq4kouPaInitStart = SQ4KOUUIDiagnostics.OperationBegin("STARTUP", "PORTAUDIO_INIT", null);
             PA19.PA_Initialize();								// Initialize the audio interface
-            if (fwc_init) Thread.Sleep(600);
+            SQ4KOUUIDiagnostics.OperationEnd(sq4kouPaInitStart, "STARTUP", "PORTAUDIO_INIT", null);
+            if (fwc_init)
+            {
+                SQ4KOUUIDiagnostics.Mark("STARTUP", "FWC_SETTLE_SLEEP_BEGIN", "ms=600");
+                Thread.Sleep(600);
+                SQ4KOUUIDiagnostics.Mark("STARTUP", "FWC_SETTLE_SLEEP_END", "ms=600");
+            }
 
             Splash.SetStatus("Loading Main Form");				// Set progress point
             Splash.SplashForm.Owner = this;						// So that main form will show/focus when splash disappears
@@ -2277,7 +2311,9 @@ namespace PowerSDR
 
 
 
-            InitConsole();										// Initialize all forms and main variables            
+            long sq4kouInitConsoleStart = SQ4KOUUIDiagnostics.OperationBegin("STARTUP", "INIT_CONSOLE", null);
+            InitConsole();
+            SQ4KOUUIDiagnostics.OperationEnd(sq4kouInitConsoleStart, "STARTUP", "INIT_CONSOLE", null);										// Initialize all forms and main variables            
 
             Splash.SetStatus("Finished");                       // Set progress point
                                                                 // Activates double buffering
@@ -2291,7 +2327,7 @@ namespace PowerSDR
             this.SetStyle(ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint | ControlStyles.OptimizedDoubleBuffer, true);
             this.UpdateStyles();
 
-            Splash.CloseForm();									// End splash screen
+            Splash.SetStatus("Finalizing Main Window"); // P20: retain original Flex splash until stable UI reveal									// End splash screen
 
             // create a Windows Mutex for PowerSDR.  Do not create a second Mutex if one already exists
             // ke9ns: Mutex prevents 2 or more threads from simultaneously accessing a resource
@@ -2633,7 +2669,9 @@ namespace PowerSDR
             //button1.Visible = true;
             //buttonTS1.Visible = true;
 #endif
+            long sq4kouSyncDspStart = SQ4KOUUIDiagnostics.OperationBegin("STARTUP", "SYNC_DSP", null);
             SyncDSP();
+            SQ4KOUUIDiagnostics.OperationEnd(sq4kouSyncDspStart, "STARTUP", "SYNC_DSP", null);
 
             //  initializing = false; //.242 was here, no down below
 
@@ -2650,7 +2688,10 @@ namespace PowerSDR
             {
                 if (setupForm.chkBoxAutoStart.Checked == true)
                 {
-                    chkPower.Checked = true;
+                    SQ4KOUUIDiagnostics.Mark(
+                        "STARTUP",
+                        "AUTOSTART_DEFERRED_UNTIL_UI_REVEAL",
+                        "power=" + chkPower.Checked);
                 }
             }
 
@@ -2665,19 +2706,13 @@ namespace PowerSDR
 
             if (CONSOLEM == true)
             {
-                //  Debug.WriteLine("MAXIMUM2" + CONSOLEL);
+                // Restore the last NORMAL rectangle first, then return to maximized state.
+                // This also preserves a useful restore size when the user later clicks Restore.
                 this.Top = CONSOLET;
                 this.Left = CONSOLEL;
                 this.Width = CONSOLEW;
                 this.Height = CONSOLEH;
-
-                //  this.WindowState = FormWindowState.Normal;
-
-
-                //   this.WindowState = FormWindowState.Maximized;
-
-
-                //  Debug.WriteLine("MAXIMUM2");
+                this.WindowState = FormWindowState.Maximized;
             }
 
             // ke9ns .194  SS1 = panafall8020 = .833333  , SS2 = panafall = .5
@@ -2775,6 +2810,7 @@ namespace PowerSDR
             Debug.WriteLine("===END=== Console here");
 
             initializing = false; //.242 moved down here
+            SQ4KOUUIDiagnostics.Mark("STARTUP", "CONSOLE_CTOR_BODY_END", "initializing=false");
 
         } // public console
 
@@ -2801,6 +2837,7 @@ namespace PowerSDR
         public bool reset_db = false;
         protected override void Dispose(bool disposing)
         {
+            Stopwatch sq4kouShutdown2Timer = Stopwatch.StartNew();
 
             Debug.WriteLine("((((((((ENTER DISPOSE ROUTINE))))))))))))))))");
 
@@ -2812,7 +2849,9 @@ namespace PowerSDR
             writer.WriteLine("1) USB exit");
 
             USB.Exit(); // for 1500
-            Thread.Sleep(300);
+            // FLEX-5000 does not use the SDR-1000/FLEX-1500 USB shutdown path.
+            // Preserve the legacy delay for other models only.
+            if (current_model != Model.FLEX5000) Thread.Sleep(300);
 
             writer.WriteLine("1) Done");
 
@@ -2916,6 +2955,7 @@ namespace PowerSDR
 
             Debug.WriteLine("((((((((TERMINATE PROGRM .......EXIT HERE.....))))))))))))))))");
 
+            writer.WriteLine("SQ4KOU_SHUTDOWN2_TOTAL_MS=" + sq4kouShutdown2Timer.ElapsedMilliseconds.ToString());
             writer.Close(); // 2
 
             //    AutoClosingMessageBox.Show("Database Updated\nPowerSDR now Closed.", "PowerSDR Closed.", 2000);
@@ -2937,6 +2977,8 @@ namespace PowerSDR
         {
 
             Debug.WriteLine("===START=== Main here");
+            SQ4KOUUIDiagnostics.StartEarly();
+            SQ4KOUUIDiagnostics.Mark("STARTUP", "MAIN_BEGIN", null);
 
             string app_data_path = "";
             string app_data_path1 = ""; // ke9ns add for original 2.7.2 folder
@@ -3228,10 +3270,13 @@ namespace PowerSDR
 
                 Debug.WriteLine("===Start=== create Console() here "); // ke9ns: 
 
+                long sq4kouConsoleCtorStart = SQ4KOUUIDiagnostics.OperationBegin("STARTUP", "CONSOLE_CTOR", null);
                 theConsole = new Console(args);  // ke9ns: run Console here
+                SQ4KOUUIDiagnostics.OperationEnd(sq4kouConsoleCtorStart, "STARTUP", "CONSOLE_CTOR", null);
 
                 Debug.WriteLine("console1"); // ke9ns: 
 
+                SQ4KOUUIDiagnostics.Mark("STARTUP", "APPLICATION_RUN_ENTER", null);
                 Application.Run(theConsole);
 
             }
@@ -4302,6 +4347,7 @@ namespace PowerSDR
 
         public void ExitConsole()
         {
+            Stopwatch sq4kouShutdown3Timer = Stopwatch.StartNew();
 
             Debug.WriteLine("((((((((EXIT CONSOLE ENTER))))))))))))))))");
 
@@ -4359,14 +4405,14 @@ namespace PowerSDR
 
 
 
-            Thread.Sleep(100);
 
             Debug.WriteLine("((((((((SAVING DATABASE))))))))))))))))");
 
+            Stopwatch sq4kouDbExitTimer = Stopwatch.StartNew();
             DB.Exit();                  // close and save database
+            writer.WriteLine("SQ4KOU_DB_EXIT_PHYSICAL_WRITE_MS=" + sq4kouDbExitTimer.ElapsedMilliseconds.ToString());
 
             writer.WriteLine("3) Done");
-            Thread.Sleep(100);
             //----------------------------------------------------------------
 
 
@@ -4688,7 +4734,6 @@ namespace PowerSDR
             if (chkPower.Checked == true) chkPower.Checked = false;   // make sure power is off		
             if (ckQuickRec.Checked == true) ckQuickRec.Checked = false; // make sure recording is stopped
 
-            Thread.Sleep(100);
 
             writer.WriteLine("28) PA Terminate");
 
@@ -4704,7 +4749,6 @@ namespace PowerSDR
 
             writer.WriteLine("28) Done");
             writer.WriteLine("29) DttSP Exit");
-            Thread.Sleep(100);
 
 
             writer.WriteLine("29) DTTSP NOW");
@@ -4716,7 +4760,6 @@ namespace PowerSDR
             Debug.WriteLine("((((((((DTTSP EXIT))))))))))))))))");
 
 
-            Thread.Sleep(100);
 
             writer.WriteLine("30) ReleaseMutex");
             //-----------------------------------------------------------------------------------
@@ -4752,6 +4795,7 @@ namespace PowerSDR
 
             writer.WriteLine("31) EXITCONSOLE DONE. Rejoin back to shutdown");
 
+            writer.WriteLine("SQ4KOU_SHUTDOWN3_TOTAL_MS=" + sq4kouShutdown3Timer.ElapsedMilliseconds.ToString());
             writer.Close();
 
 
@@ -4766,8 +4810,25 @@ namespace PowerSDR
         //ke9ns   SAVE in DATABASE 
         //==============================================================================================
         //==============================================================================================
+        // SQ4KOU P06 shutdown evidence; diagnostics only, no behavior change.
+        private long sq4kouSaveStateTotalMs = -1;
+        private long sq4kouSaveStateSWRMs = -1;
+        private long sq4kouSaveStateKe9ns8Ms = -1;
+        private long sq4kouSaveStateBuildMs = -1;
+        private long sq4kouSaveStatePurgeMs = -1;
+        private long sq4kouSaveStateDbVarsMs = -1;
+        // SQ4KOU P07: immutable close-time main-window snapshot.
+
+        private bool sq4kouClosingWindowCaptured = false;
+
+        private FormWindowState sq4kouClosingWindowState = FormWindowState.Normal;
+
+        private Rectangle sq4kouClosingRestoreBounds = Rectangle.Empty;
+
         public void SaveState()
         {
+            Stopwatch sq4kouSaveStateTimer = Stopwatch.StartNew();
+            Stopwatch sq4kouSaveStatePartTimer = Stopwatch.StartNew();
             // Automatically saves all control settings to the database in the tab
             // pages on this form of the following types: CheckBox, ComboBox,
             // NumericUpDown, RadioButton, TextBox, and TrackBar (slider)
@@ -4785,11 +4846,14 @@ namespace PowerSDR
             //-------------------------------------------------------------------
             // ke9ns add  create database to store my stuff in
 
+            sq4kouSaveStatePartTimer.Restart();
             SWR_Logger_Write(); // save SWR data
+            sq4kouSaveStateSWRMs = sq4kouSaveStatePartTimer.ElapsedMilliseconds;
 
 
             //-------------------------------------------------------------------------------
 
+            sq4kouSaveStatePartTimer.Restart();
             string file_name2 = AppDataPath + "ke9ns8.dat"; // save data for my mods
 
             FileStream stream2 = new FileStream(file_name2, FileMode.Create); // open  file
@@ -4835,6 +4899,7 @@ namespace PowerSDR
 
             writer2.Close();    // close  file
             stream2.Close();   // close stream
+            sq4kouSaveStateKe9ns8Ms = sq4kouSaveStatePartTimer.ElapsedMilliseconds;
                                //   Debug.WriteLine("save database file on exit");
 
             PAON = 0;       // shut down PAON thread
@@ -4857,6 +4922,7 @@ namespace PowerSDR
             //   Debug.WriteLine("call " + callsign);
             //   Debug.WriteLine("callL " + LastCall);
 
+            sq4kouSaveStatePartTimer.Restart();
             ArrayList a = new ArrayList();     // storage for saving everything
 
 
@@ -5502,12 +5568,23 @@ namespace PowerSDR
             a.Add("vfob_dsp_mode/" + ((int)vfob_dsp_mode).ToString());  // Save VFO B values
             a.Add("vfob_filter/" + ((int)vfob_filter).ToString());
 
-            a.Add("console_zaximize/" + this.WindowState.ToString()); // ke9ns add: for max detection
+            // Preserve both the actual window state and the NORMAL restore rectangle.
+            // On application close prefer the snapshot captured before Hide()/teardown.
+            Rectangle consoleBoundsToSave = sq4kouClosingWindowCaptured
+                ? sq4kouClosingRestoreBounds
+                : ((this.WindowState == FormWindowState.Normal) ? this.Bounds : this.RestoreBounds);
 
-            a.Add("console_top/" + this.Top.ToString());                    // save form positions
-            a.Add("console_left/" + this.Left.ToString());
-            a.Add("console_width/" + this.Width.ToString());
-            a.Add("console_height/" + this.Height.ToString());
+            FormWindowState consoleWindowStateToSave = sq4kouClosingWindowCaptured
+                ? sq4kouClosingWindowState
+                : this.WindowState;
+
+            a.Add("console_zaximize/" +
+                (consoleWindowStateToSave == FormWindowState.Maximized ? "Maximized" : "Normal"));
+
+            a.Add("console_top/" + consoleBoundsToSave.Top.ToString());      // save normal restore position
+            a.Add("console_left/" + consoleBoundsToSave.Left.ToString());
+            a.Add("console_width/" + consoleBoundsToSave.Width.ToString());
+            a.Add("console_height/" + consoleBoundsToSave.Height.ToString());
 
             a.Add("setup_top/" + setupForm.Top.ToString());
             a.Add("setup_left/" + setupForm.Left.ToString());
@@ -5535,11 +5612,17 @@ namespace PowerSDR
 
             }
 
+            sq4kouSaveStateBuildMs = sq4kouSaveStatePartTimer.ElapsedMilliseconds;
+            sq4kouSaveStatePartTimer.Restart();
             DB.PurgeNotches();                      // remove old notches from DB
+            sq4kouSaveStatePurgeMs = sq4kouSaveStatePartTimer.ElapsedMilliseconds;
             a.Add(NrModeState.Serialize(experimental_rx1_nr_mode));
             a.Add(NrModeState.Serialize(experimental_rx2_nr_mode, true));
 
+            sq4kouSaveStatePartTimer.Restart();
             DB.SaveVars("State", ref a);            // save the "State" values to the DB
+            sq4kouSaveStateDbVarsMs = sq4kouSaveStatePartTimer.ElapsedMilliseconds;
+            sq4kouSaveStateTotalMs = sq4kouSaveStateTimer.ElapsedMilliseconds;
 
             //  MessageBox.Show(new Form { TopMost = true }, "Done updating the STATE variables ArrayList database XML structure");
 
@@ -10621,6 +10704,7 @@ namespace PowerSDR
         //======================================================================================
         public void SaveBandA()
         {
+            long sq4kouSaveBandStart = SQ4KOUUIDiagnostics.OperationBegin("BAND", "SAVE_BAND_A", "band=" + rx1_band + ";vfo=" + VFOAFreq.ToString("F6"));
             checkBoxIICPTT.Checked = false; // ke9ns add
 
             if (SaveBandAA() == false) // get bandstack Locking info
@@ -10841,6 +10925,7 @@ namespace PowerSDR
 
 
 
+            SQ4KOUUIDiagnostics.OperationEnd(sq4kouSaveBandStart, "BAND", "SAVE_BAND_A", "band=" + rx1_band);
         } // saveband
 
 
@@ -11076,6 +11161,7 @@ namespace PowerSDR
 
         public void SetBand(string mode, string filter, double freq)
         {
+            long sq4kouSetBandStart = SQ4KOUUIDiagnostics.OperationBegin("BAND", "SET_BAND", "mode=" + mode + ";filter=" + filter + ";freq=" + freq.ToString("F6"));
             if (filter.Contains("@"))
             {
                 filter = filter.Substring(0, (filter.Length) - 1); // ke9ns add: for bandstack lockout
@@ -11112,6 +11198,7 @@ namespace PowerSDR
 
             // voacap
 
+            SQ4KOUUIDiagnostics.OperationEnd(sq4kouSetBandStart, "BAND", "SET_BAND", "rx1_band=" + rx1_band + ";vfo=" + VFOAFreq.ToString("F6"));
         } // setband
 
         // ke9ns add .206 band stack to vfoB
@@ -17700,6 +17787,7 @@ namespace PowerSDR
         //==================================================================================
         private void SetRX1Band(Band b)
         {
+            long sq4kouSetRx1BandStart = SQ4KOUUIDiagnostics.OperationBegin("BAND", "SET_RX1_BAND", "old=" + rx1_band + ";new=" + b);
 
             //   panelBandHF.Invalidate(); // ke9ns add
             //  panelBandVHF.Invalidate(); // ke9ns add
@@ -17796,6 +17884,7 @@ namespace PowerSDR
                 panelBandVHF.Visible = false;
             }
 
+            SQ4KOUUIDiagnostics.OperationEnd(sq4kouSetRx1BandStart, "BAND", "SET_RX1_BAND", "now=" + rx1_band);
         } //SETRX1BAND
 
         private void SetRX2Band(Band b)
@@ -39739,8 +39828,8 @@ namespace PowerSDR
             }
         }
 
-        private int display_fps = 15;
-        private int display_delay = 1000 / 15;
+        private int display_fps = 30;
+        private int display_delay = 1000 / 30;
         public int DisplayFPS
         {
             get { return display_fps; }
@@ -40612,6 +40701,8 @@ namespace PowerSDR
             switch (current_display_engine)
             {
                 case DisplayEngine.GDI_PLUS:
+
+                    SQ4KOUUIDiagnostics.InvalidateRequested();
                     picDisplay.Invalidate();
                     break;
                 case DisplayEngine.DIRECT_X:
@@ -40920,6 +41011,7 @@ namespace PowerSDR
 
         private void PaintDisplayFrame(object sender, PaintEventArgs e) 
         {
+            long sq4kouPaintStart = SQ4KOUUIDiagnostics.PaintBegin();
             PD = e;
 
             if (mox && (RX1DSPMode == DSPMode.AM || RX1DSPMode == DSPMode.SAM)) //.265        
@@ -40999,8 +41091,18 @@ namespace PowerSDR
             switch (current_display_engine)
             {
                 case DisplayEngine.GDI_PLUS:
-                    Display.RenderGDIPlus(ref PD);  // System.Windows.Forms.PaintEventArgs
+                {
+                    long sq4kouRenderStart = SQ4KOUUIDiagnostics.RenderBegin();
+                    try
+                    {
+                        Display.RenderGDIPlus(ref PD);  // System.Windows.Forms.PaintEventArgs
+                    }
+                    finally
+                    {
+                        SQ4KOUUIDiagnostics.RenderEnd(sq4kouRenderStart);
+                    }
                     break;
+                }
                 case DisplayEngine.DIRECT_X:
                     bool rendered = Direct2DDisplay.Render(picDisplay, delegate(Graphics graphics) // v3
                     {
@@ -41018,6 +41120,7 @@ namespace PowerSDR
                     break;
             }
 
+            SQ4KOUUIDiagnostics.PaintEnd(sq4kouPaintStart);
         } //picDisplay_paint
 
 
@@ -50026,6 +50129,8 @@ namespace PowerSDR
 
         private void RunDisplay()
         {
+
+
 #if (WRITE_FFT_TEST)
             BinaryWriter writer = new BinaryWriter(File.Open("test.fft", FileMode.OpenOrCreate, FileAccess.Write));
 #endif
@@ -50412,10 +50517,12 @@ namespace PowerSDR
 
                 } // Display is not ready
 
+                SQ4KOUUIDiagnostics.ProducerTick();
                 UpdateDisplay(); // ke9ns 
 
 
                 if (chkPower.Checked)
+
                 {
                     // Keep the requested FPS as a frame period. The legacy loop
                     // slept for the full delay after doing its work, making the
@@ -50430,7 +50537,7 @@ namespace PowerSDR
                     else
                     {
                         nextDisplayFrame = displayClock.ElapsedMilliseconds;
-                        Thread.Sleep(0);
+                        Thread.Sleep(1);
                     }
                 }
 
@@ -56679,6 +56786,7 @@ namespace PowerSDR
         // chkPower
         private bool one_time = true;
         private volatile bool wdspPreparing;
+        private long sq4kouLastFwcStandbyMs = -1;
         private void chkPower_CheckedChanged(object sender, System.EventArgs e)
         {
             // Modal preparation pumps messages; do not re-enter hardware start/stop.
@@ -57163,6 +57271,26 @@ namespace PowerSDR
 
                 chkVFOLock.Enabled = false;
 
+                bool sq4kouTerminalAudioStopped = false;
+
+                // SQ4KOU P05: on application close only, stop FireWire/ASIO first.
+                // The native KE9NS power-off order sends FWC standby before closing
+                // the audio stream. On some FLEX-5000 driver stacks that synchronous
+                // PAL call can wait for the still-active FireWire stream.
+                if (Audio.FastApplicationShutdown &&
+                    (current_model == Model.FLEX5000 || current_model == Model.FLEX3000))
+                {
+                    Audio.callback_return = 2;
+                    Audio.StopAudio();
+
+                    if (vac_enabled) Audio.StopAudioVAC();
+                    if (vac2_enabled) Audio.StopAudioVAC2();
+
+                    sq4kouTerminalAudioStopped = true;
+                }
+
+                Stopwatch sq4kouFwcStandbyTimer = Stopwatch.StartNew();
+
                 if (!(fwc_init && (current_model == Model.FLEX5000 || current_model == Model.FLEX3000)))
                 {
                     //  if(current_model == Model.SDR1000)     Hdw.StandBy();
@@ -57171,6 +57299,8 @@ namespace PowerSDR
                 {
                     FWC.SetStandby(true);
                 }
+
+                sq4kouLastFwcStandbyMs = sq4kouFwcStandbyTimer.ElapsedMilliseconds;
                 chkPower.BackColor = SystemColors.Control;
                 txtVFOAFreq.ForeColor = vfo_text_dark_color;
                 txtVFOAMSD.ForeColor = vfo_text_dark_color;
@@ -57198,8 +57328,11 @@ namespace PowerSDR
                     case Model.FLEX3000:
                     //  case Model.SOFTROCK40:
                     case Model.DEMO:
-                        Audio.callback_return = 2;
-                        Audio.StopAudio();
+                        if (!sq4kouTerminalAudioStopped)
+                        {
+                            Audio.callback_return = 2;
+                            Audio.StopAudio();
+                        }
                         break;
                     case Model.FLEX1500:
                         //Audio.StopAudio(); // take this out when using new driver
@@ -57207,48 +57340,45 @@ namespace PowerSDR
                         break;
                 }
 
-                if (vac_enabled)
+                if (vac_enabled && !sq4kouTerminalAudioStopped)
                 {
                     Debug.WriteLine("test8===============");
 
                     Audio.StopAudioVAC();
                 }
 
-                if (vac2_enabled)
+                if (vac2_enabled && !sq4kouTerminalAudioStopped)
                 {
                     Audio.StopAudioVAC2();
                 }
 
-                if (draw_display_thread != null)
+                // SQ4KOU P03: all worker loops see chkPower=false at the same time.
+                // Give the whole group one 500 ms shutdown budget instead of up to
+                // 500 ms per thread (the old code could accumulate to ~3 seconds).
+                Thread[] shutdownThreads = new Thread[]
                 {
-                    if (!draw_display_thread.Join(500))
-                        draw_display_thread.Abort();
-                }
-                if (multimeter_thread != null)
+                    draw_display_thread,
+                    multimeter_thread,
+                    sql_update_thread,
+                    noise_gate_update_thread,
+                    vox_update_thread,
+                    poll_ptt_thread
+                };
+
+                Stopwatch shutdownJoinWatch = Stopwatch.StartNew();
+                foreach (Thread shutdownThread in shutdownThreads)
                 {
-                    if (!multimeter_thread.Join(500))
-                        multimeter_thread.Abort();
-                }
-                if (sql_update_thread != null)
-                {
-                    if (!sql_update_thread.Join(500))
-                        sql_update_thread.Abort();
-                }
-                if (noise_gate_update_thread != null)
-                {
-                    if (!noise_gate_update_thread.Join(500))
-                        noise_gate_update_thread.Abort();
-                }
-                if (vox_update_thread != null)
-                {
-                    if (!vox_update_thread.Join(500))
-                        vox_update_thread.Abort();
+                    if (shutdownThread == null || !shutdownThread.IsAlive) continue;
+
+                    int remaining = Math.Max(0, 500 - (int)shutdownJoinWatch.ElapsedMilliseconds);
+                    if (remaining > 0) shutdownThread.Join(remaining);
                 }
 
-                if ((poll_ptt_thread != null)) // ke9ns mod
+                foreach (Thread shutdownThread in shutdownThreads)
                 {
-                    if (!poll_ptt_thread.Join(500))
-                        poll_ptt_thread.Abort();
+                    if (shutdownThread == null || !shutdownThread.IsAlive) continue;
+                    try { shutdownThread.Abort(); }
+                    catch (ThreadStateException) { }
                 }
             }
 
@@ -57686,12 +57816,24 @@ namespace PowerSDR
         {
             if (wdspPreparing) { e.Cancel = true; return; }
             if (DeferCloseForMap(e)) return;
+            P25ShutdownThetisMeters(); // P25: save/stop native Thetis meters before PowerSDR shutdown
+            Stopwatch sq4kouShutdown1Timer = Stopwatch.StartNew();
+
+            // Capture before chkPower changes, Hide() and any child-form teardown.
+            sq4kouClosingWindowState = this.WindowState;
+            sq4kouClosingRestoreBounds =
+                (this.WindowState == FormWindowState.Normal) ? this.Bounds : this.RestoreBounds;
+            sq4kouClosingWindowCaptured = true;
+
+            // Application exit is terminal: do not spend up to 10 seconds waiting
+            // for the FireWire/ASIO stream to drain gracefully. Audio.StopAudio()
+            // will use PA_AbortStream only for this close path.
+            Audio.FastApplicationShutdown = true;
             Direct2DDisplay.Shutdown();  //v3
 
             if (chkPower.Checked) //.254
             {
                 chkPower.Checked = false;
-                Thread.Sleep(800); // give time to actually stop
 
             }
 
@@ -57716,7 +57858,6 @@ namespace PowerSDR
 
 
             chkPower.Checked = false;
-            Thread.Sleep(300);
 
             //------------------------------------------------------------------------
             // ke9ns  add
@@ -57724,8 +57865,12 @@ namespace PowerSDR
             StreamWriter writer = new StreamWriter(app_data_path + "shutdown1.log"); //   // look for %userprofile%\AppData\Roaming\FlexRadio Systems\PowerSDR v2.8.0\
 
             writer.WriteLine("This is a PowerSDR powering downlog: 1-8");
+            Stopwatch sq4kouStageTimer = new Stopwatch();
+            Stopwatch sq4kouSubTimer = new Stopwatch();
+            writer.WriteLine("SQ4KOU_POWER_OFF_PHASE_MS=" + sq4kouShutdown1Timer.ElapsedMilliseconds.ToString());
 
             writer.WriteLine("1) Disable Audio, CAT, CXAuto, Rotor, VFODIAL, N1MM, QuicRec, Powermate, CWX Polling, timers, VOARUN, MUF");
+            sq4kouStageTimer.Restart();
 
             Debug.WriteLine("CONSOLE_CLOSING");
 
@@ -57754,9 +57899,10 @@ namespace PowerSDR
 
 
             writer.WriteLine("1) Done");
+            writer.WriteLine("SQ4KOU_STEP1_DISABLE_SERVICES_MS=" + sq4kouStageTimer.ElapsedMilliseconds.ToString());
+            writer.WriteLine("SQ4KOU_FWC_STANDBY_MS=" + sq4kouLastFwcStandbyMs.ToString());
             writer.WriteLine("2) Hide all forms ");
-
-            Thread.Sleep(100);
+            sq4kouStageTimer.Restart();
 
             //--------------------------------------------------------------
             // hide all open forms
@@ -57796,26 +57942,38 @@ namespace PowerSDR
             //--------------------------------------------------------------
 
             writer.WriteLine("2) Done");
+            writer.WriteLine("SQ4KOU_STEP2_HIDE_FORMS_MS=" + sq4kouStageTimer.ElapsedMilliseconds.ToString());
             writer.WriteLine("3) Save MemoryList and DXMemList");
+            sq4kouStageTimer.Restart();
 
+            sq4kouSubTimer.Restart();
             MemoryList.Save();
+            writer.WriteLine("SQ4KOU_MEMORYLIST_SAVE_MS=" + sq4kouSubTimer.ElapsedMilliseconds.ToString());
+            sq4kouSubTimer.Restart();
             DXMemList.Save1(); // ke9ns add
+            writer.WriteLine("SQ4KOU_DXMEMLIST_SAVE_MS=" + sq4kouSubTimer.ElapsedMilliseconds.ToString());
             writer.WriteLine("3) Done");
-
-            Thread.Sleep(100);
+            writer.WriteLine("SQ4KOU_STEP3_MEMORY_TOTAL_MS=" + sq4kouStageTimer.ElapsedMilliseconds.ToString());
 
             Debug.WriteLine("CONSOLE_CLOSING----- SAVE MEMORY DONE");
 
             writer.WriteLine("4) Save SWL_logger, ke9ns8.dat, and Database STATE variables, and Power.csv file");
+            sq4kouStageTimer.Restart();
 
-            SaveState();                // put current settings back into database     DB.SaveVars("State", ref a);		    // save the values to the DB
+            SaveState();
+            writer.WriteLine("SQ4KOU_STEP4_SAVESTATE_TOTAL_MS=" + sq4kouStageTimer.ElapsedMilliseconds.ToString());
+            writer.WriteLine("SQ4KOU_SAVESTATE_SWR_LOGGER_MS=" + sq4kouSaveStateSWRMs.ToString());
+            writer.WriteLine("SQ4KOU_SAVESTATE_KE9NS8_MS=" + sq4kouSaveStateKe9ns8Ms.ToString());
+            writer.WriteLine("SQ4KOU_SAVESTATE_BUILD_STATE_MS=" + sq4kouSaveStateBuildMs.ToString());
+            writer.WriteLine("SQ4KOU_SAVESTATE_PURGE_NOTCHES_MS=" + sq4kouSaveStatePurgeMs.ToString());
+            writer.WriteLine("SQ4KOU_SAVESTATE_DB_SAVEVARS_MS=" + sq4kouSaveStateDbVarsMs.ToString());
+            writer.WriteLine("SQ4KOU_SAVESTATE_INTERNAL_TOTAL_MS=" + sq4kouSaveStateTotalMs.ToString());                // put current settings back into database     DB.SaveVars("State", ref a);		    // save the values to the DB
 
             writer.WriteLine("4) Done");
 
 
             writer.WriteLine("5) turn off PABias and MIDI");
-
-            Thread.Sleep(100);
+            sq4kouStageTimer.Restart();
 
 
             //--------------------------------------------------------------
@@ -57853,16 +58011,19 @@ namespace PowerSDR
             }
 
             writer.WriteLine("5) DONE");
+            writer.WriteLine("SQ4KOU_STEP5_PABIAS_MIDI_MS=" + sq4kouStageTimer.ElapsedMilliseconds.ToString());
             //-------------------------------------------------------------
             Debug.WriteLine("CONSOLE_CLOSING----- SAVING STATE TO DATABASE. DONE");
 
             writer.WriteLine("6) Save SetupForm OPTIONS variables for Database");
+            sq4kouStageTimer.Restart();
 
             if (setupForm != null) setupForm.SaveOptions();
+            writer.WriteLine("SQ4KOU_STEP6_SAVEOPTIONS_TOTAL_MS=" + sq4kouStageTimer.ElapsedMilliseconds.ToString());
             writer.WriteLine("6) DONE");
-            Thread.Sleep(100);
 
             writer.WriteLine("7) CLOSE all forms");
+            sq4kouStageTimer.Restart();
 
             if (cwxForm != null && !cwxForm.IsDisposed) cwxForm.Close();
 
@@ -57899,10 +58060,8 @@ namespace PowerSDR
 
             if (SpotWatchBoxForm != null && !SpotWatchBoxForm.IsDisposed) SpotWatchBoxForm.Close(); // ke9ns .269
 
-
-            Thread.Sleep(100);
-
             writer.WriteLine("7) DONE");
+            writer.WriteLine("SQ4KOU_STEP7_CLOSE_FORMS_MS=" + sq4kouStageTimer.ElapsedMilliseconds.ToString());
 
             Debug.WriteLine("CONSOLE_CLOSING------ ALL FORMS CLOSED DONE");
 
@@ -57912,6 +58071,7 @@ namespace PowerSDR
             writer.WriteLine("8) done with Console_closing, on to shutdown2.log Dispose");
             // ke9ns console_closing(), then Dispose(), then ExitConsole(), then back to Displose() to finish
 
+            writer.WriteLine("SQ4KOU_SHUTDOWN1_TOTAL_MS=" + sq4kouShutdown1Timer.ElapsedMilliseconds.ToString());
             writer.Close();
 
             e.Cancel = false;
@@ -71903,6 +72063,8 @@ namespace PowerSDR
 
         public void ResizeConsole(int h_delta1, int v_delta)        //k6jca 1/15/08
         {
+            bool p51NativeLayoutWasApplied =
+                !(h_delta1 == 0 && v_delta == 0 && previous_delta == 0);
             //  if (FirstDown == true) return;
 
             // This routine captures the size and location parameters *after* windows
@@ -72666,6 +72828,8 @@ namespace PowerSDR
 
             panelTSRadar.Invalidate(); //.246
 
+            if (p51NativeLayoutWasApplied)
+                P51AfterNativeConsoleResize();
 
         } // resizeconsole
 
@@ -75301,6 +75465,7 @@ namespace PowerSDR
         //================================================================================================ke9ns MOD
         public void Console_Resize(object sender, System.EventArgs e)
         {
+            long sq4kouResizeStart = SQ4KOUUIDiagnostics.OperationBegin("LAYOUT", "CONSOLE_RESIZE", "state=" + WindowState + ";size=" + Width + "x" + Height);
 
             //  if (FirstDown == true) return;
 
@@ -75511,6 +75676,7 @@ namespace PowerSDR
                 N1MM_RESIZE = false;
             }
 
+            SQ4KOUUIDiagnostics.OperationEnd(sq4kouResizeStart, "LAYOUT", "CONSOLE_RESIZE", "state=" + WindowState + ";size=" + Width + "x" + Height);
         } // control resize
 
 

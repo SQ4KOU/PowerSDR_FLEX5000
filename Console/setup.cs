@@ -1,4 +1,4 @@
-//=================================================================
+ï»¿//=================================================================
 // setup.cs
 //=================================================================
 // PowerSDR is a C# implementation of a Software Defined Radio.
@@ -98,6 +98,8 @@ namespace PowerSDR
             InitializeWdspNbOptions();
 
             console = c;
+            P44InitTCIUI();
+            P39InitLegacyItemsUI();
             openFileDialog1.InitialDirectory = String.Empty;
             openFileDialog1.InitialDirectory = console.AppDataPath;
 
@@ -981,85 +983,204 @@ namespace PowerSDR
                     ControlList(c2, ref a);
             }
 
-            if (c.GetType() == typeof(CheckBoxTS) || c.GetType() == typeof(CheckBoxTS) ||
-                c.GetType() == typeof(ComboBoxTS) || c.GetType() == typeof(ComboBox) ||
-                c.GetType() == typeof(NumericUpDownTS) || c.GetType() == typeof(NumericUpDown) ||
-                c.GetType() == typeof(RadioButtonTS) || c.GetType() == typeof(RadioButton) ||
-                c.GetType() == typeof(TextBoxTS) || c.GetType() == typeof(TextBox) ||
-                c.GetType() == typeof(TrackBarTS) || c.GetType() == typeof(TrackBar) ||
-                c.GetType() == typeof(ColorButton))
+            if (c is CheckBox ||
+                c is ComboBox ||
+                c is NumericUpDown ||
+                c is RadioButton ||
+                c is TextBox ||
+                c is TrackBar ||
+                c is ColorButton)
                 a.Add(c);
         }
 
+        private bool P49IsPersistentOptionControl(Control c)
+        {
+            if (c == null || String.IsNullOrEmpty(c.Name)) return false;
+
+            // P39/P44 dynamically-created controls own dedicated DB tables.
+            if (c.Name.StartsWith("p39", StringComparison.OrdinalIgnoreCase) ||
+                c.Name.StartsWith("p44", StringComparison.OrdinalIgnoreCase))
+                return false;
+
+            return c is CheckBox ||
+                   c is ComboBox ||
+                   c is NumericUpDown ||
+                   c is RadioButton ||
+                   c is TextBox ||
+                   c is TrackBar ||
+                   c is ColorButton;
+        }
+
+        private bool P49SerializeOptionControl(Control c, ArrayList a)
+        {
+            if (!P49IsPersistentOptionControl(c)) return false;
+
+            ColorButton color = c as ColorButton;
+            if (color != null)
+            {
+                Color clr = color.Color;
+                a.Add(c.Name + "/" + clr.R + "." + clr.G + "." + clr.B + "." + clr.A);
+                return true;
+            }
+
+            CheckBox check = c as CheckBox;
+            if (check != null) { a.Add(c.Name + "/" + check.Checked.ToString()); return true; }
+
+            ComboBox combo = c as ComboBox;
+            if (combo != null) { a.Add(c.Name + "/" + combo.Text); return true; }
+
+            NumericUpDown numeric = c as NumericUpDown;
+            if (numeric != null)
+            {
+                a.Add(c.Name + "/" + numeric.Value.ToString(System.Globalization.CultureInfo.InvariantCulture));
+                return true;
+            }
+
+            RadioButton radio = c as RadioButton;
+            if (radio != null) { a.Add(c.Name + "/" + radio.Checked.ToString()); return true; }
+
+            TextBox text = c as TextBox;
+            if (text != null) { a.Add(c.Name + "/" + text.Text); return true; }
+
+            TrackBar track = c as TrackBar;
+            if (track != null)
+            {
+                a.Add(c.Name + "/" + track.Value.ToString(System.Globalization.CultureInfo.InvariantCulture));
+                return true;
+            }
+
+            return false;
+        }
+
+        private bool P49RestoreOptionControl(Control c, string val)
+        {
+            if (!P49IsPersistentOptionControl(c)) return false;
+
+            ColorButton color = c as ColorButton;
+            if (color != null)
+            {
+                string[] colors = val.Split('.');
+                int r,g,b,a;
+                if (colors.Length == 4 &&
+                    Int32.TryParse(colors[0], out r) &&
+                    Int32.TryParse(colors[1], out g) &&
+                    Int32.TryParse(colors[2], out b) &&
+                    Int32.TryParse(colors[3], out a))
+                {
+                    color.Color = Color.FromArgb(a,r,g,b);
+                    return true;
+                }
+                return false;
+            }
+
+            CheckBox check = c as CheckBox;
+            if (check != null)
+            {
+                bool value;
+                if (Boolean.TryParse(val,out value)) { check.Checked=value; return true; }
+                return false;
+            }
+
+            ComboBox combo = c as ComboBox;
+            if (combo != null)
+            {
+                if (combo.Items.Count == 0 || combo.Items[0] is string)
+                {
+                    combo.Text=val;
+                    return true;
+                }
+                foreach(object item in combo.Items)
+                {
+                    if (item != null && item.ToString() == val)
+                    {
+                        combo.Text=val;
+                        return true;
+                    }
+                }
+                return false;
+            }
+
+            NumericUpDown numeric = c as NumericUpDown;
+            if (numeric != null)
+            {
+                decimal value;
+                if (!Decimal.TryParse(val,System.Globalization.NumberStyles.Number,System.Globalization.CultureInfo.InvariantCulture,out value) &&
+                    !Decimal.TryParse(val,out value))
+                    return false;
+                if (value > numeric.Maximum) value=numeric.Maximum;
+                if (value < numeric.Minimum) value=numeric.Minimum;
+                numeric.Value=value;
+                return true;
+            }
+
+            RadioButton radio = c as RadioButton;
+            if (radio != null)
+            {
+                bool value;
+                if (Boolean.TryParse(val,out value)) { radio.Checked=value; return true; }
+                return false;
+            }
+
+            TextBox text = c as TextBox;
+            if (text != null) { text.Text=val; return true; }
+
+            TrackBar track = c as TrackBar;
+            if (track != null)
+            {
+                int value;
+                if (!Int32.TryParse(val,System.Globalization.NumberStyles.Integer,System.Globalization.CultureInfo.InvariantCulture,out value) &&
+                    !Int32.TryParse(val,out value))
+                    return false;
+                if (value > track.Maximum) value=track.Maximum;
+                if (value < track.Minimum) value=track.Minimum;
+                track.Value=value;
+                return true;
+            }
+
+            return false;
+        }
         private static bool saving = false;
 
 
 
         public void SaveOptions()
         {
-            // Automatically saves all control settings to the database in the tab
-            // pages on this form of the following types: CheckBoxTS, ComboBox,
-            // NumericUpDown, RadioButton, TextBox, and TrackBar (slider)
-
+            if (saving) return;
             saving = true;
 
-
-
-
-            if (CrashProtection)  //.255
+            try
             {
-                if (console.chkPower.Checked) //.254
+                if (CrashProtection && console.chkPower.Checked)
                 {
                     textBoxSAVE.Text = "Radio Paused";
-
                     PON = true;
                     console.chkPower.Checked = false;
-                    Thread.Sleep((int)udPFNDelay.Value); //.307 was 600
-
+                    Thread.Sleep((int)udPFNDelay.Value);
                 }
+
+                ArrayList a = new ArrayList();
+                ArrayList temp = new ArrayList();
+                ControlList(this, ref temp);
+
+                foreach (Control c in temp)
+                    P49SerializeOptionControl(c, a);
+
+                // Options is a complete snapshot of named Setup controls.
+                // Replace-all removes obsolete/renamed controls instead of letting
+                // stale rows influence later restore/default decisions.
+                DB.ReplaceVars("Options", ref a);
             }
-
-            ArrayList a = new ArrayList();
-            ArrayList temp = new ArrayList();
-
-            ControlList(this, ref temp);
-
-            foreach (Control c in temp)             // For each control
+            finally
             {
-                if (c.GetType() == typeof(CheckBoxTS)) a.Add(c.Name + "/" + ((CheckBoxTS)c).Checked.ToString());
-                else if (c.GetType() == typeof(ComboBoxTS)) a.Add(c.Name + "/" + ((ComboBoxTS)c).Text);
-                else if (c.GetType() == typeof(NumericUpDownTS)) a.Add(c.Name + "/" + ((NumericUpDownTS)c).Value.ToString());
-                else if (c.GetType() == typeof(RadioButtonTS)) a.Add(c.Name + "/" + ((RadioButtonTS)c).Checked.ToString());
-                else if (c.GetType() == typeof(TextBoxTS)) a.Add(c.Name + "/" + ((TextBoxTS)c).Text);
-                else if (c.GetType() == typeof(TrackBarTS)) a.Add(c.Name + "/" + ((TrackBarTS)c).Value.ToString());
-                else if (c.GetType() == typeof(ColorButton))
+                saving = false;
+                if (PON)
                 {
-                    Color clr = ((ColorButton)c).Color;
-                    a.Add(c.Name + "/" + clr.R + "." + clr.G + "." + clr.B + "." + clr.A);
+                    PON = false;
+                    console.chkPower.Checked = true;
+                    Thread.Sleep(800);
+                    textBoxSAVE.Text = "Radio Started";
                 }
-#if (DEBUG)
-				else if(c.GetType() == typeof(GroupBox) ||
-					c.GetType() == typeof(CheckBoxTS) ||
-					c.GetType() == typeof(ComboBox) ||
-					c.GetType() == typeof(NumericUpDown) ||
-					c.GetType() == typeof(RadioButton) ||
-					c.GetType() == typeof(TextBox) ||
-					c.GetType() == typeof(TrackBar))
-					Debug.WriteLine(c.Name+" needs to be converted to a Thread Safe control.");
-#endif
-            } // foreach(Control c in temp)	
-
-            DB.SaveVars("Options", ref a);      // save the values to the DB
-            saving = false;
-
-            if (PON) //.254
-            {
-                PON = false;
-                console.chkPower.Checked = true;
-                Thread.Sleep(800);
-                textBoxSAVE.Text = "Radio Started";
             }
-
         } // SaveOptions()
 
 
@@ -1068,53 +1189,42 @@ namespace PowerSDR
 
         public void GetOptions()
         {
-            // Automatically restores all controls from the database in the
-            // tab pages on this form of the following types: CheckBoxTS, ComboBox,
-            // NumericUpDown, RadioButton, TextBox, and TrackBar (slider)
-
-            // get list of live controls
-            ArrayList temp = new ArrayList();       // list of all first level controls
+            ArrayList temp = new ArrayList();
             ControlList(this, ref temp);
 
-            ArrayList checkbox_list = new ArrayList();
-            ArrayList combobox_list = new ArrayList();
-            ArrayList numericupdown_list = new ArrayList();
-            ArrayList radiobutton_list = new ArrayList();
-            ArrayList textbox_list = new ArrayList();
-            ArrayList trackbar_list = new ArrayList();
-            ArrayList colorbutton_list = new ArrayList();
+            System.Collections.Generic.Dictionary<string,Control> controls =
+                new System.Collections.Generic.Dictionary<string,Control>(StringComparer.Ordinal);
 
-            //ArrayList controls = new ArrayList();	// list of controls to restore
-            foreach (Control c in temp)
+            foreach(Control c in temp)
             {
-                if (c.GetType() == typeof(CheckBoxTS))          // the control is a CheckBoxTS
-                    checkbox_list.Add(c);
-                else if (c.GetType() == typeof(ComboBoxTS))     // the control is a ComboBox
-                    combobox_list.Add(c);
-                else if (c.GetType() == typeof(NumericUpDownTS))    // the control is a NumericUpDown
-                    numericupdown_list.Add(c);
-                else if (c.GetType() == typeof(RadioButtonTS))  // the control is a RadioButton
-                    radiobutton_list.Add(c);
-                else if (c.GetType() == typeof(TextBoxTS))      // the control is a TextBox
-                    textbox_list.Add(c);
-
-                else if (c.GetType() == typeof(TrackBarTS))     // the control is a TrackBar (slider)
-                    trackbar_list.Add(c);
-
-                else if (c.GetType() == typeof(ColorButton))
-                    colorbutton_list.Add(c);
+                if (P49IsPersistentOptionControl(c))
+                    controls[c.Name] = c;
             }
-            temp.Clear();   // now that we have the controls we want, delete first list 
 
-            ArrayList a = DB.GetVars("Options");                        // Get the saved list of controls
-            a.Sort();
-            int num_controls = checkbox_list.Count + combobox_list.Count +
-                numericupdown_list.Count + radiobutton_list.Count +
-                textbox_list.Count + trackbar_list.Count +
-                colorbutton_list.Count;
+            ArrayList a = DB.GetVars("Options");
+            System.Collections.Generic.HashSet<string> savedNames =
+                new System.Collections.Generic.HashSet<string>(StringComparer.Ordinal);
 
-            if (a.Count < num_controls)     // some control values are not in the database
-            {                               // so set all of them to the defaults
+            foreach(string s in a)
+            {
+                if (String.IsNullOrEmpty(s)) continue;
+                int slash=s.IndexOf('/');
+                if (slash <= 0) continue;
+                savedNames.Add(s.Substring(0,slash));
+            }
+
+            bool missingCurrentControl = false;
+            foreach(string name in controls.Keys)
+            {
+                if (!savedNames.Contains(name))
+                {
+                    missingCurrentControl = true;
+                    break;
+                }
+            }
+
+            if (missingCurrentControl)
+            {
                 InitGeneralTab();
                 InitAudioTab();
                 InitDSPTab();
@@ -1123,147 +1233,28 @@ namespace PowerSDR
                 InitAppearanceTab();
             }
 
-            // restore saved values to the controls
-            foreach (string s in a)             // string is in the format "name,value"
+            foreach(string s in a)
             {
-                string[] vals = s.Split('/');
-                if (vals.Length > 2)
-                {
-                    for (int i = 2; i < vals.Length; i++)
-                        vals[1] += "/" + vals[i];
-                }
+                if (String.IsNullOrEmpty(s)) continue;
+                int slash=s.IndexOf('/');
+                if (slash <= 0) continue;
 
-                string name = vals[0];
-                string val = vals[1];
+                string name=s.Substring(0,slash);
+                string val=s.Substring(slash+1);
 
-                if (s.StartsWith("chk"))            // control is a CheckBoxTS
-                {
-                    for (int i = 0; i < checkbox_list.Count; i++)
-                    {   // look through each control to find the matching name
-                        CheckBoxTS c = (CheckBoxTS)checkbox_list[i];
-                        if (c.Name.Equals(name))        // name found
-                        {
-                            c.Checked = bool.Parse(val);    // restore value
-                            i = checkbox_list.Count + 1;
-                        }
-                        if (i == checkbox_list.Count)
-                            MessageBox.Show(new Form { TopMost = true }, "Control not found: " + name);
-                    }
-                }
-                else if (s.StartsWith("combo")) // control is a ComboBox
-                {
-                    for (int i = 0; i < combobox_list.Count; i++)
-                    {   // look through each control to find the matching name
-                        ComboBoxTS c = (ComboBoxTS)combobox_list[i];
-                        if (c.Name.Equals(name))        // name found
-                        {
-                            if (c.Items.Count > 0 && c.Items[0].GetType() == typeof(string))
-                            {
-                                c.Text = val;
-                            }
-                            else
-                            {
-                                foreach (object o in c.Items)
-                                {
-                                    if (o.ToString() == val)
-                                        c.Text = val;   // restore value
-                                }
-                            }
-                            i = combobox_list.Count + 1;
-                        }
-                        if (i == combobox_list.Count)
-                            MessageBox.Show(new Form { TopMost = true }, "Control not found: " + name);
-                    }
-                }
-                else if (s.StartsWith("ud"))
-                {
-                    for (int i = 0; i < numericupdown_list.Count; i++)
-                    {   // look through each control to find the matching name
-                        NumericUpDownTS c = (NumericUpDownTS)numericupdown_list[i];
-                        if (c.Name.Equals(name))        // name found
-                        {
-                            decimal num = decimal.Parse(val);
+                Control control;
+                if (!controls.TryGetValue(name,out control))
+                    continue; // stale/foreign legacy row: ignore without modal warnings
 
-                            if (num > c.Maximum) num = c.Maximum;       // check endpoints
-                            else if (num < c.Minimum) num = c.Minimum;
-                            c.Value = num;          // restore value
-                            i = numericupdown_list.Count + 1;
-                        }
-                        if (i == numericupdown_list.Count)
-                            MessageBox.Show(new Form { TopMost = true }, "Control not found: " + name);
-                    }
-                }
-                else if (s.StartsWith("rad"))
-                {   // look through each control to find the matching name
-                    for (int i = 0; i < radiobutton_list.Count; i++)
-                    {
-                        RadioButtonTS c = (RadioButtonTS)radiobutton_list[i];
-                        if (c.Name.Equals(name))        // name found
-                        {
-                            c.Checked = bool.Parse(val);    // restore value
-                            i = radiobutton_list.Count + 1;
-                        }
-                        if (i == radiobutton_list.Count)
-                            MessageBox.Show(new Form { TopMost = true }, "Control not found: " + name);
-                    }
-                }
-                else if (s.StartsWith("txt"))
-                {   // look through each control to find the matching name
-                    for (int i = 0; i < textbox_list.Count; i++)
-                    {
-                        TextBoxTS c = (TextBoxTS)textbox_list[i];
-                        if (c.Name.Equals(name))        // name found
-                        {
-                            c.Text = val;   // restore value
-                            i = textbox_list.Count + 1;
-                        }
-                        if (i == textbox_list.Count)
-                            MessageBox.Show(new Form { TopMost = true }, "Control not found: " + name);
-                    }
-                }
-                else if (s.StartsWith("tb"))
-                {
-                    // look through each control to find the matching name
-                    for (int i = 0; i < trackbar_list.Count; i++)
-                    {
-                        TrackBarTS c = (TrackBarTS)trackbar_list[i];
-                        if (c.Name.Equals(name))        // name found
-                        {
-                            c.Value = Int32.Parse(val);
-                            i = trackbar_list.Count + 1;
-                        }
-                        if (i == trackbar_list.Count)
-                            MessageBox.Show(new Form { TopMost = true }, "Control not found: " + name);
-                    }
-                }
-                else if (s.StartsWith("clrbtn"))
-                {
-                    string[] colors = val.Split('.');
-                    if (colors.Length == 4)
-                    {
-                        int R, G, B, A;
-                        R = Int32.Parse(colors[0]);
-                        G = Int32.Parse(colors[1]);
-                        B = Int32.Parse(colors[2]);
-                        A = Int32.Parse(colors[3]);
-
-                        for (int i = 0; i < colorbutton_list.Count; i++)
-                        {
-                            ColorButton c = (ColorButton)colorbutton_list[i];
-                            if (c.Name.Equals(name))        // name found
-                            {
-                                c.Color = Color.FromArgb(A, R, G, B);
-                                i = colorbutton_list.Count + 1;
-                            }
-                            if (i == colorbutton_list.Count)
-                                MessageBox.Show(new Form { TopMost = true }, "Control not found: " + name);
-                        }
-                    }
-                }
+                if (!P49RestoreOptionControl(control,val))
+                    Debug.WriteLine("P49 option restore rejected value: " + name + "=" + val);
             }
 
-            foreach (ColorButton c in colorbutton_list)
-                c.Automatic = "";
+            foreach(Control c in temp)
+            {
+                ColorButton color = c as ColorButton;
+                if (color != null) color.Automatic = "";
+            }
         }
 
         private string KeyToString(Keys k)
@@ -11384,21 +11375,14 @@ namespace PowerSDR
 
         private void btnOK_Click(object sender, System.EventArgs e)
         {
-            Thread t = new Thread(new ThreadStart(SaveOptions));
-            t.Name = "Save Options Thread";
-            t.IsBackground = true;
-            t.Priority = ThreadPriority.Lowest;
-            t.Start();
+            SaveOptions();
+            DB.Update();
             this.Hide();
         }
 
         private void btnCancel_Click(object sender, System.EventArgs e)
         {
-            Thread t = new Thread(new ThreadStart(GetOptions));
-            t.Name = "Save Options Thread";
-            t.IsBackground = true;
-            t.Priority = ThreadPriority.Lowest;
-            t.Start();
+            GetOptions();
             this.Hide();
         }
 
@@ -11408,12 +11392,7 @@ namespace PowerSDR
         public void btnApply_Click(object sender, System.EventArgs e)
         {
             textBoxSAVE.Text = " ";
-
-            Thread t = new Thread(new ThreadStart(ApplyOptions));
-            t.Name = "Save Options Thread";
-            t.IsBackground = true;
-            t.Priority = ThreadPriority.AboveNormal; // ke9ns was lowest
-            t.Start();
+            ApplyOptions();
         }
 
         bool PON = false; //.254
@@ -11475,6 +11454,8 @@ namespace PowerSDR
 
         private void Setup_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
+            SaveOptions();
+            DB.Update();
             this.Hide();
             e.Cancel = true;
         }
@@ -11588,7 +11569,7 @@ namespace PowerSDR
                     "It is *very* important that the database being imported was created with the same radio " +
                     "model currently in use.  Failure to do so can result is unpredictable behavior and " +
                     "possibly damage the radio if incorrect parameters are imported.\r\n\r\n" +
-                    "It is required to use the PowerSDR-DataTransfer™ utility included with this version of PowerSDR " +
+                    "It is required to use the PowerSDR-DataTransferï¿½ utility included with this version of PowerSDR " +
                     "for migrating users settings from different radio types rather than the Setup Export/Import feture.\r\n\r\n" +
                     "Please ensure that the database selected for import was created using the " +
                     "same radio model before importing a database.",
@@ -11612,7 +11593,7 @@ namespace PowerSDR
                             "same version of PowerSDR and radio model that is currently running.\r\n\r\n" +
                             "The import of databases that were not created PowerSDR v" + current_ver_num + " may result " +
                             "in errors due to database schema incompatibilities or differences in default values.\r\n\r\n" +
-                            "It is required to use the PowerSDR-DataTransfer™ utility included with this version of PowerSDR " +
+                            "It is required to use the PowerSDR-DataTransferï¿½ utility included with this version of PowerSDR " +
                             "for migrating users settings from different versions of PowerSDR rather than the Setup Export/Import feature.\r\n\r\n" +
                             "Please ensure that the database selected for import was created using PowerSDR v" + current_ver_num +
                             " before importing a database.", 
@@ -11631,7 +11612,7 @@ namespace PowerSDR
                     "same version of PowerSDR and radio model that is currently running.\r\n\r\n" +
                     "The import of databases that were not created PowerSDR v" + current_ver_num + " may result " +
                     "in errors due to database schema incompatibilities or differences in default values.\r\n\r\n" +
-                    "It is recommended to use the PowerSDR-DataTransfer™ utility included with this version of PowerSDR " +
+                    "It is recommended to use the PowerSDR-DataTransferï¿½ utility included with this version of PowerSDR " +
                     "for migrating users settings from different versions of PowerSDR rather than the Setup Export/Import feature.\r\n\r\n" +
                     "Do you want to continue the database import at your own risk?",
                     "Import Database?", MessageBoxButtons.YesNo, MessageBoxIcon.Question);

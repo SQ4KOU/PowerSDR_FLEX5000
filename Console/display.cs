@@ -4259,7 +4259,7 @@ namespace PowerSDR
                     {
                         // OLDint[] band_edge_list_r14 = { 5351500, 5353999, 5354000, 5365999, 5366000, 5366500 }; //  5351.5 - 5366.5 kHz
 
-                        // 5351.5 – 5366.5 segment
+                        // 5351.5 ï¿½ 5366.5 segment
                         // 5351500 to 5353999 = CW and narrowband digital modes (max 200hz bandwidth) lower edge of first segment
                         // 5354000 ukCH7, 5357000 USAch3 now FT8, 5360000, 5362000 ukCH8, 5363000 to 5365999 = Phone and wideband digital modes (max 2.7khz bandwidth) middle segment (3khz spacing)
                         // 5366000 to 5366500 = CW and narrowband digital modes (max 20hz bandwidth) upper edge of third segment
@@ -18769,8 +18769,8 @@ namespace PowerSDR
 
             // Calculate the dot product.
             return (BAx * BCx + BAy * BCy);
-            // Return the dot product AB · BC.
-            // Note that AB · BC = |AB| * |BC| * Cos(theta).
+            // Return the dot product AB ï¿½ BC.
+            // Note that AB ï¿½ BC = |AB| * |BC| * Cos(theta).
 
         } //  private static float DotProduct(float Ax, float Ay, float Bx, float By, float Cx, float Cy)
 
@@ -20932,7 +20932,9 @@ namespace PowerSDR
 
             if (console.setupForm != null && console.setupForm.check3DPan.Checked == false)
             {
-                points = null; // ke9ns: reset the points array
+                // SQ4KOU P08: keep the Point[] buffer for the next frame.
+                // DrawPanadapter already resizes it when W grows. Nulling it here
+                // forced a new W-sized managed allocation on every rendered frame.
             }
 
 
@@ -21803,7 +21805,7 @@ namespace PowerSDR
 
             bool waterfallBitmapChanged = false;
 
-            if ((duration > waterfall_update_period) && console.chkPower.Checked)
+            if ((duration >= waterfall_update_period) && console.chkPower.Checked)
             {
                 waterfallBitmapChanged = true;
                 if (rx == 1) timer_waterfall.Start();
@@ -22032,7 +22034,7 @@ namespace PowerSDR
                         if (console.ROTOREnabled == true)
                         {
                             answer = console.spotDDUtil_Rotor1; // get rotor angle current position
-                            Rotor = answer + "°";
+                            Rotor = answer + "ï¿½";
                         }
                         else
                         {
@@ -22538,11 +22540,11 @@ namespace PowerSDR
 
                 int total_size = bitmapData.Stride * bitmapData.Height;                 // find buffer size (stride = scan width) ke9ns height = 281 or 525 full screen 
 
-                Win32.memcpy(
+                Win32.memmove(
                     new IntPtr((int)bitmapData.Scan0 + (bitmapData.Stride)).ToPointer(),  // + stride is 1 row down
                   bitmapData.Scan0.ToPointer(),
                     total_size - bitmapData.Stride
-                    );  // copy (dest, source, count)
+                    );  // overlapping scroll copy: dest starts one row below source
 
 
                 row = (byte*)bitmapData.Scan0;     // ke9ns  first row but W over to the right since the Width of the bmp is 3times the real viewing area

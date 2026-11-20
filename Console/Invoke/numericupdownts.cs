@@ -1,4 +1,4 @@
-//=================================================================
+﻿//=================================================================
 // numericupdownts.cs
 //=================================================================
 // This file implements a thread-safe NumericUpDown control based on the
@@ -1204,6 +1204,25 @@ namespace System.Windows.Forms
             else return base.Validate();
         }
 
+        // MW0LGE_22b - exact Thetis TinyStep behavior used by Multi Meters.
+        private bool _tinyStep = false;
+        public bool TinyStep
+        {
+            get { return _tinyStep; }
+            set { _tinyStep = value; }
+        }
+        protected override void OnMouseWheel(MouseEventArgs e)
+        {
+            decimal newValue = this.Value;
+            decimal step = this.Increment;
+            if (this.DecimalPlaces > 0 && _tinyStep && step != (decimal)0.1f)
+                step = (decimal)0.1f;
+            if (e.Delta > 0) newValue += step;
+            else newValue -= step;
+            if (newValue > this.Maximum) newValue = this.Maximum;
+            else if (newValue < this.Minimum) newValue = this.Minimum;
+            this.Value = newValue;
+        }
         #endregion
     }
 }
