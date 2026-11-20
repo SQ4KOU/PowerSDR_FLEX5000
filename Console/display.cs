@@ -18982,6 +18982,7 @@ namespace PowerSDR
                         {
                             _cachedWidth = W;
                             _3DBuffer = new int[_maxLines][];
+
                             for (int i = 0; i < _maxLines; i++)
                             {
                                 _3DBuffer[i] = new int[W];

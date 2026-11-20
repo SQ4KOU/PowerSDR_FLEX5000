@@ -20116,7 +20116,7 @@ namespace PowerSDR
             string url = "http://eibispace.de/dx/sked-a26.csv";
 
 
-            string targetDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), @"FlexRadio Systems\PowerSDR v2.8.0\");
+            string targetDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), @"FlexRadio Systems\PowerSDR v3.0.0\");
             string destinationFile = Path.Combine(targetDirectory, "SWL.csv");
             string backupFile = Path.Combine(targetDirectory, "swl_old.csv");
 
