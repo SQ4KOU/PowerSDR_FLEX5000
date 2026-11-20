@@ -1,0 +1,96 @@
+name: SQ4KOU P51 compatibility audit on KE9NS v3
+on:
+  push:
+    branches: [feature/ke9ns-v3.0.0.15d-sq4kou-p51]
+    paths: [.github/workflows/port-p51-v3.yml]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  audit:
+    runs-on: windows-2022
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - name: Reconstruct exact P51 and perform three-way migration
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $log=Join-Path $env:GITHUB_WORKSPACE 'port-audit'
+          New-Item -ItemType Directory -Force $log | Out-Null
+          $oldSha='d558979570c4c2e4572b63ac218d3d4477926cb8'
+          $p51Sha='454489cb218b71fc94104b5390bcd4205ca5eda1'
+          $newSha='b37d6ed08813baa32003f840f71aafd032ca13ea'
+          $old=Join-Path $env:RUNNER_TEMP 'psdr-old'
+          $h=Join-Path $env:RUNNER_TEMP 'psdr-p51'
+          $new=Join-Path $env:RUNNER_TEMP 'psdr-port'
+          function GitChecked([string[]]$a) {
+            & git @a
+            if($LASTEXITCODE -ne 0){throw "git failed rc=$LASTEXITCODE : $a"}
+          }
+          GitChecked @('config','user.name','SQ4KOU migration CI')
+          GitChecked @('config','user.email','actions@users.noreply.github.com')
+          GitChecked @('config','core.longpaths','true')
+          GitChecked @('fetch','--no-tags','--depth=1','origin',$p51Sha)
+          GitChecked @('worktree','add','--detach',$h,$p51Sha)
+          GitChecked @('fetch','--no-tags','--depth=1','https://github.com/ke9ns/PowerSDR-KE9NS-v2.8.0.git',$oldSha)
+          GitChecked @('worktree','add','--detach',$old,$oldSha)
+          GitChecked @('fetch','--no-tags','--depth=1','origin',$newSha)
+          if((git rev-parse "$newSha^{tree}").Trim() -ne '9155307cfbe157ee7f02ee4837c7f0d6e0c3dad9'){throw 'new upstream tree mismatch'}
+          $scripts=Join-Path $h 'tools/powersdr'
+          $builder=Get-Content (Join-Path $scripts 'Build-PowerSDR-MSI.ps1') -Raw
+          $stageNames=@([regex]::Matches($builder,"'((?:Apply|Verify)-PowerSDR-[^']+\.ps1)'\)\s+-SourceRoot") | ForEach-Object {$_.Groups[1].Value})
+          if($stageNames.Count -lt 15){throw 'old patch order extraction incomplete'}
+          $stageNames += @('Apply-PowerSDR-ThetisMetersCoherent-P32.ps1','Apply-PowerSDR-MetersPersistence-P48.ps1','Apply-PowerSDR-LegacyItems-P39.ps1','Apply-PowerSDR-TCI-P44.ps1','Apply-PowerSDR-TCI-Streaming-P46.ps1','Apply-PowerSDR-DatabasePersistence-P49.ps1','Apply-PowerSDR-WindowPositions-P50.ps1','Apply-PowerSDR-WindowResize-P51.ps1')
+          Push-Location $old
+          try {
+            foreach($stage in $stageNames){
+              Write-Host "[PATCH] $stage"
+              & (Join-Path $scripts $stage) -SourceRoot $old
+              GitChecked @('add','-A')
+              GitChecked @('commit','--allow-empty','-m',"Reconstruct $stage")
+              "$stage $((git rev-parse HEAD).Trim())" | Add-Content (Join-Path $log 'stages.txt')
+            }
+            $oldPatched=(git rev-parse HEAD).Trim()
+            GitChecked @('diff','--binary',"--output=$(Join-Path $log 'P51-exact.patch')",$oldSha,$oldPatched)
+            git diff --stat $oldSha $oldPatched | Set-Content (Join-Path $log 'P51-file-stat.txt')
+          } finally {Pop-Location}
+          $newTree=(git rev-parse "$newSha^{tree}").Trim()
+          $synthetic=(git commit-tree $newTree -p $oldSha -m 'Synthetic audit: new KE9NS tree on old base').Trim()
+          if(!$synthetic -or $LASTEXITCODE -ne 0){throw 'synthetic audit commit failed'}
+          GitChecked @('worktree','add','--detach',$new,$synthetic)
+          Push-Location $new
+          try {
+            & git -c merge.conflictStyle=diff3 merge --no-commit --no-ff $oldPatched 2>&1 | Tee-Object -FilePath (Join-Path $log 'merge.log')
+            $mergeRc=$LASTEXITCODE
+            $conflicts=@(git diff --name-only --diff-filter=U)
+            $conflicts | Set-Content (Join-Path $log 'conflicts.txt')
+            git status --short | Set-Content (Join-Path $log 'merge-status.txt')
+            git diff --cached --stat | Set-Content (Join-Path $log 'merged-stat.txt')
+            git diff --cached --binary --output="$(Join-Path $log 'clean-hunks.patch')"
+            if($mergeRc -ne 0 -or $conflicts.Count){
+              git diff --cc --output="$(Join-Path $log 'conflicts.diff')"
+              foreach($file in $conflicts){
+                $name=$file -replace '[\\/:]','_'
+                $full=Join-Path $new $file
+                if(Test-Path -LiteralPath $full -PathType Leaf){
+                  Copy-Item -LiteralPath $full -Destination (Join-Path $log ("conflict-"+$name)) -Force
+                }
+              }
+              Write-Host "[BLOCKED] Semantic conflict review required:"
+              $conflicts | ForEach-Object {Write-Host $_}
+              throw '3-way merge conflicts: not safe to publish an MSI'
+            }
+            git diff --cached --check
+            if($LASTEXITCODE -ne 0){throw 'patch whitespace check failed'}
+            Write-Host '[PASS] text merge completed; compiler and deployment gates pending'
+          } finally {Pop-Location}
+      - name: Upload compatibility evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: PowerSDR-v3-P51-compatibility
+          path: port-audit/
+          if-no-files-found: error
